@@ -578,10 +578,13 @@ export default function HomePage() {
             <div>
               <div className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
                 <span>現場離線票夾模式已啟動</span>
-                <span className="text-[10px] bg-amber-900 text-amber-300 px-1.5 py-0.5 rounded font-mono">OFFLINE</span>
+                <span className="text-[10px] bg-amber-900 text-amber-300 px-1.5 py-0.5 rounded font-mono">
+                  OFFLINE
+                </span>
               </div>
               <div className="text-[11px] text-amber-300/80 mt-0.5">
-                現場 4G/5G 網路壅塞或無連線中。已由本機 Service Worker 載入快取票夾，您依然能出示擬真票根、排號與座位資訊。
+                現場 4G/5G 網路壅塞或無連線中。已由本機 Service Worker
+                載入快取票夾，您依然能出示擬真票根、排號與座位資訊。
               </div>
             </div>
           </div>
@@ -1206,12 +1209,19 @@ export default function HomePage() {
                                   )}
                                   {Boolean(att.merchTotalCost && att.merchTotalCost > 0) && (
                                     <span className="text-purple-300 font-medium">
-                                      🛍️ 周邊：${att.merchTotalCost!.toLocaleString()} {att.currency}
+                                      🛍️ 周邊：${att.merchTotalCost!.toLocaleString()}{' '}
+                                      {att.currency}
                                     </span>
                                   )}
-                                  {Boolean(((att.ticketPrice || 0) + (att.merchTotalCost || 0)) > 0) && (
+                                  {Boolean(
+                                    (att.ticketPrice || 0) + (att.merchTotalCost || 0) > 0
+                                  ) && (
                                     <span className="text-emerald-400 font-bold bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
-                                      💳 累計總支出：${((att.ticketPrice || 0) + (att.merchTotalCost || 0)).toLocaleString()} {att.currency}
+                                      💳 累計總支出：$
+                                      {(
+                                        (att.ticketPrice || 0) + (att.merchTotalCost || 0)
+                                      ).toLocaleString()}{' '}
+                                      {att.currency}
                                     </span>
                                   )}
                                   {att.rating && (
@@ -1243,7 +1253,12 @@ export default function HomePage() {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => setViewingMerchSession({ attendanceId: att.id, eventTitle: ev.title })}
+                                    onClick={() =>
+                                      setViewingMerchSession({
+                                        attendanceId: att.id,
+                                        eventTitle: ev.title,
+                                      })
+                                    }
                                     className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-800/80 transition-colors"
                                   >
                                     <ShoppingBag className="h-3 w-3 mr-1 text-purple-400" />
@@ -1251,7 +1266,13 @@ export default function HomePage() {
                                   </button>
                                   <button
                                     type="button"
-                                    onClick={() => setViewingMediaSession({ attendanceId: att.id, eventTitle: ev.title, sessionDate: session.sessionDate })}
+                                    onClick={() =>
+                                      setViewingMediaSession({
+                                        attendanceId: att.id,
+                                        eventTitle: ev.title,
+                                        sessionDate: session.sessionDate,
+                                      })
+                                    }
                                     className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-pink-950/80 hover:bg-pink-900 text-pink-300 border border-pink-800/80 transition-colors"
                                   >
                                     <Camera className="h-3 w-3 mr-1 text-pink-400" />

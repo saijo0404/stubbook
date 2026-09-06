@@ -24,13 +24,41 @@ interface MerchManagerModalProps {
 }
 
 export const MERCH_CATEGORIES: Record<string, { label: string; icon: string; color: string }> = {
-  LIGHTSTICK: { label: '應援手燈', icon: '🪄', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
-  APPAREL: { label: '服飾 T恤', icon: '👕', color: 'bg-blue-500/20 text-blue-300 border-blue-500/30' },
-  TOWEL: { label: '應援毛巾', icon: '🧣', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' },
-  PAMPHLET: { label: '場刊畫冊', icon: '📖', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-  BADGE: { label: '徽章別針', icon: '📛', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' },
-  ACCESSORY: { label: '提袋配件', icon: '🎒', color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30' },
-  OTHER: { label: '其他戰利品', icon: '📦', color: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30' },
+  LIGHTSTICK: {
+    label: '應援手燈',
+    icon: '🪄',
+    color: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
+  },
+  APPAREL: {
+    label: '服飾 T恤',
+    icon: '👕',
+    color: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
+  },
+  TOWEL: {
+    label: '應援毛巾',
+    icon: '🧣',
+    color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30',
+  },
+  PAMPHLET: {
+    label: '場刊畫冊',
+    icon: '📖',
+    color: 'bg-amber-500/20 text-amber-300 border-amber-500/30',
+  },
+  BADGE: {
+    label: '徽章別針',
+    icon: '📛',
+    color: 'bg-purple-500/20 text-purple-300 border-purple-500/30',
+  },
+  ACCESSORY: {
+    label: '提袋配件',
+    icon: '🎒',
+    color: 'bg-cyan-500/20 text-cyan-300 border-cyan-500/30',
+  },
+  OTHER: {
+    label: '其他戰利品',
+    icon: '📦',
+    color: 'bg-zinc-500/20 text-zinc-300 border-zinc-500/30',
+  },
 };
 
 export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
@@ -212,7 +240,10 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
           </div>
 
           {/* Add Merch Form */}
-          <form onSubmit={handleAddItem} className="bg-zinc-800/60 border border-zinc-700/60 rounded-xl p-4 space-y-4">
+          <form
+            onSubmit={handleAddItem}
+            className="bg-zinc-800/60 border border-zinc-700/60 rounded-xl p-4 space-y-4"
+          >
             <h4 className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
               <span>➕</span> 記錄新的戰利品
             </h4>
@@ -307,7 +338,9 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
                   className="px-3 py-1.5 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-xs text-zinc-200 transition flex items-center gap-1.5"
                 >
                   <span>📷</span>
-                  <span>{uploadingPhoto ? '上傳中...' : photoUrl ? '更換照片' : '上傳戰利品實拍'}</span>
+                  <span>
+                    {uploadingPhoto ? '上傳中...' : photoUrl ? '更換照片' : '上傳戰利品實拍'}
+                  </span>
                 </button>
                 {photoUrl && (
                   <div className="flex items-center gap-2">
@@ -350,7 +383,9 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
               <div className="text-center py-10 border border-dashed border-zinc-800 rounded-xl">
                 <span className="text-3xl block mb-2">🎁</span>
                 <p className="text-sm text-zinc-400">尚未記錄任何周邊物品</p>
-                <p className="text-xs text-zinc-500 mt-1">手燈、T恤、會場限定場刊，把演唱會的美好記憶帶回家吧！</p>
+                <p className="text-xs text-zinc-500 mt-1">
+                  手燈、T恤、會場限定場刊，把演唱會的美好記憶帶回家吧！
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -377,15 +412,21 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
                         )}
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className={`text-[10px] px-2 py-0.5 rounded-full border ${cat.color}`}>
+                            <span
+                              className={`text-[10px] px-2 py-0.5 rounded-full border ${cat.color}`}
+                            >
                               {cat.label}
                             </span>
-                            <h5 className="text-sm font-semibold text-zinc-100 truncate">{item.itemName}</h5>
+                            <h5 className="text-sm font-semibold text-zinc-100 truncate">
+                              {item.itemName}
+                            </h5>
                           </div>
                           <div className="text-xs text-zinc-400 mt-1">
                             {item.price > 0 ? (
                               <>
-                                <span>{item.currency} {item.price.toLocaleString()}</span>
+                                <span>
+                                  {item.currency} {item.price.toLocaleString()}
+                                </span>
                                 <span className="mx-1.5 text-zinc-600">×</span>
                                 <span>{item.quantity} 件</span>
                               </>
@@ -399,7 +440,9 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
                       <div className="flex items-center gap-3 flex-shrink-0 ml-4">
                         <div className="text-right">
                           <div className="text-sm font-bold text-amber-300">
-                            {itemSubtotal > 0 ? `${item.currency} ${itemSubtotal.toLocaleString()}` : '免費'}
+                            {itemSubtotal > 0
+                              ? `${item.currency} ${itemSubtotal.toLocaleString()}`
+                              : '免費'}
                           </div>
                         </div>
                         <button

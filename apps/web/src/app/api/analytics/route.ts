@@ -27,9 +27,7 @@ export async function GET(req: NextRequest) {
 
     // 2. 年份過濾條件
     const yearCondition =
-      selectedYear && selectedYear !== 'ALL'
-        ? `AND strftime('%Y', s.session_date) = ?`
-        : '';
+      selectedYear && selectedYear !== 'ALL' ? `AND strftime('%Y', s.session_date) = ?` : '';
     const yearParams = selectedYear && selectedYear !== 'ALL' ? [selectedYear] : [];
 
     // 3. 總場次與參與統計
@@ -54,9 +52,7 @@ export async function GET(req: NextRequest) {
 
     // 4. 周邊戰利品花費統計與分類圓餅資料
     const merchCondition =
-      selectedYear && selectedYear !== 'ALL'
-        ? `AND strftime('%Y', s.session_date) = ?`
-        : '';
+      selectedYear && selectedYear !== 'ALL' ? `AND strftime('%Y', s.session_date) = ?` : '';
     const merchStats = db
       .prepare(
         `
@@ -151,19 +147,14 @@ export async function GET(req: NextRequest) {
 
     // 8. 累積相片與視角照片總數
     const mediaCount = (
-      db
-        .prepare('SELECT COUNT(*) as c FROM attendance_media')
-        .get() as { c: number }
+      db.prepare('SELECT COUNT(*) as c FROM attendance_media').get() as { c: number }
     ).c;
     const seatViewCount = (
-      db
-        .prepare('SELECT COUNT(*) as c FROM seat_view_photos')
-        .get() as { c: number }
+      db.prepare('SELECT COUNT(*) as c FROM seat_view_photos').get() as { c: number }
     ).c;
 
     const totalSpending =
-      Number(attendanceStats.totalTicketSpending || 0) +
-      Number(merchStats.totalMerchSpending || 0);
+      Number(attendanceStats.totalTicketSpending || 0) + Number(merchStats.totalMerchSpending || 0);
 
     // 9. 動態計算樂迷專屬封號
     let fanTitle = '音樂漫遊者 (Music Explorer)';

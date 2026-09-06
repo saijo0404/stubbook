@@ -129,7 +129,10 @@ export async function POST(req: NextRequest) {
     fs.writeFileSync(targetPath, buffer);
 
     const publicUrl = `/uploads/${folder}/${randomName}`;
-    logger.info(`檔案安全上傳成功 [${folder}]: ${publicUrl} (${(file.size / 1024).toFixed(1)} KB)`, 'UPLOAD_API');
+    logger.info(
+      `檔案安全上傳成功 [${folder}]: ${publicUrl} (${(file.size / 1024).toFixed(1)} KB)`,
+      'UPLOAD_API'
+    );
 
     return NextResponse.json({
       success: true,

@@ -10,12 +10,7 @@ interface TicketMaskModalProps {
   onApplyMask: (maskedBlob: Blob, isMasked: boolean) => void;
 }
 
-export function TicketMaskModal({
-  isOpen,
-  imageSrc,
-  onClose,
-  onApplyMask,
-}: TicketMaskModalProps) {
+export function TicketMaskModal({ isOpen, imageSrc, onClose, onApplyMask }: TicketMaskModalProps) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [brushSize, setBrushSize] = useState<number>(30);
@@ -125,7 +120,9 @@ export function TicketMaskModal({
   };
 
   // 取得滑鼠或觸控在 Canvas 內部實際像素座標
-  const getCoordinates = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const getCoordinates = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
@@ -146,7 +143,9 @@ export function TicketMaskModal({
     };
   };
 
-  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
     setIsDrawing(true);
     draw(e);
   };

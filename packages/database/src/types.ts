@@ -162,4 +162,3 @@ export interface EventSetlist {
   created_at: string;
   updated_at: string;
 }
-
