@@ -63,6 +63,7 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 ```
 
 ### 解析管線分層職責：
+
 1. **Tier 1 (輕量標籤優先 - Meta & JSON-LD):**
    - 使用輕量 HTTP 客戶端取得 HTML，優先讀取 `schema.org/MusicEvent`（JSON-LD）或 Open Graph 標籤（`og:title`, `og:image`, `og:description`）。
    - 耗時極短（<300ms），適用於結構友善的活動專頁。
@@ -163,25 +164,31 @@ erDiagram
 ## 4. 關鍵設計細節 (Architecture Highlights)
 
 ### ① 巡迴與多場次分離 (Tour & Multi-Session Architecture)
-* 演唱會多為連開多日（如：五月天跨年、Coldplay 連開數場）。拆分 `Event` 與 `EventSession`，爬蟲抓到多場次時一次建立關聯場次，使用者可精確標記「參加了哪一天的哪一場」。
+
+- 演唱會多為連開多日（如：五月天跨年、Coldplay 連開數場）。拆分 `Event` 與 `EventSession`，爬蟲抓到多場次時一次建立關聯場次，使用者可精確標記「參加了哪一天的哪一場」。
 
 ### ② 票根個資與條碼智慧隱私遮罩 (Ticket Stub Privacy Shield)
-* 實體與電子票根包含條碼 (Barcode / QR Code)、身分證字號與訂單序號。
-* 前端票券預覽與上傳模組內建 **Canvas 自動偵測條碼區域** 並提供「一鍵高斯模糊/遮罩」，保護個人隱私。
+
+- 實體與電子票根包含條碼 (Barcode / QR Code)、身分證字號與訂單序號。
+- 前端票券預覽與上傳模組內建 **Canvas 自動偵測條碼區域** 並提供「一鍵高斯模糊/遮罩」，保護個人隱私。
 
 ### ③ 演唱會預算與全旅程記帳 (Expense & Travel Tracking)
-* 擴充個人記錄模組，提供「總支出追蹤」（門票、手續費、交通、住宿與官方周邊），支援多國幣別轉換。
+
+- 擴充個人記錄模組，提供「總支出追蹤」（門票、手續費、交通、住宿與官方周邊），支援多國幣別轉換。
 
 ### ④ 現場無網路環境與離線票夾 (Offline-First Resilience)
-* 數萬人場館現場往往基地台癱瘓無法連網。
-* PWA 與 Mobile 端支援 **Service Worker 靜態快取 + IndexedDB 離線快取**。票券座位、演出須知即便處於飛航模式亦可即時離線開啟。
+
+- 數萬人場館現場往往基地台癱瘓無法連網。
+- PWA 與 Mobile 端支援 **Service Worker 靜態快取 + IndexedDB 離線快取**。票券座位、演出須知即便處於飛航模式亦可即時離線開啟。
 
 ### ⑤ 歌單串接與自動同步 (Setlist.fm & Spotify Integration)
-* 演出結束後，系統可自動比對 **Setlist.fm API** 匯入當晚現場演奏曲目，並提供一鍵「匯出為 Spotify 播放清單」。
+
+- 演出結束後，系統可自動比對 **Setlist.fm API** 匯入當晚現場演奏曲目，並提供一鍵「匯出為 Spotify 播放清單」。
 
 ### ⑥ 年度回顧與視覺化票根手帳 (Concert Wrapped & Canvas)
-* **擬真票根牆**：提供復古撕票線、雷射防偽質感的數位票根手帳模式。
-* **年度足跡 Wrapped**：年終自動產出專屬分享小卡（IG Story / Threads 規格）：年度場次、歌手雷達圖、踩點場館與花費統計。
+
+- **擬真票根牆**：提供復古撕票線、雷射防偽質感的數位票根手帳模式。
+- **年度足跡 Wrapped**：年終自動產出專屬分享小卡（IG Story / Threads 規格）：年度場次、歌手雷達圖、踩點場館與花費統計。
 
 ---
 
@@ -189,11 +196,11 @@ erDiagram
 
 採用 **方案 A：單一程式碼庫全平台架構**：
 
-| 平台 | 容器 / 技術 | 核心體驗場景 |
-| --- | --- | --- |
-| **Desktop Web** | Next.js 14+ (App Router) + Tailwind CSS | 大螢幕票夾、統計儀表板、批次管理、高解析相片牆 |
-| **Mobile Web (PWA)** | Next.js + next-pwa + Web Share Target | 輕量免安裝、桌面捷徑、接收手機瀏覽器分享的售票網址 |
-| **iOS / Android App** | Capacitor 封裝 Next.js 前端 | 原生相機拍攝票根、離線 SQLite/IndexedDB 快取、系統級 Share Extension |
+| 平台                  | 容器 / 技術                             | 核心體驗場景                                                         |
+| --------------------- | --------------------------------------- | -------------------------------------------------------------------- |
+| **Desktop Web**       | Next.js 14+ (App Router) + Tailwind CSS | 大螢幕票夾、統計儀表板、批次管理、高解析相片牆                       |
+| **Mobile Web (PWA)**  | Next.js + next-pwa + Web Share Target   | 輕量免安裝、桌面捷徑、接收手機瀏覽器分享的售票網址                   |
+| **iOS / Android App** | Capacitor 封裝 Next.js 前端             | 原生相機拍攝票根、離線 SQLite/IndexedDB 快取、系統級 Share Extension |
 
 ---
 

@@ -17,6 +17,7 @@
 ---
 
 ## 🎯 Phase 1: 核心資料結構與 KKTIX / 拓元網頁解析管線 (Foundation & Parsing Pipeline)
+
 > **目標**：實現一鍵貼入 KKTIX 或 拓元售票網址即可自動結構化入庫，奠定 Supabase 資料與活動本體基礎。
 
 - [ ] **專案架構與基礎設施建立**
@@ -36,6 +37,7 @@
 ---
 
 ## 🎟️ Phase 2: 個人回憶手帳、多媒體與票根牆 (Memories, Stubs & Media)
+
 > **目標**：打造擬真且富含溫度的演唱會手帳，記錄票根、位置、周邊物品與現場氛圍。
 
 - [ ] **個人參與記錄模組 (User Attendance Tracking)**
@@ -54,6 +56,7 @@
 ---
 
 ## 📱 Phase 3: 跨平台多端與現場離線體驗 (Cross-Platform & Offline Mode)
+
 > **目標**：以 Capacitor 封裝行動端原生殼，並在網路癱瘓的現場提供可靠的離線票夾體驗。
 
 - [ ] **行動端與 Capacitor 整合**
@@ -70,6 +73,7 @@
 ---
 
 ## 📊 Phase 4: 歌單串接、年度統計與社群回顧 (Setlists & Concert Wrapped)
+
 > **目標**：自動留存現場 Setlist，年終產出高顏值演唱會足跡分享卡。
 
 - [ ] **Setlist 現場歌單串接**
@@ -86,10 +90,10 @@
 
 ## 🚀 進行中狀態與版本追蹤 (Release Changelog)
 
-| 版本 | 狀態 | 預計交付核心 |
-| --- | --- | --- |
-| `v0.1.0` | 🔨 進行中 | 規範確立、CI/CD、Repo 規範、方案 A 骨架與文件規格 |
-| `v0.2.0` | 規劃中 | Supabase Schema 設計與 KKTIX、拓元 (tixCraft) 專屬解析器 |
-| `v0.3.0` | 規劃中 | 個人參與記錄、票根上傳與自動隱私遮罩 |
-| `v0.4.0` | 規劃中 | Capacitor 封裝、PWA 離線票夾與 Share Target 支援 |
-| `v1.0.0` | 規劃中 | 完整跨平台 PC + Mobile 上線，Setlist.fm 串接與年度 Wrapped |
+| 版本     | 狀態      | 預計交付核心                                               |
+| -------- | --------- | ---------------------------------------------------------- |
+| `v0.1.0` | 🔨 進行中 | 規範確立、CI/CD、Repo 規範、方案 A 骨架與文件規格          |
+| `v0.2.0` | 規劃中    | Supabase Schema 設計與 KKTIX、拓元 (tixCraft) 專屬解析器   |
+| `v0.3.0` | 規劃中    | 個人參與記錄、票根上傳與自動隱私遮罩                       |
+| `v0.4.0` | 規劃中    | Capacitor 封裝、PWA 離線票夾與 Share Target 支援           |
+| `v1.0.0` | 規劃中    | 完整跨平台 PC + Mobile 上線，Setlist.fm 串接與年度 Wrapped |
