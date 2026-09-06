@@ -15,6 +15,7 @@ import {
   Flame,
   CheckCircle2,
   Eye,
+  ListMusic,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 
@@ -66,6 +67,7 @@ interface LiveEventHeroCardProps {
   onOpenMediaGallery: () => void;
   onOpenMerchManager: () => void;
   onOpenSeatViews?: (venueName?: string, seatInfo?: string) => void;
+  onOpenSetlist?: () => void;
 }
 
 interface CountdownState {
@@ -90,6 +92,7 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
   onOpenMediaGallery,
   onOpenMerchManager,
   onOpenSeatViews,
+  onOpenSetlist,
 }) => {
   const [countdown, setCountdown] = useState<CountdownState>({
     status: 'COUNTDOWN',
@@ -344,7 +347,7 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
           </div>
 
           {/* 現場快速動作捷徑 */}
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -354,9 +357,9 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               className="p-3 bg-pink-950/40 hover:bg-pink-900/60 border border-pink-700/50 rounded-xl text-xs text-pink-300 font-semibold flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <Camera className="w-4 h-4 text-pink-400" />
-              <span>現場拍照記錄</span>
+              <span>現場拍照</span>
               <span className="text-[10px] text-pink-400/80 font-normal">
-                {session.attendance?.mediaCount ? `${session.attendance.mediaCount} 則紀錄` : '開啟回憶牆'}
+                {session.attendance?.mediaCount ? `${session.attendance.mediaCount} 則紀錄` : '回憶牆'}
               </span>
             </button>
 
@@ -369,11 +372,26 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               className="p-3 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-700/50 rounded-xl text-xs text-purple-300 font-semibold flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
             >
               <ShoppingBag className="w-4 h-4 text-purple-400" />
-              <span>戰利品周邊記帳</span>
+              <span>周邊記帳</span>
               <span className="text-[10px] text-purple-400/80 font-normal">
-                {session.attendance?.merchCount ? `${session.attendance.merchCount} 件戰利品` : '記錄周邊'}
+                {session.attendance?.merchCount ? `${session.attendance.merchCount} 件戰利品` : '記帳'}
               </span>
             </button>
+
+            {onOpenSetlist && (
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.medium();
+                  onOpenSetlist();
+                }}
+                className="col-span-2 sm:col-span-1 p-3 bg-indigo-950/40 hover:bg-indigo-900/60 border border-indigo-700/50 rounded-xl text-xs text-indigo-300 font-semibold flex flex-col items-center justify-center gap-1.5 transition active:scale-95"
+              >
+                <ListMusic className="w-4 h-4 text-indigo-400" />
+                <span>現場歌單</span>
+                <span className="text-[10px] text-indigo-400/80 font-normal">曲目回顧</span>
+              </button>
+            )}
           </div>
         </div>
       </div>

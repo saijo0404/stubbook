@@ -380,5 +380,98 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('場館座位視野資料庫');
     expect(pageContent).toContain('handleOpenSeatViews');
   });
+
+  it('SQLite 資料庫應支援 event_setlists 表格與 CRUD 操作', async () => {
+    const { getDefaultDatabase } = await import('@stubbook/database');
+    const db = getDefaultDatabase();
+
+    // 驗證表格存在
+    const tableInfo = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='event_setlists'")
+      .get() as { name: string } | undefined;
+    expect(tableInfo?.name).toBe('event_setlists');
+
+    // 建立臨時 event 與 session 供外鍵約束關聯
+    const ev = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('Test Concert', 'https://example.com') RETURNING id"
+      )
+      .get() as { id: string };
+    const sess = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-09-06') RETURNING id"
+      )
+      .get(ev.id) as { id: string };
+
+    const songsJson = JSON.stringify([
+      { name: 'Song 1', isEncore: false },
+      { name: 'Song 2', isEncore: true, encoreNumber: 1, coverOf: 'Original Artist' },
+    ]);
+
+    // 插入測試歌單
+    const insertRes = db
+      .prepare(
+        `
+      INSERT INTO event_setlists (
+        session_id, user_id, artist_name, tour_name, venue_name, session_date, source, songs
+      )
+      VALUES (?, 'local', ?, ?, ?, ?, 'MANUAL', ?)
+      RETURNING *
+    `
+      )
+      .get(sess.id, 'Test Artist', 'World Tour', 'Taipei Arena', '2026-09-06', songsJson) as any;
+
+    expect(insertRes).toBeDefined();
+    expect(insertRes.artist_name).toBe('Test Artist');
+    expect(JSON.parse(insertRes.songs).length).toBe(2);
+
+    // 查詢歌單
+    const queried = db
+      .prepare('SELECT * FROM event_setlists WHERE session_id = ?')
+      .get(sess.id) as any;
+    expect(queried.venue_name).toBe('Taipei Arena');
+
+    // 刪除清理
+    db.prepare('DELETE FROM events WHERE id = ?').run(ev.id); // 外鍵級聯刪除 session 與 setlist
+    const deleted = db.prepare('SELECT * FROM event_setlists WHERE session_id = ?').get(sess.id);
+    expect(deleted).toBeUndefined();
+  });
+
+  it('Setlists API 路由檔案與功能驗證應符合規範', () => {
+    const setlistRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'setlists', 'route.ts');
+    expect(fs.existsSync(setlistRoute)).toBe(true);
+
+    const content = fs.readFileSync(setlistRoute, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('export async function POST');
+    expect(content).toContain('export async function DELETE');
+    expect(content).toContain('search_setlist_fm');
+    expect(content).toContain('ON CONFLICT(session_id, user_id)');
+  });
+
+  it('前端應完整實作 SetlistModal 組件並整合至 LiveEventHeroCard 與首頁', () => {
+    const modalPath = path.join(__dirname, '..', 'src', 'components', 'SetlistModal.tsx');
+    expect(fs.existsSync(modalPath)).toBe(true);
+
+    const modalContent = fs.readFileSync(modalPath, 'utf-8');
+    expect(modalContent).toContain('export const SetlistModal');
+    expect(modalContent).toContain('現場演出歌單 (Setlist)');
+    expect(modalContent).toContain('handleImportSetlistFm');
+    expect(modalContent).toContain('handleCopySetlist');
+    expect(modalContent).toContain('handleSaveSetlist');
+
+    // 驗證 LiveEventHeroCard 整合歌單入口
+    const cardPath = path.join(__dirname, '..', 'src', 'components', 'LiveEventHeroCard.tsx');
+    const cardContent = fs.readFileSync(cardPath, 'utf-8');
+    expect(cardContent).toContain('onOpenSetlist');
+    expect(cardContent).toContain('現場歌單');
+
+    // 驗證 page.tsx 整合呼叫
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('SetlistModal');
+    expect(pageContent).toContain('viewingSetlistSession');
+  });
 });
+
 
