@@ -782,4 +782,31 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('eventsVersion');
     expect(pageContent).toContain('refreshTrigger={eventsVersion}');
   });
+
+  it('導覽列與圖片海報應具備無裁切響應式佈局 (Issue #47)', () => {
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    // 頂部導覽需具備水平滾動與防裁切設置
+    expect(pageContent).toContain('overflow-x-auto');
+    expect(pageContent).toContain('shrink-0 whitespace-nowrap');
+    // 票根縮圖不裁切
+    expect(pageContent).toContain('object-contain bg-black/60');
+
+    const calendarDashboardPath = path.join(
+      __dirname,
+      '..',
+      'src',
+      'components',
+      'CalendarDashboard.tsx'
+    );
+    const calendarDashboardContent = fs.readFileSync(calendarDashboardPath, 'utf-8');
+    // 行事曆海報圖片均應採用 object-contain 避免內容被裁切
+    expect(calendarDashboardContent).not.toContain(
+      'object-cover rounded-xl border border-gray-700/80'
+    );
+    expect(calendarDashboardContent).not.toContain(
+      'object-cover rounded-2xl border border-gray-700'
+    );
+    expect(calendarDashboardContent).toContain('object-contain bg-gray-950/80');
+  });
 });

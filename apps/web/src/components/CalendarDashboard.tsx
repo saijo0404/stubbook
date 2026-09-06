@@ -465,7 +465,7 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                       <img
                         src={radar.posterUrl}
                         alt={radar.eventTitle}
-                        className="w-12 h-12 object-cover rounded-xl border border-gray-700/80 shrink-0"
+                        className="w-12 h-12 object-contain bg-gray-950/80 rounded-xl border border-gray-700/80 shrink-0 p-0.5"
                       />
                     ) : (
                       <div className="w-12 h-12 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0 text-gray-500">
@@ -848,7 +848,7 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                       <img
                         src={radar.posterUrl}
                         alt={radar.eventTitle}
-                        className="w-16 h-16 object-cover rounded-2xl border border-gray-700 shrink-0"
+                        className="w-16 h-16 object-contain bg-gray-950/80 rounded-2xl border border-gray-700 shrink-0 p-0.5"
                       />
                     ) : (
                       <div className="w-16 h-16 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0 text-gray-500">
@@ -968,7 +968,7 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                     <img
                       src={item.posterUrl}
                       alt={item.eventTitle}
-                      className="w-16 h-16 object-cover rounded-xl border border-gray-700 shrink-0"
+                      className="w-16 h-16 object-contain bg-gray-950/80 rounded-xl border border-gray-700 shrink-0 p-0.5"
                     />
                   ) : (
                     <div className="w-16 h-16 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center shrink-0 text-gray-500">
