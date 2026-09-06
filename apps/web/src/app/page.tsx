@@ -825,11 +825,23 @@ export default function HomePage() {
               {/* 海報與主視覺頭部 */}
               <div className="relative bg-gradient-to-t from-gray-950 to-transparent p-6 pb-4 sm:p-8 sm:pb-6 flex flex-col sm:flex-row gap-6 items-start">
                 {event.posterUrl && (
-                  <img
-                    src={event.posterUrl}
-                    alt={event.title}
-                    className="w-full sm:w-44 h-48 sm:h-56 object-cover rounded-xl shadow-lg border border-gray-700/50 flex-shrink-0"
-                  />
+                  <div className="w-full sm:w-48 h-56 sm:h-64 rounded-xl overflow-hidden shadow-lg border border-gray-700/60 flex-shrink-0 bg-gray-950 flex items-center justify-center relative group">
+                    <img
+                      src={event.posterUrl}
+                      alt={event.title}
+                      className="w-full h-full object-contain"
+                    />
+                    <a
+                      href={event.posterUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white text-xs font-semibold gap-1 backdrop-blur-[2px]"
+                      title="在新分頁檢視海報原圖"
+                    >
+                      <Eye className="w-5 h-5 text-indigo-300" />
+                      <span>查看大圖</span>
+                    </a>
+                  </div>
                 )}
                 <div className="flex-1 space-y-3">
                   <div className="flex items-center space-x-2">
@@ -929,6 +941,7 @@ export default function HomePage() {
                                 event.platform,
                             }}
                             compact
+                            align="left"
                           />
                         </div>
                       </div>
@@ -1143,13 +1156,15 @@ export default function HomePage() {
                   <div className="p-5 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start space-x-4">
                       {ev.posterUrl ? (
-                        <img
-                          src={ev.posterUrl}
-                          alt={ev.title}
-                          className="w-14 h-18 object-cover rounded-lg border border-gray-700/60 flex-shrink-0"
-                        />
+                        <div className="w-14 h-20 bg-gray-950 rounded-lg border border-gray-700/60 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
+                          <img
+                            src={ev.posterUrl}
+                            alt={ev.title}
+                            className="w-full h-full object-contain"
+                          />
+                        </div>
                       ) : (
-                        <div className="w-14 h-18 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-gray-500">
+                        <div className="w-14 h-20 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-gray-500">
                           <Ticket className="h-6 w-6" />
                         </div>
                       )}
