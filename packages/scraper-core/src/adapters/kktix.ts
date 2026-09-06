@@ -8,6 +8,7 @@ import {
   ScrapedSalePhase,
   SaleType,
 } from '../types';
+import { parseChineseDateTime, extractSalePhasesFromContent } from '../utils/datetime';
 
 export class KktixScraperAdapter implements BaseScraperAdapter {
   readonly name = 'KktixScraperAdapter';
@@ -116,16 +117,15 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
     }
 
     // 檢查 .event-time 或常見時間容器文字
-    const timeText = $('.event-time').text().trim() || $('.timezoneSuffix').parent().text().trim();
+    const timeText =
+      $('.event-time').text().trim() ||
+      $('.timezoneSuffix').parent().text().trim() ||
+      $('.date-range').text().trim() ||
+      $('.info-block').text().trim();
+
     if (timeText) {
-      const match = timeText.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/);
-      if (match) {
-        const [_, y, m, d, hh = '19', mm = '00'] = match;
-        const dt = new Date(
-          `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:00+08:00`
-        );
-        if (!isNaN(dt.getTime())) return dt.toISOString();
-      }
+      const parsed = parseChineseDateTime(timeText, 19, 30);
+      if (parsed) return parsed;
     }
 
     return new Date().toISOString();
@@ -189,78 +189,48 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
   private extractSalePhases($: cheerio.CheerioAPI, html: string, url: string): ScrapedSalePhase[] {
     const phases: ScrapedSalePhase[] = [];
 
-    // 1. Selector-based lookup
-    $('.ticket-sale-time, .sale-time, .start-sale-time, .tickets-header-info').each((_, el) => {
-      const text = $(el).text().trim();
-      const phase = this.parseSalePhaseText(text, url);
-      if (phase) phases.push(phase);
-    });
-
-    // 2. Regex-based pattern in HTML / text
-    if (phases.length === 0) {
-      const saleLineRegex =
-        /(?:售票時間|開賣時間|啟售時間|預購時間|優先購票|公開發售)[：:]\s*([^\n\r<]+)/gi;
-      const matches = html.match(saleLineRegex);
-      if (matches) {
-        for (const match of matches) {
-          const phase = this.parseSalePhaseText(match, url);
-          if (phase && !phases.some((p) => p.saleStart === phase.saleStart)) {
-            phases.push(phase);
-          }
+    const addUniquePhases = (found: ScrapedSalePhase[]) => {
+      for (const p of found) {
+        if (
+          !phases.some(
+            (existing) => existing.saleStart === p.saleStart && existing.phaseName === p.phaseName
+          )
+        ) {
+          phases.push(p);
         }
       }
-    }
-
-    return phases;
-  }
-
-  private parseSalePhaseText(text: string, url: string): ScrapedSalePhase | null {
-    // 匹配日期與時間：2026/09/20 (日) 12:00 或 2026-09-20 12:00
-    const match = text.match(
-      /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[^\d]*?(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
-    );
-    if (!match) return null;
-
-    const [_, y, m, d, hh = '12', mm = '00', ss = '00'] = match;
-    const isoStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:${ss.padStart(2, '0')}+08:00`;
-    const dt = new Date(isoStr);
-    if (isNaN(dt.getTime())) return null;
-
-    let saleType: SaleType = 'GENERAL';
-    if (
-      text.includes('優先') ||
-      text.includes('會員') ||
-      text.includes('預購') ||
-      text.includes('卡友')
-    ) {
-      saleType = 'PRESALE';
-    } else if (text.includes('抽票') || text.includes('登記') || text.includes('抽選')) {
-      saleType = 'LOTTERY';
-    } else if (text.includes('清票') || text.includes('釋票')) {
-      saleType = 'RERELEASE';
-    }
-
-    // 擷取階段名稱
-    let phaseName = 'KKTIX 一般售票';
-    const nameMatch = text.match(
-      /(?:售票時間|開賣時間|啟售時間|預購時間|優先購票|公開發售)[：:]\s*(?:.*?(?:\d{1,2}:\d{2}))?\s*(.*)/i
-    );
-    if (nameMatch && nameMatch[1]?.trim()) {
-      phaseName = nameMatch[1].trim();
-    } else if (saleType === 'PRESALE') {
-      phaseName = 'KKTIX 會員/優先預購';
-    } else if (saleType === 'LOTTERY') {
-      phaseName = 'KKTIX 實名制抽票登記';
-    }
-
-    return {
-      phaseName,
-      saleType,
-      saleStart: dt.toISOString(),
-      ticketingPlatform: 'KKTIX',
-      bookingUrl: url,
-      eligibilityNotes: text.replace(/\s+/g, ' ').trim(),
-      isLottery: saleType === 'LOTTERY',
     };
+
+    // 1. Selector-based lookup: 特殊開賣時間容器
+    $(
+      '.ticket-sale-time, .sale-time, .start-sale-time, .tickets-header-info, .ticket-sales, .ticket-warning, .tickets-note'
+    ).each((_, el) => {
+      const text = $(el).text().trim();
+      addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
+    });
+
+    // 2. Alert, Notice, Announcement 結構
+    $('.alert, .notice, .warning, .announcement, .info-box, .custom-html').each((_, el) => {
+      const text = $(el).text().trim();
+      addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
+    });
+
+    // 3. Description 與 Meta Tags
+    const metaDesc =
+      $('meta[name="description"]').attr('content') ||
+      $('meta[property="og:description"]').attr('content') ||
+      '';
+    const descText = $('.description, #description, .event-description').text().trim();
+    addUniquePhases(extractSalePhasesFromContent(metaDesc, url, 'KKTIX'));
+    addUniquePhases(extractSalePhasesFromContent(descText, url, 'KKTIX'));
+
+    // 4. 若仍未找到，全 HTML 全文掃描作為最終備援
+    if (phases.length === 0) {
+      addUniquePhases(extractSalePhasesFromContent(html, url, 'KKTIX'));
+    }
+
+    // 按開賣時間排序
+    phases.sort((a, b) => new Date(a.saleStart).getTime() - new Date(b.saleStart).getTime());
+    return phases;
   }
 }
