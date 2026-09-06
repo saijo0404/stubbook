@@ -84,24 +84,100 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     const db = getDefaultDatabase();
-    const events = db
+
+    const eventRows = db
       .prepare(
         `
       SELECT 
         e.id,
         e.title,
+        e.tour_name as tourName,
         e.platform,
         e.source_url as sourceUrl,
         e.poster_url as posterUrl,
-        e.created_at as createdAt,
-        COUNT(s.id) as sessionsCount
+        e.description,
+        e.organizer,
+        e.created_at as createdAt
       FROM events e
-      LEFT JOIN event_sessions s ON s.event_id = e.id
-      GROUP BY e.id
       ORDER BY e.created_at DESC
     `
       )
-      .all();
+      .all() as any[];
+
+    const sessionRows = db
+      .prepare(
+        `
+      SELECT 
+        s.id,
+        s.event_id as eventId,
+        s.session_title as sessionTitle,
+        s.session_date as sessionDate,
+        s.doors_open_time as doorsOpenTime,
+        s.ticket_sale_time as ticketSaleTime,
+        s.ticket_platform as ticketPlatform,
+        s.ticket_tiers as ticketTiers,
+        s.booking_url as bookingUrl,
+        s.venue_name_override as venueName,
+        a.id as attendanceId,
+        a.status as attendanceStatus,
+        a.seat_info as attendanceSeatInfo,
+        a.ticket_type as attendanceTicketType,
+        a.ticket_price as attendanceTicketPrice,
+        a.currency as attendanceCurrency,
+        a.rating as attendanceRating,
+        a.notes as attendanceNotes
+      FROM event_sessions s
+      LEFT JOIN user_attendances a ON a.session_id = s.id
+      ORDER BY s.session_date ASC
+    `
+      )
+      .all() as any[];
+
+    // 組裝 sessions 到對應 event
+    const sessionsByEvent = new Map<string, any[]>();
+    for (const s of sessionRows) {
+      let tiers = [];
+      try {
+        tiers = typeof s.ticketTiers === 'string' ? JSON.parse(s.ticketTiers) : s.ticketTiers;
+      } catch {
+        tiers = [];
+      }
+
+      const sessionObj = {
+        id: s.id,
+        sessionTitle: s.sessionTitle,
+        sessionDate: s.sessionDate,
+        doorsOpenTime: s.doorsOpenTime,
+        ticketSaleTime: s.ticketSaleTime,
+        ticketPlatform: s.ticketPlatform,
+        ticketTiers: tiers,
+        bookingUrl: s.bookingUrl,
+        venueName: s.venueName,
+        attendance: s.attendanceId
+          ? {
+              id: s.attendanceId,
+              status: s.attendanceStatus,
+              seatInfo: s.attendanceSeatInfo,
+              ticketType: s.attendanceTicketType,
+              ticketPrice: s.attendanceTicketPrice,
+              currency: s.attendanceCurrency,
+              rating: s.attendanceRating,
+              notes: s.attendanceNotes,
+            }
+          : null,
+      };
+
+      if (!sessionsByEvent.has(s.eventId)) {
+        sessionsByEvent.set(s.eventId, []);
+      }
+      sessionsByEvent.get(s.eventId)!.push(sessionObj);
+    }
+
+    const events = eventRows.map((e) => ({
+      ...e,
+      sessions: sessionsByEvent.get(e.id) || [],
+      sessionsCount: (sessionsByEvent.get(e.id) || []).length,
+    }));
 
     return NextResponse.json({ events });
   } catch (error) {
