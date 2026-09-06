@@ -111,12 +111,11 @@ describe('TixcraftScraperAdapter', () => {
     const [presale, general] = event.salePhases;
     expect(presale.saleType).toBe('PRESALE');
     expect(presale.phaseName).toContain('Live Nation會員預購');
-    expect(new Date(presale.saleStart).getDate()).toBe(15);
-    expect(new Date(presale.saleStart).getHours()).toBe(12);
+    expect(presale.saleStart).toBe('2026-09-15T04:00:00.000Z');
 
     expect(general.saleType).toBe('GENERAL');
     expect(general.phaseName).toContain('全面開賣');
-    expect(new Date(general.saleStart).getDate()).toBe(16);
+    expect(general.saleStart).toBe('2026-09-16T04:00:00.000Z');
 
     // 場次開賣時間
     expect(event.sessions[0].ticketSaleTime).toBe(presale.saleStart);
@@ -139,11 +138,6 @@ describe('TixcraftScraperAdapter', () => {
     const event = adapter.parseHtml(metaHtml, 'https://tixcraft.com/activity/detail/26_EDS');
     expect(event.salePhases).toHaveLength(1);
     expect(event.salePhases[0].saleType).toBe('GENERAL');
-
-    const dt = new Date(event.salePhases[0].saleStart);
-    expect(dt.getFullYear()).toBe(2026);
-    expect(dt.getMonth()).toBe(9); // 10月
-    expect(dt.getDate()).toBe(20);
-    expect(dt.getHours()).toBe(13);
+    expect(event.salePhases[0].saleStart).toBe('2026-10-20T05:00:00.000Z');
   });
 });

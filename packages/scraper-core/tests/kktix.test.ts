@@ -82,11 +82,7 @@ describe('KktixScraperAdapter', () => {
     expect(event.salePhases[0].phaseName).toContain('全面開賣');
     expect(event.salePhases[0].saleType).toBe('GENERAL');
 
-    const dt = new Date(event.salePhases[0].saleStart);
-    expect(dt.getFullYear()).toBe(2026);
-    expect(dt.getMonth()).toBe(8); // 9月
-    expect(dt.getDate()).toBe(10);
-    expect(dt.getHours()).toBe(12);
+    expect(event.salePhases[0].saleStart).toBe('2026-09-10T04:00:00.000Z');
 
     // 場次開賣時間亦應自動對齊
     expect(event.sessions[0].ticketSaleTime).toBe(event.salePhases[0].saleStart);
@@ -111,11 +107,6 @@ describe('KktixScraperAdapter', () => {
     expect(event.salePhases).toHaveLength(1);
     expect(event.salePhases[0].saleType).toBe('PRESALE');
     expect(event.salePhases[0].phaseName).toContain('國泰世華CUBE卡友優先購票');
-
-    const dt = new Date(event.salePhases[0].saleStart);
-    expect(dt.getFullYear()).toBe(2026);
-    expect(dt.getMonth()).toBe(9); // 10月
-    expect(dt.getDate()).toBe(1);
-    expect(dt.getHours()).toBe(12);
+    expect(event.salePhases[0].saleStart).toBe('2026-10-01T04:00:00.000Z');
   });
 });

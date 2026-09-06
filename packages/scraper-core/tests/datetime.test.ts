@@ -22,14 +22,9 @@ describe('Chinese DateTime & Sale Phase Parser', () => {
 
   describe('parseChineseDateTime', () => {
     it('應正確解析包含星期符號之日期時間格式', () => {
-      // 2026/09/10 (四) 12:00
+      // 2026/09/10 (四) 12:00 -> 台北時間中午 12:00，對應 UTC 04:00
       const d1 = parseChineseDateTime('2026/09/10 (四) 12:00');
-      expect(d1).not.toBeNull();
-      const dt1 = new Date(d1!);
-      expect(dt1.getFullYear()).toBe(2026);
-      expect(dt1.getMonth()).toBe(8); // 9月 (0-based)
-      expect(dt1.getDate()).toBe(10);
-      expect(dt1.getHours()).toBe(12);
+      expect(d1).toBe('2026-09-10T04:00:00.000Z');
 
       // 2026/09/10(四) 12:00 (無空格括號)
       const d2 = parseChineseDateTime('2026/09/10(四) 12:00');
@@ -49,52 +44,44 @@ describe('Chinese DateTime & Sale Phase Parser', () => {
     });
 
     it('應正確解析中文時制 (中午、下午、晚上、上午)', () => {
-      // 中午 12:00
+      // 中午 12:00 -> UTC 04:00
       const noon = parseChineseDateTime('2026/09/10 (四) 中午 12:00');
-      expect(new Date(noon!).getHours()).toBe(12);
+      expect(noon).toBe('2026-09-10T04:00:00.000Z');
 
-      // 中午12點
+      // 中午12點 -> UTC 04:00
       const noonChinese = parseChineseDateTime('2026/09/10 (四) 中午12點');
-      expect(new Date(noonChinese!).getHours()).toBe(12);
-      expect(new Date(noonChinese!).getMinutes()).toBe(0);
+      expect(noonChinese).toBe('2026-09-10T04:00:00.000Z');
 
-      // 下午 1:00 -> 13:00
+      // 下午 1:00 -> 13:00 -> UTC 05:00
       const pm1 = parseChineseDateTime('2026/09/10 (四) 下午 1:00');
-      expect(new Date(pm1!).getHours()).toBe(13);
+      expect(pm1).toBe('2026-09-10T05:00:00.000Z');
 
-      // 下午 13:00 -> 13:00
+      // 下午 13:00 -> 13:00 -> UTC 05:00
       const pm13 = parseChineseDateTime('2026/09/10 (四) 下午 13:00');
-      expect(new Date(pm13!).getHours()).toBe(13);
+      expect(pm13).toBe('2026-09-10T05:00:00.000Z');
 
-      // 晚上 7:30 -> 19:30
+      // 晚上 7:30 -> 19:30 -> UTC 11:30
       const night = parseChineseDateTime('2026/09/10 (四) 晚上 7:30');
-      expect(new Date(night!).getHours()).toBe(19);
-      expect(new Date(night!).getMinutes()).toBe(30);
+      expect(night).toBe('2026-09-10T11:30:00.000Z');
 
-      // 晚上7點半 -> 19:30
+      // 晚上7點半 -> 19:30 -> UTC 11:30
       const nightHalf = parseChineseDateTime('2026/09/10 (四) 晚上7點半');
-      expect(new Date(nightHalf!).getHours()).toBe(19);
-      expect(new Date(nightHalf!).getMinutes()).toBe(30);
+      expect(nightHalf).toBe('2026-09-10T11:30:00.000Z');
 
-      // 上午 11:00 -> 11:00
+      // 上午 11:00 -> 11:00 -> UTC 03:00
       const morning = parseChineseDateTime('2026/09/10 (四) 上午 11:00');
-      expect(new Date(morning!).getHours()).toBe(11);
+      expect(morning).toBe('2026-09-10T03:00:00.000Z');
     });
 
     it('全形數字與符號混雜時應能精準解析', () => {
       const raw = '２０２６年０９月１０日（週四）中午１２：００';
       const parsed = parseChineseDateTime(raw);
-      expect(parsed).not.toBeNull();
-      const dt = new Date(parsed!);
-      expect(dt.getFullYear()).toBe(2026);
-      expect(dt.getMonth()).toBe(8);
-      expect(dt.getDate()).toBe(10);
-      expect(dt.getHours()).toBe(12);
+      expect(parsed).toBe('2026-09-10T04:00:00.000Z');
     });
 
     it('未指定時間時應使用預設時間', () => {
       const dateOnly = parseChineseDateTime('2026/09/10', 12, 0);
-      expect(new Date(dateOnly!).getHours()).toBe(12);
+      expect(dateOnly).toBe('2026-09-10T04:00:00.000Z');
     });
   });
 
@@ -114,17 +101,15 @@ describe('Chinese DateTime & Sale Phase Parser', () => {
 
       expect(phases[0].saleType).toBe('PRESALE');
       expect(phases[0].phaseName).toContain('國泰世華CUBE卡友優先購票');
-      expect(new Date(phases[0].saleStart).getDate()).toBe(10);
-      expect(new Date(phases[0].saleStart).getHours()).toBe(12);
+      expect(phases[0].saleStart).toBe('2026-09-10T04:00:00.000Z');
 
       expect(phases[1].saleType).toBe('GENERAL');
       expect(phases[1].phaseName).toContain('拓元售票系統全面開賣');
-      expect(new Date(phases[1].saleStart).getDate()).toBe(12);
-      expect(new Date(phases[1].saleStart).getHours()).toBe(12);
+      expect(phases[1].saleStart).toBe('2026-09-12T04:00:00.000Z');
 
       expect(phases[2].saleType).toBe('RERELEASE');
       expect(phases[2].phaseName).toContain('系統釋票');
-      expect(new Date(phases[2].saleStart).getHours()).toBe(15);
+      expect(phases[2].saleStart).toBe('2026-09-12T07:00:00.000Z');
     });
 
     it('應能精準識別抽票/抽選/登記抽票 (LOTTERY)', () => {
