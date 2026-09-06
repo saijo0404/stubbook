@@ -41,9 +41,10 @@ import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
 import { SeatViewModal } from '../components/SeatViewModal';
 import { SetlistModal } from '../components/SetlistModal';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
+import { CalendarDashboard } from '../components/CalendarDashboard';
 import { haptics } from '../utils/haptics';
 
-type TabMode = 'scrape' | 'journal' | 'seats' | 'analytics';
+type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics';
 
 interface SessionAttendance {
   id: string;
@@ -656,6 +657,21 @@ export default function HomePage() {
                 {totalEventsCount}
               </span>
             )}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('calendar');
+              haptics.light();
+            }}
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'calendar'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Calendar className="h-4 w-4" />
+            <span>手帳行事曆</span>
           </button>
           <button
             type="button"
@@ -1339,6 +1355,19 @@ export default function HomePage() {
             )}
           </div>
         </div>
+      )}
+
+      {/* ─────────────────── TAB: 智慧手帳行事曆與搶票雷達 ─────────────────── */}
+      {activeTab === 'calendar' && (
+        <CalendarDashboard
+          onNavigateToJournal={(eventId) => {
+            setActiveTab('journal');
+            loadSavedEvents();
+          }}
+          onNavigateToScrape={() => {
+            setActiveTab('scrape');
+          }}
+        />
       )}
 
       {/* ─────────────────── TAB 3: 視角資料庫 (VIEW FROM MY SEAT) ─────────────────── */}

@@ -47,4 +47,15 @@ export const haptics = {
       // 靜默降級
     }
   },
+
+  /** 選取 / 換日回饋 */
+  selection: () => {
+    try {
+      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+        navigator.vibrate(8);
+      }
+    } catch {
+      // 靜默降級
+    }
+  },
 };
