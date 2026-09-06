@@ -75,3 +75,7 @@ data/
 *.db-journal
 *.db-wal
 *.db-shm
+
+# User uploads
+public/uploads/*
+!public/uploads/.gitkeep

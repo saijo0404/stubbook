@@ -125,7 +125,9 @@ export async function GET() {
         a.ticket_price as attendanceTicketPrice,
         a.currency as attendanceCurrency,
         a.rating as attendanceRating,
-        a.notes as attendanceNotes
+        a.notes as attendanceNotes,
+        a.ticket_stub_url as attendanceTicketStubUrl,
+        a.stub_privacy_masked as attendanceStubPrivacyMasked
       FROM event_sessions s
       LEFT JOIN user_attendances a ON a.session_id = s.id
       ORDER BY s.session_date ASC
@@ -163,6 +165,8 @@ export async function GET() {
               currency: s.attendanceCurrency,
               rating: s.attendanceRating,
               notes: s.attendanceNotes,
+              ticketStubUrl: s.attendanceTicketStubUrl,
+              stubPrivacyMasked: Boolean(s.attendanceStubPrivacyMasked),
             }
           : null,
       };
