@@ -127,7 +127,10 @@ export async function GET() {
         a.rating as attendanceRating,
         a.notes as attendanceNotes,
         a.ticket_stub_url as attendanceTicketStubUrl,
-        a.stub_privacy_masked as attendanceStubPrivacyMasked
+        a.stub_privacy_masked as attendanceStubPrivacyMasked,
+        COALESCE((SELECT COUNT(*) FROM merchandise_items m WHERE m.attendance_id = a.id), 0) as attendanceMerchCount,
+        COALESCE((SELECT SUM(m.price * m.quantity) FROM merchandise_items m WHERE m.attendance_id = a.id), 0) as attendanceMerchTotalCost,
+        COALESCE((SELECT COUNT(*) FROM attendance_media med WHERE med.attendance_id = a.id), 0) as attendanceMediaCount
       FROM event_sessions s
       LEFT JOIN user_attendances a ON a.session_id = s.id
       ORDER BY s.session_date ASC
@@ -167,6 +170,9 @@ export async function GET() {
               notes: s.attendanceNotes,
               ticketStubUrl: s.attendanceTicketStubUrl,
               stubPrivacyMasked: Boolean(s.attendanceStubPrivacyMasked),
+              merchCount: s.attendanceMerchCount || 0,
+              merchTotalCost: s.attendanceMerchTotalCost || 0,
+              mediaCount: s.attendanceMediaCount || 0,
             }
           : null,
       };

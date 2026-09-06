@@ -85,14 +85,14 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(row.sum).toBe(2);
   });
 
-  it('Upload API 路由應實作嚴格安全性檢查 (大小上限、MIME 白名單、Magic Bytes 簽章、防路徑穿越)', () => {
+  it('Upload API 路由應實作嚴格安全性檢查 (大小上限、MIME 白名單、Magic Bytes 簽章、防路徑穿越、分類目錄支援)', () => {
     const uploadRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'upload', 'route.ts');
     expect(fs.existsSync(uploadRoute)).toBe(true);
 
     const content = fs.readFileSync(uploadRoute, 'utf-8');
     expect(content).toContain('validateMagicBytes');
-    expect(content).toContain('MAX_FILE_SIZE');
-    expect(content).toContain('ALLOWED_MIME_TYPES');
+    expect(content).toContain('MAX_IMAGE_SIZE');
+    expect(content).toContain('ALLOWED_FOLDERS');
     expect(content).toContain('crypto.randomBytes');
     expect(content).toContain('startsWith(uploadDir');
   });
@@ -112,5 +112,104 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     const stubContent = fs.readFileSync(stubModalPath, 'utf-8');
     expect(stubContent).toContain('STUB · 存根聯');
     expect(stubContent).toContain('stubPrivacyMasked');
+  });
+
+  it('Merchandise API 路由應實作完整 CRUD 操作且使用參數化查詢', () => {
+    const routePath = path.join(__dirname, '..', 'src', 'app', 'api', 'merchandise', 'route.ts');
+    expect(fs.existsSync(routePath)).toBe(true);
+
+    const content = fs.readFileSync(routePath, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('export async function POST');
+    expect(content).toContain('export async function DELETE');
+    expect(content).toContain('VALID_CATEGORIES');
+    expect(content).toContain('getDefaultDatabase');
+  });
+
+  it('Media API 路由應實作完整 CRUD 操作且使用參數化查詢', () => {
+    const routePath = path.join(__dirname, '..', 'src', 'app', 'api', 'media', 'route.ts');
+    expect(fs.existsSync(routePath)).toBe(true);
+
+    const content = fs.readFileSync(routePath, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('export async function POST');
+    expect(content).toContain('export async function DELETE');
+    expect(content).toContain('VALID_MEDIA_TYPES');
+    expect(content).toContain('getDefaultDatabase');
+  });
+
+  it('前端應完整實作 MerchManagerModal 與 MediaGalleryModal 組件', () => {
+    const merchModalPath = path.join(__dirname, '..', 'src', 'components', 'MerchManagerModal.tsx');
+    const mediaModalPath = path.join(__dirname, '..', 'src', 'components', 'MediaGalleryModal.tsx');
+
+    expect(fs.existsSync(merchModalPath)).toBe(true);
+    expect(fs.existsSync(mediaModalPath)).toBe(true);
+
+    const merchContent = fs.readFileSync(merchModalPath, 'utf-8');
+    expect(merchContent).toContain('MERCH_CATEGORIES');
+    expect(merchContent).toContain('LIGHTSTICK');
+    expect(merchContent).toContain('loadMerchItems');
+
+    const mediaContent = fs.readFileSync(mediaModalPath, 'utf-8');
+    expect(mediaContent).toContain('MediaGalleryModal');
+    expect(mediaContent).toContain('loadMedia');
+    expect(mediaContent).toContain('lightboxIndex');
+  });
+
+  it('SQLite 資料庫應能正確操作 merchandise_items 與 attendance_media 關聯表記錄', async () => {
+    const { getDatabase } = await import('@stubbook/database');
+    const db = getDatabase({ inMemory: true });
+
+    // 1. 建立測試活動、場次與出席記錄
+    db.prepare(`
+      INSERT INTO events (id, title, platform, source_url)
+      VALUES ('ev-test', 'Test Live Concert', 'KKTIX', 'https://test.kktix.cc')
+    `).run();
+
+    db.prepare(`
+      INSERT INTO event_sessions (id, event_id, session_title, session_date, ticket_platform)
+      VALUES ('sess-test', 'ev-test', 'Day 1', '2026-10-01', 'KKTIX')
+    `).run();
+
+    db.prepare(`
+      INSERT INTO user_attendances (id, user_id, session_id, status, ticket_price, currency)
+      VALUES ('att-test', 'local', 'sess-test', 'CONFIRMED', 3800, 'TWD')
+    `).run();
+
+    // 2. 測試 merchandise_items 寫入與總額聚合
+    db.prepare(`
+      INSERT INTO merchandise_items (id, attendance_id, item_name, category, price, currency, quantity)
+      VALUES ('m-1', 'att-test', '應援手燈', 'LIGHTSTICK', 1200, 'TWD', 1),
+             ('m-2', 'att-test', '紀念T恤', 'APPAREL', 900, 'TWD', 2)
+    `).run();
+
+    const merchRows = db.prepare(`SELECT * FROM merchandise_items WHERE attendance_id = 'att-test'`).all();
+    expect(merchRows.length).toBe(2);
+
+    const totalCostRow = db.prepare(`
+      SELECT SUM(price * quantity) as total FROM merchandise_items WHERE attendance_id = 'att-test'
+    `).get() as { total: number };
+    expect(totalCostRow.total).toBe(1200 * 1 + 900 * 2); // 3000
+
+    // 3. 測試 attendance_media 寫入與時序查詢
+    db.prepare(`
+      INSERT INTO attendance_media (id, attendance_id, media_url, media_type, captured_at, caption)
+      VALUES ('med-1', 'att-test', '/uploads/media/pic1.jpg', 'PHOTO', '2026-10-01T18:00:00Z', '開場燈海'),
+             ('med-2', 'att-test', '/uploads/media/vid1.mp4', 'VIDEO', '2026-10-01T20:30:00Z', '安可彩帶')
+    `).run();
+
+    const mediaRows = db.prepare(`
+      SELECT * FROM attendance_media WHERE attendance_id = 'att-test' ORDER BY captured_at ASC
+    `).all() as any[];
+    expect(mediaRows.length).toBe(2);
+    expect(mediaRows[0].caption).toBe('開場燈海');
+    expect(mediaRows[1].media_type).toBe('VIDEO');
+
+    // 4. 測試級聯刪除 (Cascading Delete): 刪除 attendance 應同時清理周邊與媒體
+    db.prepare(`DELETE FROM user_attendances WHERE id = 'att-test'`).run();
+    const remainingMerch = db.prepare(`SELECT COUNT(*) as count FROM merchandise_items WHERE attendance_id = 'att-test'`).get() as { count: number };
+    const remainingMedia = db.prepare(`SELECT COUNT(*) as count FROM attendance_media WHERE attendance_id = 'att-test'`).get() as { count: number };
+    expect(remainingMerch.count).toBe(0);
+    expect(remainingMedia.count).toBe(0);
   });
 });
