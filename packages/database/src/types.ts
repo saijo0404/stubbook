@@ -162,3 +162,23 @@ export interface EventSetlist {
   created_at: string;
   updated_at: string;
 }
+
+// ── 10. Event Sale Phases (搶票開賣日程與多階段時程) ──────────────────────────
+export type SaleType = 'PRESALE' | 'GENERAL' | 'LOTTERY' | 'RERELEASE' | 'DOOR' | 'OTHER';
+
+export interface EventSalePhase {
+  id: string;
+  event_id: string;
+  session_id: string | null;
+  phase_name: string;
+  sale_type: SaleType;
+  sale_start: string;
+  sale_end: string | null;
+  ticketing_platform: string;
+  booking_url: string | null;
+  eligibility_notes: string | null;
+  is_lottery: number; // 0/1
+  reminder_enabled: number; // 0/1
+  created_at: string;
+  updated_at: string;
+}

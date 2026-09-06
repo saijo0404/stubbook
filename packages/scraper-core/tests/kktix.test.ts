@@ -46,4 +46,15 @@ describe('KktixScraperAdapter', () => {
     expect(session.ticketTiers[1].price).toBe(2800);
     expect(session.ticketTiers[1].status).toBe('AVAILABLE');
   });
+
+  it('應能正確解析開賣時程 (Sale Phases) 並綁定場次開賣時間', () => {
+    const event = adapter.parseHtml(sampleHtml, targetUrl);
+
+    expect(event.salePhases).toBeDefined();
+    expect(event.salePhases.length).toBeGreaterThan(0);
+    expect(event.salePhases[0].phaseName).toBe('KKTIX 一般售票');
+    expect(event.salePhases[0].saleType).toBe('GENERAL');
+    expect(new Date(event.salePhases[0].saleStart).getMonth()).toBe(8); // 9月 (0-indexed 8)
+    expect(event.sessions[0].ticketSaleTime).toBe(event.salePhases[0].saleStart);
+  });
 });

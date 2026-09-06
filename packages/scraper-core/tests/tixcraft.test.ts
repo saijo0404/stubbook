@@ -52,4 +52,26 @@ describe('TixcraftScraperAdapter', () => {
     expect(day1.ticketTiers[0].price).toBe(6880);
     expect(day1.ticketTiers[5].price).toBe(1880);
   });
+
+  it('應能正確解析多階段售票時程 (優先購票與全面開賣)', () => {
+    const event = adapter.parseHtml(sampleHtml, targetUrl);
+
+    expect(event.salePhases).toBeDefined();
+    expect(event.salePhases.length).toBe(2);
+
+    const [presale, general] = event.salePhases;
+
+    // 優先購票
+    expect(presale.phaseName).toContain('國泰世華CUBE卡友優先購票');
+    expect(presale.saleType).toBe('PRESALE');
+    expect(new Date(presale.saleStart).getDate()).toBe(10);
+
+    // 全面開賣
+    expect(general.phaseName).toContain('拓元售票系統全面開賣');
+    expect(general.saleType).toBe('GENERAL');
+    expect(new Date(general.saleStart).getDate()).toBe(12);
+
+    // 場次也應綁定開賣時間
+    expect(event.sessions[0].ticketSaleTime).toBe(presale.saleStart);
+  });
 });

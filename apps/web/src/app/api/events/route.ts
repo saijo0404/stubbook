@@ -34,6 +34,14 @@ export async function POST(req: NextRequest) {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
+    const insertSalePhase = db.prepare(`
+      INSERT INTO event_sale_phases (
+        event_id, session_id, phase_name, sale_type, sale_start, sale_end,
+        ticketing_platform, booking_url, eligibility_notes, is_lottery
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
     // 使用 SQLite Transaction 保證原子性寫入
     const saveEventTx = db.transaction((ev: ScrapedEvent) => {
       const row = insertEvent.get(
@@ -59,6 +67,39 @@ export async function POST(req: NextRequest) {
           s.bookingUrl || null,
           s.venueName || null
         );
+      }
+
+      if (ev.salePhases && ev.salePhases.length > 0) {
+        for (const phase of ev.salePhases) {
+          insertSalePhase.run(
+            row.id,
+            null,
+            phase.phaseName,
+            phase.saleType || 'GENERAL',
+            phase.saleStart,
+            phase.saleEnd || null,
+            phase.ticketingPlatform || ev.platform,
+            phase.bookingUrl || ev.sourceUrl,
+            phase.eligibilityNotes || null,
+            phase.isLottery ? 1 : 0
+          );
+        }
+      } else {
+        const firstSaleTime = ev.sessions.find((s) => s.ticketSaleTime)?.ticketSaleTime;
+        if (firstSaleTime) {
+          insertSalePhase.run(
+            row.id,
+            null,
+            '活動公開售票',
+            'GENERAL',
+            firstSaleTime,
+            null,
+            ev.platform,
+            ev.sourceUrl,
+            null,
+            0
+          );
+        }
       }
 
       return row.id;
@@ -183,10 +224,52 @@ export async function GET() {
       sessionsByEvent.get(s.eventId)!.push(sessionObj);
     }
 
+    const salePhaseRows = db
+      .prepare(
+        `
+      SELECT
+        p.id,
+        p.event_id as eventId,
+        p.session_id as sessionId,
+        p.phase_name as phaseName,
+        p.sale_type as saleType,
+        p.sale_start as saleStart,
+        p.sale_end as saleEnd,
+        p.ticketing_platform as ticketingPlatform,
+        p.booking_url as bookingUrl,
+        p.eligibility_notes as eligibilityNotes,
+        p.is_lottery as isLottery,
+        p.reminder_enabled as reminderEnabled
+      FROM event_sale_phases p
+      ORDER BY p.sale_start ASC
+    `
+      )
+      .all() as any[];
+
+    const salePhasesByEvent = new Map<string, any[]>();
+    for (const p of salePhaseRows) {
+      if (!salePhasesByEvent.has(p.eventId)) {
+        salePhasesByEvent.set(p.eventId, []);
+      }
+      salePhasesByEvent.get(p.eventId)!.push({
+        id: p.id,
+        phaseName: p.phaseName,
+        saleType: p.saleType,
+        saleStart: p.saleStart,
+        saleEnd: p.saleEnd,
+        ticketingPlatform: p.ticketingPlatform,
+        bookingUrl: p.bookingUrl,
+        eligibilityNotes: p.eligibilityNotes,
+        isLottery: Boolean(p.isLottery),
+        reminderEnabled: Boolean(p.reminderEnabled),
+      });
+    }
+
     const events = eventRows.map((e) => ({
       ...e,
       sessions: sessionsByEvent.get(e.id) || [],
       sessionsCount: (sessionsByEvent.get(e.id) || []).length,
+      salePhases: salePhasesByEvent.get(e.id) || [],
     }));
 
     return NextResponse.json({ events });
