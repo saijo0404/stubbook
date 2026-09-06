@@ -25,6 +25,7 @@ export interface Database {
           image_url?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       venues: {
         Row: {
@@ -54,6 +55,7 @@ export interface Database {
           capacity?: number | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       events: {
         Row: {
@@ -98,6 +100,15 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'events_artist_id_fkey';
+            columns: ['artist_id'];
+            isOneToOne: false;
+            referencedRelation: 'artists';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       event_sessions: {
         Row: {
@@ -142,6 +153,15 @@ export interface Database {
           booking_url?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: 'event_sessions_event_id_fkey';
+            columns: ['event_id'];
+            isOneToOne: false;
+            referencedRelation: 'events';
+            referencedColumns: ['id'];
+          },
+        ];
       };
       user_attendances: {
         Row: {
@@ -192,6 +212,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       merchandise_items: {
         Row: {
@@ -233,6 +254,7 @@ export interface Database {
           photo_url?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
       attendance_media: {
         Row: {
@@ -265,7 +287,20 @@ export interface Database {
           caption?: string | null;
           created_at?: string;
         };
+        Relationships: [];
       };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      [_ in never]: never;
+    };
+    Enums: {
+      [_ in never]: never;
+    };
+    CompositeTypes: {
+      [_ in never]: never;
     };
   };
 }

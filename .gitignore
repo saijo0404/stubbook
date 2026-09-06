@@ -67,3 +67,4 @@ test-results/
 # Runtime logs
 logs/
 *.log
+*.tsbuildinfo
