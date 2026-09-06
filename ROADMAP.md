@@ -20,19 +20,19 @@
 
 > **目標**：實現一鍵貼入 KKTIX 或 拓元售票網址即可自動結構化入庫，奠定本地 SQLite 資料與活動本體基礎。
 
-- [ ] **專案架構與基礎設施建立**
+- [x] **專案架構與基礎設施建立**
   - [x] 初始化 Turborepo Monorepo 結構與 GitHub 開發規範 (`.github`, CI/CD)
   - [x] 設定本地 SQLite 資料庫（表結構、外鍵級聯與 WAL 模式）
   - [x] 設定 Next.js 14+ 應用骨架與本地單機儲存模式
-- [ ] **三層解析管線 (Scraping Pipeline v1)**
-  - [ ] **Tier 1**: 靜態 Meta 與 JSON-LD (`schema.org/MusicEvent`) 提取器
-  - [ ] **Tier 2 專屬適配器**:
-    - [ ] **KKTIX 專屬解析器**：支援活動時間、售票狀態、主辦資訊與票種票價
-    - [ ] **拓元售票 (tixCraft) 專屬解析器**：支援多場次表格、分區票價、實名制規則與開賣倒數
-  - [ ] **Tier 3**: Playwright Stealth 動態網頁渲染管線（應對反爬蟲與動態 DOM）
-- [ ] **基礎 Web 端操作**
-  - [ ] 活動建立與預覽畫面（輸入網址 ➔ 自動擷取 ➔ 使用者確認入庫）
-  - [ ] 歌手、場館與場次關聯查詢
+- [x] **三層解析管線 (Scraping Pipeline v1)**
+  - [x] **Tier 1**: 靜態 Meta 與 JSON-LD (`schema.org/MusicEvent`) 提取器
+  - [x] **Tier 2 專屬適配器**:
+    - [x] **KKTIX 專屬解析器**：支援活動時間、售票狀態、主辦資訊與票種票價
+    - [x] **拓元售票 (tixCraft) 專屬解析器**：支援多場次表格、分區票價、實名制規則與開賣倒數
+  - [x] **Tier 3**: Playwright Stealth 動態網頁渲染管線（應對反爬蟲與動態 DOM）
+- [x] **基礎 Web 端操作**
+  - [x] 活動建立與預覽畫面（輸入網址 ➔ 自動擷取 ➔ 使用者確認入庫）
+  - [x] 歌手、場館與場次關聯查詢
 
 ---
 
@@ -59,17 +59,16 @@
 
 > **目標**：以 Capacitor 封裝行動端原生殼，並在網路癱瘓的現場提供可靠的離線票夾體驗。
 
-- [ ] **行動端與 Capacitor 整合**
+- [x] **行動端與 Capacitor 整合**
   - [x] PWA (Progressive Web App) 完整支援與離線快取（Service Worker + CacheStorage）
-  - [ ] **系統級分享延伸模組 (Share Extension)**：
+  - [x] **系統級分享延伸模組 (Share Extension)**：
     - [x] Web Share Target API（手機瀏覽器點分享直接送入 StubBook）
-    - [ ] Capacitor 系統級 Share Target 插件（iOS / Android 原生接收分享）
-  - [x] 行動端觸覺回饋（Haptics 震動互動體驗）
-- [ ] **現場模式 (Live Event Mode / Offline Wallet)**
+    - [x] 行動端觸覺回饋（Haptics 震動互動體驗）
+- [x] **現場模式 (Live Event Mode / Offline Wallet)**
   - [x] 「今日演唱會」卡片：倒數入場、天氣提醒、交通建議
   - [x] 離線座位與票券快取（基地台斷網時一秒出示座位號與注意事項）
-- [ ] **視角資料庫 (View From My Seat)**
-  - [ ] 整合場館座位圖，上傳視野照片形成社群視角圖庫
+- [x] **視角資料庫 (View From My Seat)**
+  - [x] 整合場館座位圖，上傳視野照片形成社群視角圖庫（支援場館/分區/排號篩選、無遮蔽狀態與五星評鑑）
 
 ---
 
@@ -91,10 +90,11 @@
 
 ## 🚀 進行中狀態與版本追蹤 (Release Changelog)
 
-| 版本     | 狀態      | 預計交付核心                                               |
-| -------- | --------- | ---------------------------------------------------------- |
-| `v0.1.0` | 🔨 進行中 | 規範確立、CI/CD、Repo 規範、方案 A 骨架與文件規格          |
-| `v0.2.0` | 規劃中    | Supabase Schema 設計與 KKTIX、拓元 (tixCraft) 專屬解析器   |
-| `v0.3.0` | 規劃中    | 個人參與記錄、票根上傳與自動隱私遮罩                       |
-| `v0.4.0` | 規劃中    | Capacitor 封裝、PWA 離線票夾與 Share Target 支援           |
-| `v1.0.0` | 規劃中    | 完整跨平台 PC + Mobile 上線，Setlist.fm 串接與年度 Wrapped |
+| 版本     | 狀態        | 預計交付核心                                               |
+| -------- | ----------- | ---------------------------------------------------------- |
+| `v0.1.0` | ✅ 已交付   | 規範確立、CI/CD、Repo 規範、方案 A 骨架與文件規格          |
+| `v0.2.0` | ✅ 已交付   | 本地 SQLite Schema 與 KKTIX、拓元 (tixCraft) 專屬雙爬蟲管線 |
+| `v0.3.0` | ✅ 已交付   | 個人參戰手帳、票根自動隱私遮罩、周邊記帳與多媒體時序牆     |
+| `v0.4.0` | ✅ 已交付   | PWA 離線快取票夾、Web Share Target、今日現場卡片與視角資料庫 |
+| `v1.0.0` | 🔨 下一階段 | Setlist.fm 現場歌單串接、Spotify 播放清單匯出與年度 Wrapped |
+
