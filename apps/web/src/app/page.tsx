@@ -24,10 +24,14 @@ import {
   Layers,
   Image as ImageIcon,
   ShieldCheck,
+  ShoppingBag,
+  Camera,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
 import { TicketStubModal } from '../components/TicketStubModal';
+import { MerchManagerModal } from '../components/MerchManagerModal';
+import { MediaGalleryModal } from '../components/MediaGalleryModal';
 
 type TabMode = 'scrape' | 'journal';
 
@@ -42,6 +46,9 @@ interface SessionAttendance {
   notes: string | null;
   ticketStubUrl?: string | null;
   stubPrivacyMasked?: boolean;
+  merchCount?: number;
+  merchTotalCost?: number;
+  mediaCount?: number;
 }
 
 interface SavedSession {
@@ -156,6 +163,15 @@ export default function HomePage() {
   const [viewingStubSession, setViewingStubSession] = useState<{
     event: SavedEvent;
     session: SavedSession;
+  } | null>(null);
+  const [viewingMerchSession, setViewingMerchSession] = useState<{
+    attendanceId: string;
+    eventTitle: string;
+  } | null>(null);
+  const [viewingMediaSession, setViewingMediaSession] = useState<{
+    attendanceId: string;
+    eventTitle: string;
+    sessionDate?: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -920,6 +936,16 @@ export default function HomePage() {
                                       💰 票價：${att.ticketPrice.toLocaleString()} {att.currency}
                                     </span>
                                   )}
+                                  {Boolean(att.merchTotalCost && att.merchTotalCost > 0) && (
+                                    <span className="text-purple-300 font-medium">
+                                      🛍️ 周邊：${att.merchTotalCost!.toLocaleString()} {att.currency}
+                                    </span>
+                                  )}
+                                  {Boolean(((att.ticketPrice || 0) + (att.merchTotalCost || 0)) > 0) && (
+                                    <span className="text-emerald-400 font-bold bg-emerald-950/50 px-2 py-0.5 rounded border border-emerald-800/40">
+                                      💳 累計總支出：${((att.ticketPrice || 0) + (att.merchTotalCost || 0)).toLocaleString()} {att.currency}
+                                    </span>
+                                  )}
                                   {att.rating && (
                                     <div className="flex items-center text-amber-300">
                                       {Array.from({ length: 5 }).map((_, rIdx) => (
@@ -941,12 +967,28 @@ export default function HomePage() {
                                       className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/80 transition-colors"
                                     >
                                       <Ticket className="h-3 w-3 mr-1 text-indigo-400" />
-                                      查看擬真票根
+                                      擬真票根
                                       {att.stubPrivacyMasked && (
                                         <ShieldCheck className="h-3 w-3 ml-1 text-emerald-400" />
                                       )}
                                     </button>
                                   )}
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingMerchSession({ attendanceId: att.id, eventTitle: ev.title })}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-purple-950/80 hover:bg-purple-900 text-purple-300 border border-purple-800/80 transition-colors"
+                                  >
+                                    <ShoppingBag className="h-3 w-3 mr-1 text-purple-400" />
+                                    周邊戰利品 {att.merchCount ? `(${att.merchCount}件)` : ''}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setViewingMediaSession({ attendanceId: att.id, eventTitle: ev.title, sessionDate: session.sessionDate })}
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-pink-950/80 hover:bg-pink-900 text-pink-300 border border-pink-800/80 transition-colors"
+                                  >
+                                    <Camera className="h-3 w-3 mr-1 text-pink-400" />
+                                    現場回憶 {att.mediaCount ? `(${att.mediaCount}則)` : ''}
+                                  </button>
                                 </div>
                                 {att.notes && (
                                   <p className="text-gray-400 italic bg-gray-900/60 p-2 rounded-lg border border-gray-800">
@@ -1212,6 +1254,43 @@ export default function HomePage() {
                   </button>
                 )}
               </div>
+
+              {/* 周邊戰利品與現場多媒體快捷入口 */}
+              {editingSession?.session?.attendance?.id && (
+                <div className="pt-2 border-t border-gray-800 grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingSession && editingSession.session.attendance) {
+                        setViewingMerchSession({
+                          attendanceId: editingSession.session.attendance.id,
+                          eventTitle: editingSession.event.title,
+                        });
+                      }
+                    }}
+                    className="py-2 px-3 bg-purple-950/40 hover:bg-purple-900/60 border border-purple-800/60 rounded-xl text-xs text-purple-300 font-medium flex items-center justify-center gap-1.5 transition"
+                  >
+                    <ShoppingBag className="h-3.5 w-3.5 text-purple-400" />
+                    <span>管理周邊戰利品</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (editingSession && editingSession.session.attendance) {
+                        setViewingMediaSession({
+                          attendanceId: editingSession.session.attendance.id,
+                          eventTitle: editingSession.event.title,
+                          sessionDate: editingSession.session.sessionDate,
+                        });
+                      }
+                    }}
+                    className="py-2 px-3 bg-pink-950/40 hover:bg-pink-900/60 border border-pink-800/60 rounded-xl text-xs text-pink-300 font-medium flex items-center justify-center gap-1.5 transition"
+                  >
+                    <Camera className="h-3.5 w-3.5 text-pink-400" />
+                    <span>管理現場回憶牆</span>
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Modal Footer */}
@@ -1342,6 +1421,29 @@ export default function HomePage() {
           ticketStubUrl={viewingStubSession.session.attendance?.ticketStubUrl}
           stubPrivacyMasked={viewingStubSession.session.attendance?.stubPrivacyMasked}
           onClose={() => setViewingStubSession(null)}
+        />
+      )}
+
+      {/* 演唱會周邊戰利品 Modal */}
+      {viewingMerchSession && (
+        <MerchManagerModal
+          isOpen={Boolean(viewingMerchSession)}
+          attendanceId={viewingMerchSession.attendanceId}
+          eventTitle={viewingMerchSession.eventTitle}
+          onClose={() => setViewingMerchSession(null)}
+          onUpdated={loadSavedEvents}
+        />
+      )}
+
+      {/* 現場時序回憶牆 Modal */}
+      {viewingMediaSession && (
+        <MediaGalleryModal
+          isOpen={Boolean(viewingMediaSession)}
+          attendanceId={viewingMediaSession.attendanceId}
+          eventTitle={viewingMediaSession.eventTitle}
+          sessionDate={viewingMediaSession.sessionDate}
+          onClose={() => setViewingMediaSession(null)}
+          onUpdated={loadSavedEvents}
         />
       )}
     </div>
