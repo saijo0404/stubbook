@@ -280,4 +280,105 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('LiveEventHeroCard');
     expect(pageContent).toContain('activeLiveSession');
   });
+
+  it('SQLite 資料庫應支援 seat_view_photos 表格與 CRUD 視角照片操作', async () => {
+    const { getDefaultDatabase } = await import('@stubbook/database');
+    const db = getDefaultDatabase();
+
+    // 驗證表格存在
+    const tableInfo = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='seat_view_photos'")
+      .get() as { name: string } | undefined;
+    expect(tableInfo?.name).toBe('seat_view_photos');
+
+    // 插入測試視角照片
+    const insertRes = db
+      .prepare(
+        `
+      INSERT INTO seat_view_photos (
+        venue_name, section, row_number, seat_number, photo_url, view_rating, visibility, notes
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
+    `
+      )
+      .get(
+        '臺北小巨蛋',
+        '紅2B區',
+        '5排',
+        '12號',
+        '/uploads/seat-views/test_photo.jpg',
+        5,
+        'CLEAR',
+        '主舞台視野毫無遮擋'
+      ) as any;
+
+    expect(insertRes).toBeDefined();
+    expect(insertRes.venue_name).toBe('臺北小巨蛋');
+    expect(insertRes.section).toBe('紅2B區');
+    expect(insertRes.view_rating).toBe(5);
+    expect(insertRes.visibility).toBe('CLEAR');
+
+    // 查詢驗證
+    const queried = db
+      .prepare('SELECT * FROM seat_view_photos WHERE id = ?')
+      .get(insertRes.id) as any;
+    expect(queried.notes).toBe('主舞台視野毫無遮擋');
+
+    // 刪除清理
+    db.prepare('DELETE FROM seat_view_photos WHERE id = ?').run(insertRes.id);
+    const deleted = db.prepare('SELECT * FROM seat_view_photos WHERE id = ?').get(insertRes.id);
+    expect(deleted).toBeUndefined();
+  });
+
+  it('Seat Views API 路由檔案與安全性驗證應符合規範', () => {
+    const seatViewRoute = path.join(
+      __dirname,
+      '..',
+      'src',
+      'app',
+      'api',
+      'seat-views',
+      'route.ts'
+    );
+    expect(fs.existsSync(seatViewRoute)).toBe(true);
+
+    const content = fs.readFileSync(seatViewRoute, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('export async function POST');
+    expect(content).toContain('export async function DELETE');
+    expect(content).toContain('getDefaultDatabase');
+    expect(content).toContain('VALID_VISIBILITY_TYPES');
+
+    // 驗證 Upload API 包含 seat-views 目錄支援
+    const uploadRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'upload', 'route.ts');
+    const uploadContent = fs.readFileSync(uploadRoute, 'utf-8');
+    expect(uploadContent).toContain("'seat-views'");
+  });
+
+  it('前端應完整實作 SeatViewModal 組件並整合至 LiveEventHeroCard 與首頁', () => {
+    const modalPath = path.join(__dirname, '..', 'src', 'components', 'SeatViewModal.tsx');
+    expect(fs.existsSync(modalPath)).toBe(true);
+
+    const modalContent = fs.readFileSync(modalPath, 'utf-8');
+    expect(modalContent).toContain('export const SeatViewModal');
+    expect(modalContent).toContain('視角資料庫 (View From My Seat)');
+    expect(modalContent).toContain('VISIBILITY_CONFIG');
+    expect(modalContent).toContain('handleSaveView');
+
+    // 驗證 LiveEventHeroCard 整合查看此排視野
+    const cardPath = path.join(__dirname, '..', 'src', 'components', 'LiveEventHeroCard.tsx');
+    const cardContent = fs.readFileSync(cardPath, 'utf-8');
+    expect(cardContent).toContain('onOpenSeatViews');
+    expect(cardContent).toContain('查看此排視野');
+
+    // 驗證 page.tsx 頁籤與呼叫整合
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('SeatViewModal');
+    expect(pageContent).toContain("activeTab === 'seats'");
+    expect(pageContent).toContain('場館座位視野資料庫');
+    expect(pageContent).toContain('handleOpenSeatViews');
+  });
 });
+

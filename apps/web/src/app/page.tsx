@@ -28,6 +28,7 @@ import {
   Camera,
   WifiOff,
   Share2,
+  Eye,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -35,9 +36,10 @@ import { TicketStubModal } from '../components/TicketStubModal';
 import { MerchManagerModal } from '../components/MerchManagerModal';
 import { MediaGalleryModal } from '../components/MediaGalleryModal';
 import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
+import { SeatViewModal } from '../components/SeatViewModal';
 import { haptics } from '../utils/haptics';
 
-type TabMode = 'scrape' | 'journal';
+type TabMode = 'scrape' | 'journal' | 'seats';
 
 interface SessionAttendance {
   id: string;
@@ -178,6 +180,44 @@ export default function HomePage() {
     sessionDate?: string;
   } | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // 視角資料庫 Modal 狀態
+  const [seatViewModal, setSeatViewModal] = useState<{
+    isOpen: boolean;
+    venue?: string | null;
+    section?: string | null;
+    row?: string | null;
+    eventTitle?: string | null;
+    sessionId?: string | null;
+    attendanceId?: string | null;
+  }>({
+    isOpen: false,
+  });
+
+  const handleOpenSeatViews = (
+    venueName?: string,
+    seatInfo?: string,
+    eventTitle?: string,
+    sessionId?: string,
+    attendanceId?: string
+  ) => {
+    let parsedSection: string | null = null;
+    let parsedRow: string | null = null;
+    if (seatInfo) {
+      const parts = seatInfo.trim().split(/\s+/);
+      if (parts.length > 0) parsedSection = parts[0];
+      if (parts.length > 1) parsedRow = parts.slice(1).join(' ');
+    }
+    setSeatViewModal({
+      isOpen: true,
+      venue: venueName || null,
+      section: parsedSection,
+      row: parsedRow,
+      eventTitle: eventTitle || null,
+      sessionId: sessionId || null,
+      attendanceId: attendanceId || null,
+    });
+  };
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -601,6 +641,21 @@ export default function HomePage() {
               </span>
             )}
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('seats');
+              haptics.light();
+            }}
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'seats'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Eye className="h-4 w-4" />
+            <span>視角資料庫</span>
+          </button>
         </div>
       </div>
 
@@ -965,6 +1020,15 @@ export default function HomePage() {
                     });
                   }
                 }}
+                onOpenSeatViews={(venueName, seatInfo) => {
+                  handleOpenSeatViews(
+                    venueName || activeLiveSession.session.venueName || undefined,
+                    seatInfo || activeLiveSession.session.attendance?.seatInfo || undefined,
+                    activeLiveSession.event.title,
+                    activeLiveSession.session.id,
+                    activeLiveSession.session.attendance?.id
+                  );
+                }}
               />
             </div>
           )}
@@ -1157,6 +1221,22 @@ export default function HomePage() {
                                     <Camera className="h-3 w-3 mr-1 text-pink-400" />
                                     現場回憶 {att.mediaCount ? `(${att.mediaCount}則)` : ''}
                                   </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleOpenSeatViews(
+                                        session.venueName || undefined,
+                                        att.seatInfo || undefined,
+                                        ev.title,
+                                        session.id,
+                                        att.id
+                                      )
+                                    }
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-cyan-950/80 hover:bg-cyan-900 text-cyan-300 border border-cyan-800/80 transition-colors"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1 text-cyan-400" />
+                                    視野圖庫
+                                  </button>
                                 </div>
                                 {att.notes && (
                                   <p className="text-gray-400 italic bg-gray-900/60 p-2 rounded-lg border border-gray-800">
@@ -1185,6 +1265,92 @@ export default function HomePage() {
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ─────────────────── TAB 3: 視角資料庫 (VIEW FROM MY SEAT) ─────────────────── */}
+      {activeTab === 'seats' && (
+        <div className="space-y-8 animate-fadeIn max-w-5xl mx-auto">
+          {/* 標題與引言 */}
+          <div className="text-center max-w-2xl mx-auto space-y-3">
+            <div className="inline-flex items-center space-x-2 px-3 py-1 bg-indigo-950/80 border border-indigo-800/60 rounded-full text-indigo-300 text-xs font-semibold mb-1">
+              <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
+              <span>Phase 3 視角資料庫</span>
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              場館座位視野資料庫
+            </h1>
+            <p className="text-gray-400 text-sm sm:text-base">
+              現場樂迷真實視角照片與無遮蔽評鑑，快速檢視小巨蛋、北流、高巨等場館各排各區實際視野。
+            </p>
+          </div>
+
+          {/* 視角圖庫特色引導卡片 */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gray-900/80 border border-gray-800 p-5 rounded-2xl shadow-xl space-y-2">
+              <div className="p-2.5 bg-indigo-950/70 border border-indigo-800/60 rounded-xl w-fit text-indigo-400">
+                <Eye className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">真實視角防雷</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                現場樂迷親拍上傳，明確標註是否有音響控台、攝影機搖臂或立柱擋住視線。
+              </p>
+            </div>
+
+            <div className="bg-gray-900/80 border border-gray-800 p-5 rounded-2xl shadow-xl space-y-2">
+              <div className="p-2.5 bg-purple-950/70 border border-purple-800/60 rounded-xl w-fit text-purple-400">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">分區排號精準查詢</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                支援特區、紅區、紫區、黃區及樓層排號過濾，買票選位不再憑空想像。
+              </p>
+            </div>
+
+            <div className="bg-gray-900/80 border border-gray-800 p-5 rounded-2xl shadow-xl space-y-2">
+              <div className="p-2.5 bg-emerald-950/70 border border-emerald-800/60 rounded-xl w-fit text-emerald-400">
+                <Camera className="w-5 h-5" />
+              </div>
+              <h3 className="text-sm font-bold text-white">本地典藏與社群共享</h3>
+              <p className="text-xs text-gray-400 leading-relaxed">
+                結合 SQLite 與 Service Worker 離線快取，無網路時亦可一秒檢視視野照片。
+              </p>
+            </div>
+          </div>
+
+          {/* 快速動作面板 */}
+          <div className="bg-gradient-to-br from-indigo-950/50 via-purple-950/30 to-zinc-950 border border-indigo-700/40 rounded-2xl p-6 sm:p-8 text-center space-y-4 shadow-2xl">
+            <h2 className="text-lg sm:text-xl font-black text-white">
+              準備好探索視野或貢獻你的座位了嗎？
+            </h2>
+            <p className="text-xs text-indigo-200 max-w-md mx-auto">
+              立即開啟視角圖庫瀏覽已登錄的場館照片，或將你在演唱會現場拍下的視角上傳備份！
+            </p>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.medium();
+                  setSeatViewModal({ isOpen: true });
+                }}
+                className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white text-xs sm:text-sm font-bold rounded-xl shadow-lg shadow-indigo-500/25 flex items-center space-x-2 transition active:scale-95"
+              >
+                <Eye className="w-4 h-4" />
+                <span>瀏覽場館視野圖庫</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.medium();
+                  setSeatViewModal({ isOpen: true });
+                }}
+                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 text-purple-300 border border-purple-700/60 text-xs sm:text-sm font-bold rounded-xl shadow-lg flex items-center space-x-2 transition active:scale-95"
+              >
+                <Camera className="w-4 h-4 text-purple-400" />
+                <span>拍照上傳視野</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -1612,6 +1778,23 @@ export default function HomePage() {
           sessionDate={viewingMediaSession.sessionDate}
           onClose={() => setViewingMediaSession(null)}
           onUpdated={loadSavedEvents}
+        />
+      )}
+
+      {/* 視角資料庫 Modal */}
+      {seatViewModal.isOpen && (
+        <SeatViewModal
+          isOpen={seatViewModal.isOpen}
+          initialVenue={seatViewModal.venue}
+          initialSection={seatViewModal.section}
+          initialRow={seatViewModal.row}
+          initialEventTitle={seatViewModal.eventTitle}
+          initialSessionId={seatViewModal.sessionId}
+          initialAttendanceId={seatViewModal.attendanceId}
+          onClose={() => setSeatViewModal({ isOpen: false })}
+          onViewAdded={() => {
+            loadSavedEvents();
+          }}
         />
       )}
     </div>
