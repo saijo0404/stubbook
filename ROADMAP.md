@@ -1,6 +1,6 @@
 # 🗺️ StubBook 開發里程碑與路線圖 (Product Roadmap)
 
-本文件規劃 **StubBook** 的產品分期目標與實施里程碑。架構採用 **方案 A (Next.js PWA + Capacitor 單一程式碼庫)**，後端由 **Supabase** 驅動，爬蟲首批支援 **KKTIX** 與 **拓元 (tixCraft)**。
+本文件規劃 **StubBook** 的產品分期目標與實施里程碑。架構採用 **方案 A (Next.js PWA + Capacitor 單一程式碼庫)**，資料儲存由 **SQLite (better-sqlite3)** 本地嵌入式資料庫驅動，爬蟲首批支援 **KKTIX** 與 **拓元 (tixCraft)**。
 
 ---
 
@@ -18,12 +18,12 @@
 
 ## 🎯 Phase 1: 核心資料結構與 KKTIX / 拓元網頁解析管線 (Foundation & Parsing Pipeline)
 
-> **目標**：實現一鍵貼入 KKTIX 或 拓元售票網址即可自動結構化入庫，奠定 Supabase 資料與活動本體基礎。
+> **目標**：實現一鍵貼入 KKTIX 或 拓元售票網址即可自動結構化入庫，奠定本地 SQLite 資料與活動本體基礎。
 
 - [ ] **專案架構與基礎設施建立**
   - [x] 初始化 Turborepo Monorepo 結構與 GitHub 開發規範 (`.github`, CI/CD)
-  - [ ] 設定 Supabase 資料庫（PostgreSQL 表結構、RLS 權限設定與 Storage 儲存桶）
-  - [ ] 設定 Next.js 14+ 應用骨架與 Supabase Auth（Email / Google / Apple 登入）
+  - [x] 設定本地 SQLite 資料庫（表結構、外鍵級聯與 WAL 模式）
+  - [x] 設定 Next.js 14+ 應用骨架與本地單機儲存模式
 - [ ] **三層解析管線 (Scraping Pipeline v1)**
   - [ ] **Tier 1**: 靜態 Meta 與 JSON-LD (`schema.org/MusicEvent`) 提取器
   - [ ] **Tier 2 專屬適配器**:
@@ -45,7 +45,7 @@
   - [ ] 座位記錄（特區、排號、視野評價）
   - [ ] 購票金額與全旅程支出記帳（支援多幣別）
 - [ ] **票根典藏與隱私保護**
-  - [ ] 票根數位化上傳至 Supabase Storage（支援實體票、電子票截圖、手環）
+  - [ ] 票根數位化保存至本地檔案儲存（支援實體票、電子票截圖、手環）
   - [ ] **條碼智慧自動遮罩 (Ticket Privacy Mask)**：上傳時自動模糊 Barcode / 個資防盜用
   - [ ] 擬真票根手帳 Canvas 排版展示模式（復古撕票線、雷射防偽質感）
 - [ ] **多媒體與周邊管理 (Merch & Media)**

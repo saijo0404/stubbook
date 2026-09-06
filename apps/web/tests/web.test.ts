@@ -31,5 +31,15 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(content).toContain('handleSave');
     expect(content).toContain('kktix');
     expect(content).toContain('tixcraft');
+    expect(content).toContain('確認入庫 (儲存至本地資料庫)');
+  });
+
+  it('Events API 路由應使用 SQLite 且不依賴 Supabase', () => {
+    const eventsRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'events', 'route.ts');
+    const content = fs.readFileSync(eventsRoute, 'utf-8');
+
+    expect(content).toContain('getDefaultDatabase');
+    expect(content).toContain('sqlite_local');
+    expect(content).not.toContain('supabase');
   });
 });

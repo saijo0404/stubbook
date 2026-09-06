@@ -24,18 +24,18 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 ┌──────────────────────────────────────────────────────────────────────────┐
 │                   BFF & API 服務層 (Next.js Server Actions / API)        │
 ├────────────────────────────────┬─────────────────────────────────────────┤
-│  驗證授權 (Supabase Auth)      │  票根隱私遮罩與畫布渲染 (Canvas / Satori)│
+│  本地單機儲存 (Local Storage)   │  票根隱私遮罩與畫布渲染 (Canvas / Satori)│
 │  預算與統計彙總服務 (Analytics) │  外部串接 (Spotify / Setlist.fm API)     │
 └────────────────────────────────┴─────────────────────────────────────────┘
                                │
                ┌───────────────┴───────────────┐
                ▼                               ▼
 ┌───────────────────────────────┐  ┌───────────────────────────────────────┐
-│ 網頁擷取與解析管線 (Scraper)  │  │ 後端基礎設施 (Supabase BaaS)         │
+│ 網頁擷取與解析管線 (Scraper)  │  │ 本地資料庫與檔案儲存 (SQLite)         │
 ├───────────────────────────────┤  ├───────────────────────────────────────┤
-│ Tier 1: Meta / JSON-LD 標籤   │  │ Database: PostgreSQL (啟用 RLS)       │
-│ Tier 2: 專屬平台 Scraper 適配器│  │ Auth: Supabase Auth (OAuth/Email)     │
-│         - KKTIX 專屬解析器    │  │ Storage: Supabase Storage (票根/照片) │
+│ Tier 1: Meta / JSON-LD 標籤   │  │ Database: SQLite (better-sqlite3, WAL)│
+│ Tier 2: 專屬平台 Scraper 適配器│  │ Mode: 本地單機，零雲端依賴           │
+│         - KKTIX 專屬解析器    │  │ Storage: 本地檔案系統 (票根/照片)     │
 │         - tixCraft 拓元解析器 │  │                                       │
 │ Tier 3: Playwright / Cheerio  │  │                                       │
 └───────────────────────────────┘  └───────────────────────────────────────┘
@@ -77,7 +77,7 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 
 ## 3. 資料庫結構設計 (Database Schema)
 
-基於 **Supabase (PostgreSQL)**，將模型拆分為**活動本體（Tour/Event）**、**具體場次（EventSession）**與**個人參與回憶（UserAttendance）**，避免重複建檔：
+基於 **SQLite (better-sqlite3)**，將模型拆分為**活動本體（Tour/Event）**、**具體場次（EventSession）**與**個人參與回憶（UserAttendance）**，避免重複建檔：
 
 ```mermaid
 erDiagram
@@ -206,9 +206,9 @@ erDiagram
 
 ## 6. 安全性與權限控制 (Security & Governance)
 
-1. **Row Level Security (RLS)**:
-   - Supabase PostgreSQL 強制啟用 RLS。個人回憶日記、私人照片與周邊記帳僅擁有者可讀寫；公共 Event/Venue/Artist 資訊則開放唯讀。
+1. **SQL 注入防護與安全查詢**:
+   - 資料庫操作全面採用**參數化查詢（Prepared Statements）**，嚴禁字串拼接 SQL；資料庫開啟外鍵約束與 WAL 模式保障交易完整性。
 2. **防爬蟲與合規 (Scraping Compliance)**:
    - 爬蟲管線僅擷取公開演出時間與售票資訊，嚴禁儲存個人訂票個資；設定合理 Rate Limiting 與 User-Agent 宣告。
-3. **媒體安全儲存**:
-   - 照片與多媒體檔案上傳採 Supabase Storage Presigned URL 機制，不經過伺服器中轉，提升傳輸效能與安全性。
+3. **媒體本地安全儲存與敏感資訊遮罩**:
+   - 票根與照片直接儲存於本機安全目錄，前端上傳時強制執行條碼 (Barcode) 與個人資料自動高斯模糊遮罩，防止隱私洩漏。

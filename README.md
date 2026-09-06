@@ -28,7 +28,7 @@
 [三層式解析管線] ─── (Open Graph / JSON-LD / KKTIX & 拓元專屬 Scraper) ───► [結構化演唱會本體]
                                                                                 │
                                                                                 ▼
-[個人專屬回憶錄] ◄─── (標記狀態、票根隱私遮罩、周邊記帳、現場歌單) ──────────── [Supabase 資料庫儲存]
+[個人專屬回憶錄] ◄─── (標記狀態、票根隱私遮罩、周邊記帳、現場歌單) ──────────── [SQLite 本地資料庫儲存]
 ```
 
 ### 1. 🕷️ 三層式網頁解析管線 (3-Tier Parsing Pipeline)
@@ -78,9 +78,8 @@
 | **全端應用 (方案 A)** | Next.js 14+ (App Router), Tailwind CSS, shadcn/ui | 統一程式碼庫，支援桌面 Web 與 Mobile PWA                  |
 | **行動端原生外殼**    | Capacitor (@capacitor/core, @capacitor/cli)       | 提供 iOS/Android 原生相機、分享延伸模組 (Share Extension) |
 | **網頁擷取管線**      | Cheerio, Playwright Stealth, Zod                  | 輕重型動態解析、結構化 Schema 驗證                        |
-| **後端與資料庫**      | PostgreSQL + Supabase (RLS)                       | 嚴格 Row-Level Security 權限隔離                          |
-| **認證系統**          | Supabase Auth                                     | 支援 Email、Google 與 Apple 快速登入                      |
-| **多媒體儲存**        | Supabase Storage                                  | 票根、周邊物品與現場照片雲端保存                          |
+| **後端與資料庫**      | SQLite (better-sqlite3)                           | 本地嵌入式資料庫，支援 WAL 模式、外鍵約束與原子性交易     |
+| **檔案與多媒體**      | Local File Storage                                | 本地安全保存票根、周邊物品與現場照片                      |
 
 ---
 
@@ -96,7 +95,8 @@ stubbook/
 │   │   │   ├── adapters/        # tixcraft, kktix 專屬適配器
 │   │   │   ├── engine/          # pipeline 調度引擎
 │   │   │   └── types/           # 結構化活動型別定義
-│   ├── database/                # Supabase Client, 資料模型與 Migration
+│   ├── database/                # SQLite 資料庫操作、型別定義與 Schema
+│   ├── logger/                  # 容量限制滾動日誌與去敏導出模組
 │   ├── shared/                  # 共享型別 (TypeScript), Zod 驗證綱要, 常數
 │   └── ui/                      # 共享元件庫 (Button, Dialog, StubCard...)
 ├── .github/

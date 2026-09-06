@@ -1,306 +1,113 @@
+/**
+ * @stubbook/database — TypeScript 型別定義
+ *
+ * 純 TypeScript 介面，不依賴任何外部 ORM 或 BaaS SDK。
+ * 與 SQLite schema.sql 中的表結構一一對應。
+ */
+
+// ── JSON 通用型別 ──────────────────────────────────────────────────────────
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
-export interface Database {
-  public: {
-    Tables: {
-      artists: {
-        Row: {
-          id: string;
-          name: string;
-          english_name: string | null;
-          image_url: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          english_name?: string | null;
-          image_url?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          english_name?: string | null;
-          image_url?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      venues: {
-        Row: {
-          id: string;
-          name: string;
-          city: string | null;
-          address: string | null;
-          country: string;
-          capacity: number | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          city?: string | null;
-          address?: string | null;
-          country?: string;
-          capacity?: number | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          city?: string | null;
-          address?: string | null;
-          country?: string;
-          capacity?: number | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      events: {
-        Row: {
-          id: string;
-          title: string;
-          artist_id: string | null;
-          tour_name: string | null;
-          source_url: string;
-          poster_url: string | null;
-          platform: string;
-          description: string | null;
-          organizer: string | null;
-          raw_metadata: Json;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          title: string;
-          artist_id?: string | null;
-          tour_name?: string | null;
-          source_url: string;
-          poster_url?: string | null;
-          platform?: string;
-          description?: string | null;
-          organizer?: string | null;
-          raw_metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          artist_id?: string | null;
-          tour_name?: string | null;
-          source_url?: string;
-          poster_url?: string | null;
-          platform?: string;
-          description?: string | null;
-          organizer?: string | null;
-          raw_metadata?: Json;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'events_artist_id_fkey';
-            columns: ['artist_id'];
-            isOneToOne: false;
-            referencedRelation: 'artists';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      event_sessions: {
-        Row: {
-          id: string;
-          event_id: string;
-          venue_id: string | null;
-          venue_name_override: string | null;
-          session_title: string | null;
-          session_date: string;
-          doors_open_time: string | null;
-          ticket_sale_time: string | null;
-          ticket_platform: string;
-          ticket_tiers: Json;
-          booking_url: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          event_id: string;
-          venue_id?: string | null;
-          venue_name_override?: string | null;
-          session_title?: string | null;
-          session_date: string;
-          doors_open_time?: string | null;
-          ticket_sale_time?: string | null;
-          ticket_platform?: string;
-          ticket_tiers?: Json;
-          booking_url?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          event_id?: string;
-          venue_id?: string | null;
-          venue_name_override?: string | null;
-          session_title?: string | null;
-          session_date?: string;
-          doors_open_time?: string | null;
-          ticket_sale_time?: string | null;
-          ticket_platform?: string;
-          ticket_tiers?: Json;
-          booking_url?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: 'event_sessions_event_id_fkey';
-            columns: ['event_id'];
-            isOneToOne: false;
-            referencedRelation: 'events';
-            referencedColumns: ['id'];
-          },
-        ];
-      };
-      user_attendances: {
-        Row: {
-          id: string;
-          user_id: string;
-          session_id: string;
-          status: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
-          seat_info: string | null;
-          ticket_type: 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
-          ticket_price: number | null;
-          currency: string;
-          rating: number | null;
-          notes: string | null;
-          ticket_stub_url: string | null;
-          stub_privacy_masked: boolean;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          session_id: string;
-          status?: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
-          seat_info?: string | null;
-          ticket_type?: 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
-          ticket_price?: number | null;
-          currency?: string;
-          rating?: number | null;
-          notes?: string | null;
-          ticket_stub_url?: string | null;
-          stub_privacy_masked?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          session_id?: string;
-          status?: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
-          seat_info?: string | null;
-          ticket_type?: 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
-          ticket_price?: number | null;
-          currency?: string;
-          rating?: number | null;
-          notes?: string | null;
-          ticket_stub_url?: string | null;
-          stub_privacy_masked?: boolean;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [];
-      };
-      merchandise_items: {
-        Row: {
-          id: string;
-          attendance_id: string;
-          user_id: string;
-          item_name: string;
-          category:
-            'LIGHTSTICK' | 'APPAREL' | 'TOWEL' | 'PAMPHLET' | 'BADGE' | 'ACCESSORY' | 'OTHER';
-          price: number;
-          currency: string;
-          quantity: number;
-          photo_url: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          attendance_id: string;
-          user_id: string;
-          item_name: string;
-          category?:
-            'LIGHTSTICK' | 'APPAREL' | 'TOWEL' | 'PAMPHLET' | 'BADGE' | 'ACCESSORY' | 'OTHER';
-          price?: number;
-          currency?: string;
-          quantity?: number;
-          photo_url?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          attendance_id?: string;
-          user_id?: string;
-          item_name?: string;
-          category?:
-            'LIGHTSTICK' | 'APPAREL' | 'TOWEL' | 'PAMPHLET' | 'BADGE' | 'ACCESSORY' | 'OTHER';
-          price?: number;
-          currency?: string;
-          quantity?: number;
-          photo_url?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      attendance_media: {
-        Row: {
-          id: string;
-          attendance_id: string;
-          user_id: string;
-          media_url: string;
-          media_type: 'PHOTO' | 'VIDEO' | 'AUDIO';
-          captured_at: string | null;
-          caption: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          attendance_id: string;
-          user_id: string;
-          media_url: string;
-          media_type?: 'PHOTO' | 'VIDEO' | 'AUDIO';
-          captured_at?: string | null;
-          caption?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          attendance_id?: string;
-          user_id?: string;
-          media_url?: string;
-          media_type?: 'PHOTO' | 'VIDEO' | 'AUDIO';
-          captured_at?: string | null;
-          caption?: string | null;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      [_ in never]: never;
-    };
-    Enums: {
-      [_ in never]: never;
-    };
-    CompositeTypes: {
-      [_ in never]: never;
-    };
-  };
+// ── 1. Artists (演出者 / 歌手 / 樂團) ─────────────────────────────────────
+export interface Artist {
+  id: string;
+  name: string;
+  english_name: string | null;
+  image_url: string | null;
+  created_at: string;
+}
+
+// ── 2. Venues (演唱會場館 / 場地) ─────────────────────────────────────────
+export interface Venue {
+  id: string;
+  name: string;
+  city: string | null;
+  address: string | null;
+  country: string;
+  capacity: number | null;
+  created_at: string;
+}
+
+// ── 3. Events (演唱會主體 / 巡迴活動) ─────────────────────────────────────
+export interface Event {
+  id: string;
+  title: string;
+  artist_id: string | null;
+  tour_name: string | null;
+  source_url: string;
+  poster_url: string | null;
+  platform: string;
+  description: string | null;
+  organizer: string | null;
+  raw_metadata: string; // JSON string
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 4. Event Sessions (各場次時間與票價階梯) ──────────────────────────────
+export interface EventSession {
+  id: string;
+  event_id: string;
+  venue_id: string | null;
+  venue_name_override: string | null;
+  session_title: string | null;
+  session_date: string;
+  doors_open_time: string | null;
+  ticket_sale_time: string | null;
+  ticket_platform: string;
+  ticket_tiers: string; // JSON string
+  booking_url: string | null;
+  created_at: string;
+}
+
+// ── 5. User Attendances (使用者個人參與紀錄) ──────────────────────────────
+export type AttendanceStatus = 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
+export type TicketType = 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
+
+export interface UserAttendance {
+  id: string;
+  user_id: string;
+  session_id: string;
+  status: AttendanceStatus;
+  seat_info: string | null;
+  ticket_type: TicketType;
+  ticket_price: number | null;
+  currency: string;
+  rating: number | null;
+  notes: string | null;
+  ticket_stub_url: string | null;
+  stub_privacy_masked: number; // SQLite boolean (0/1)
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 6. Merchandise Items (演唱會周邊物品清單) ─────────────────────────────
+export type MerchandiseCategory =
+  'LIGHTSTICK' | 'APPAREL' | 'TOWEL' | 'PAMPHLET' | 'BADGE' | 'ACCESSORY' | 'OTHER';
+
+export interface MerchandiseItem {
+  id: string;
+  attendance_id: string;
+  user_id: string;
+  item_name: string;
+  category: MerchandiseCategory;
+  price: number;
+  currency: string;
+  quantity: number;
+  photo_url: string | null;
+  created_at: string;
+}
+
+// ── 7. Attendance Media (現場照片、影片、錄音) ────────────────────────────
+export type MediaType = 'PHOTO' | 'VIDEO' | 'AUDIO';
+
+export interface AttendanceMedia {
+  id: string;
+  attendance_id: string;
+  user_id: string;
+  media_url: string;
+  media_type: MediaType;
+  captured_at: string | null;
+  caption: string | null;
+  created_at: string;
 }
