@@ -30,6 +30,9 @@ describe('SQLite Local Database Schema & Operations', () => {
     expect(tableNames).toContain('user_attendances');
     expect(tableNames).toContain('merchandise_items');
     expect(tableNames).toContain('attendance_media');
+    expect(tableNames).toContain('seat_view_photos');
+    expect(tableNames).toContain('event_setlists');
+    expect(tableNames).toContain('event_sale_phases');
   });
 
   it('應成功插入活動並自動生成預設欄位 (id, created_at, updated_at)', () => {
@@ -149,5 +152,54 @@ describe('SQLite Local Database Schema & Operations', () => {
     expect(() => {
       insertAttendance.run('local', sessionId, 'WANT_TO_GO', null, null);
     }).toThrow();
+  });
+
+  it('應支援 event_sale_phases 搶票開賣日程與外鍵 CASCADE 刪除約束', () => {
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('搶票測試活動', 'https://tixcraft.com/sample') RETURNING id"
+      )
+      .get() as any;
+
+    const insertPhase = db.prepare(`
+      INSERT INTO event_sale_phases (
+        event_id, phase_name, sale_type, sale_start, ticketing_platform, is_lottery
+      )
+      VALUES (?, ?, ?, ?, ?, ?)
+    `);
+
+    insertPhase.run(
+      eventId,
+      '國泰卡友優先預購',
+      'PRESALE',
+      '2026-09-10T12:00:00+08:00',
+      'TIXCRAFT',
+      0
+    );
+    insertPhase.run(
+      eventId,
+      '拓元系統全面開賣',
+      'GENERAL',
+      '2026-09-12T12:00:00+08:00',
+      'TIXCRAFT',
+      0
+    );
+
+    const phases = db
+      .prepare('SELECT * FROM event_sale_phases WHERE event_id = ? ORDER BY sale_start ASC')
+      .all(eventId) as any[];
+
+    expect(phases).toHaveLength(2);
+    expect(phases[0].phase_name).toBe('國泰卡友優先預購');
+    expect(phases[0].sale_type).toBe('PRESALE');
+    expect(phases[1].phase_name).toBe('拓元系統全面開賣');
+    expect(phases[1].sale_type).toBe('GENERAL');
+
+    // 刪除活動應連帶刪除所有開賣階段
+    db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
+    const remaining = db
+      .prepare('SELECT COUNT(*) as count FROM event_sale_phases WHERE event_id = ?')
+      .get(eventId) as any;
+    expect(remaining.count).toBe(0);
   });
 });

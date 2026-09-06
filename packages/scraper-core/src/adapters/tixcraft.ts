@@ -1,6 +1,13 @@
 import * as cheerio from 'cheerio';
 import { BaseScraperAdapter } from './base';
-import { ScrapedEvent, ScrapedSession, TicketTier, TicketStatus } from '../types';
+import {
+  ScrapedEvent,
+  ScrapedSession,
+  TicketTier,
+  TicketStatus,
+  ScrapedSalePhase,
+  SaleType,
+} from '../types';
 
 export class TixcraftScraperAdapter implements BaseScraperAdapter {
   readonly name = 'TixcraftScraperAdapter';
@@ -41,11 +48,14 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
       $('meta[property="og:description"]').attr('content') ||
       undefined;
 
-    // 4. 解析全場通用的票價階梯 (從說明內文或票價清單提取)
+    // 4. 解析售票時程 (Sale Phases)
+    const salePhases = this.extractSalePhases($, html, url);
+
+    // 5. 解析全場通用的票價階梯 (從說明內文或票價清單提取)
     const globalTiers = this.extractTicketTiers($, html);
 
-    // 5. 解析多場次表格 (#gameList)
-    const sessions = this.extractSessions($, url, globalTiers);
+    // 6. 解析多場次表格 (#gameList)
+    const sessions = this.extractSessions($, url, globalTiers, salePhases);
 
     return {
       title,
@@ -53,14 +63,17 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
       posterUrl,
       description,
       platform: 'TIXCRAFT',
-      sessions: sessions.length > 0 ? sessions : [this.fallbackSession($, url, globalTiers)],
+      sessions:
+        sessions.length > 0 ? sessions : [this.fallbackSession($, url, globalTiers, salePhases)],
+      salePhases,
     };
   }
 
   private extractSessions(
     $: cheerio.CheerioAPI,
     baseUrl: string,
-    globalTiers: TicketTier[]
+    globalTiers: TicketTier[],
+    salePhases: ScrapedSalePhase[] = []
   ): ScrapedSession[] {
     const sessions: ScrapedSession[] = [];
 
@@ -102,6 +115,7 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
         venueName: venueText.replace(/\s+/g, ' '),
         ticketPlatform: 'TIXCRAFT',
         ticketTiers: tiers,
+        ticketSaleTime: salePhases[0]?.saleStart,
         bookingUrl: fullBookingUrl || baseUrl,
       });
     });
@@ -174,14 +188,104 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
     return tiers;
   }
 
-  private fallbackSession($: cheerio.CheerioAPI, url: string, tiers: TicketTier[]): ScrapedSession {
+  private fallbackSession(
+    $: cheerio.CheerioAPI,
+    url: string,
+    tiers: TicketTier[],
+    salePhases: ScrapedSalePhase[] = []
+  ): ScrapedSession {
     return {
       sessionTitle: '單一場次',
       sessionDate: new Date().toISOString(),
       venueName: $('.venue').text().trim() || '拓元活動場館',
       ticketPlatform: 'TIXCRAFT',
       ticketTiers: tiers,
+      ticketSaleTime: salePhases[0]?.saleStart,
       bookingUrl: url,
+    };
+  }
+
+  private extractSalePhases($: cheerio.CheerioAPI, html: string, url: string): ScrapedSalePhase[] {
+    const phases: ScrapedSalePhase[] = [];
+
+    // 拓元常見售票時間描述：
+    // 售票時間：2026/09/10 (四) 12:00 國泰世華CUBE卡友優先購票
+    // 售票時間：2026/09/12 (六) 12:00 拓元售票系統全面開賣
+    const saleLineRegex =
+      /(?:售票時間|開賣時間|啟售時間|預售時間|優先購票|會員預購|登記抽票|全面開賣)[：:]\s*([^\n\r<]+)/gi;
+    const matches = html.match(saleLineRegex);
+
+    if (matches) {
+      for (const match of matches) {
+        const phase = this.parseSalePhaseText(match, url);
+        if (
+          phase &&
+          !phases.some((p) => p.phaseName === phase.phaseName && p.saleStart === phase.saleStart)
+        ) {
+          phases.push(phase);
+        }
+      }
+    }
+
+    return phases;
+  }
+
+  private parseSalePhaseText(text: string, url: string): ScrapedSalePhase | null {
+    // 匹配日期與時間：2026/09/10 (四) 12:00 或 2026-09-10 12:00
+    const match = text.match(
+      /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[^\d]*?(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
+    );
+    if (!match) return null;
+
+    const [_, y, m, d, hh = '12', mm = '00', ss = '00'] = match;
+    const isoStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:${ss.padStart(2, '0')}+08:00`;
+    const dt = new Date(isoStr);
+    if (isNaN(dt.getTime())) return null;
+
+    let saleType: SaleType = 'GENERAL';
+    if (
+      text.includes('優先') ||
+      text.includes('會員') ||
+      text.includes('預購') ||
+      text.includes('卡友') ||
+      text.includes('先行')
+    ) {
+      saleType = 'PRESALE';
+    } else if (text.includes('抽票') || text.includes('登記') || text.includes('抽選')) {
+      saleType = 'LOTTERY';
+    } else if (text.includes('清票') || text.includes('釋票')) {
+      saleType = 'RERELEASE';
+    }
+
+    // 階段名稱判定
+    let phaseName = '拓元全面開賣';
+    const stripped = text
+      .replace(
+        /(?:售票時間|開賣時間|啟售時間|預售時間|優先購票|會員預購|登記抽票|全面開賣)[：:]\s*/i,
+        ''
+      )
+      .replace(
+        /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*\([^\)]+\))?\s*(?:\d{1,2}:\d{2}(?::\d{2})?)?/,
+        ''
+      )
+      .trim();
+
+    if (stripped) {
+      phaseName = stripped;
+    } else if (saleType === 'PRESALE') {
+      phaseName = '拓元會員/優先預購';
+    } else if (saleType === 'LOTTERY') {
+      phaseName = '拓元實名制登記抽票';
+    }
+
+    return {
+      phaseName,
+      saleType,
+      saleStart: dt.toISOString(),
+      ticketingPlatform: 'TIXCRAFT',
+      bookingUrl: url,
+      eligibilityNotes: text.replace(/\s+/g, ' ').trim(),
+      isLottery: saleType === 'LOTTERY',
     };
   }
 }

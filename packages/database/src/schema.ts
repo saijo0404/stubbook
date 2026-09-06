@@ -196,4 +196,35 @@ CREATE TRIGGER IF NOT EXISTS tr_event_setlists_updated_at
   BEGIN
     UPDATE event_setlists SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
+
+-- 10. Event Sale Phases (搶票開賣日程與多階段時程)
+CREATE TABLE IF NOT EXISTS event_sale_phases (
+  id                    TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  event_id              TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  session_id            TEXT REFERENCES event_sessions(id) ON DELETE CASCADE,
+  phase_name            TEXT NOT NULL,
+  sale_type             TEXT NOT NULL DEFAULT 'GENERAL' CHECK (
+    sale_type IN ('PRESALE', 'GENERAL', 'LOTTERY', 'RERELEASE', 'DOOR', 'OTHER')
+  ),
+  sale_start            TEXT NOT NULL,
+  sale_end              TEXT,
+  ticketing_platform    TEXT NOT NULL DEFAULT 'OTHER',
+  booking_url           TEXT,
+  eligibility_notes     TEXT,
+  is_lottery            INTEGER NOT NULL DEFAULT 0,
+  reminder_enabled      INTEGER NOT NULL DEFAULT 1,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_sale_phases_event ON event_sale_phases(event_id);
+CREATE INDEX IF NOT EXISTS idx_sale_phases_start ON event_sale_phases(sale_start);
+CREATE INDEX IF NOT EXISTS idx_sale_phases_session ON event_sale_phases(session_id);
+
+CREATE TRIGGER IF NOT EXISTS tr_event_sale_phases_updated_at
+  AFTER UPDATE ON event_sale_phases
+  FOR EACH ROW
+  BEGIN
+    UPDATE event_sale_phases SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
 `;

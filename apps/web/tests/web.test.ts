@@ -531,4 +531,14 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain("activeTab === 'analytics'");
     expect(pageContent).toContain('數據回顧 & Wrapped');
   });
+
+  it('Events API 應支援 event_sale_phases 儲存與查詢回傳', () => {
+    const eventsRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'events', 'route.ts');
+    const content = fs.readFileSync(eventsRoute, 'utf-8');
+
+    expect(content).toContain('event_sale_phases');
+    expect(content).toContain('insertSalePhase');
+    expect(content).toContain('salePhases');
+    expect(content).toContain('salePhaseRows');
+  });
 });

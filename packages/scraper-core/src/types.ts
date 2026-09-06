@@ -35,6 +35,21 @@ export const ScrapedSessionSchema = z.object({
 });
 export type ScrapedSession = z.infer<typeof ScrapedSessionSchema>;
 
+export const SaleTypeEnum = z.enum(['PRESALE', 'GENERAL', 'LOTTERY', 'RERELEASE', 'DOOR', 'OTHER']);
+export type SaleType = z.infer<typeof SaleTypeEnum>;
+
+export const ScrapedSalePhaseSchema = z.object({
+  phaseName: z.string(),
+  saleType: SaleTypeEnum.default('GENERAL'),
+  saleStart: z.string(), // ISO 8601 string
+  saleEnd: z.string().optional(),
+  ticketingPlatform: TicketPlatformEnum.default('OTHER'),
+  bookingUrl: z.string().url().optional(),
+  eligibilityNotes: z.string().optional(),
+  isLottery: z.boolean().default(false),
+});
+export type ScrapedSalePhase = z.infer<typeof ScrapedSalePhaseSchema>;
+
 export const ScrapedEventSchema = z.object({
   title: z.string().min(1, '活動名稱不得為空'),
   artist: z.string().optional(),
@@ -45,6 +60,7 @@ export const ScrapedEventSchema = z.object({
   organizer: z.string().optional(),
   platform: TicketPlatformEnum,
   sessions: z.array(ScrapedSessionSchema).min(1, '至少需包含一個場次資訊'),
+  salePhases: z.array(ScrapedSalePhaseSchema).default([]),
   rawMetadata: z.record(z.unknown()).optional(),
 });
 export type ScrapedEvent = z.infer<typeof ScrapedEventSchema>;

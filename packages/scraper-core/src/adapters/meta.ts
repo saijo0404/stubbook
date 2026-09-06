@@ -49,6 +49,7 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       description: ogDescription,
       platform: 'OTHER',
       sessions: [session],
+      salePhases: [],
     };
   }
 
@@ -142,6 +143,7 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       organizer: data.organizer?.name,
       platform: 'OTHER',
       sessions: [session],
+      salePhases: [],
       rawMetadata: data,
     };
   }
