@@ -29,6 +29,9 @@ importers:
       '@stubbook/scraper-core':
         specifier: workspace:*
         version: link:../../packages/scraper-core
+      better-sqlite3:
+        specifier: ^11.1.2
+        version: 11.10.0
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -51,6 +54,9 @@ importers:
       '@capacitor/cli':
         specifier: ^6.1.0
         version: 6.2.2
+      '@types/better-sqlite3':
+        specifier: ^7.6.11
+        version: 7.6.13
       '@types/node':
         specifier: ^20.14.0
         version: 20.19.43
