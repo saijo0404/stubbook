@@ -68,3 +68,10 @@ test-results/
 logs/
 *.log
 *.tsbuildinfo
+
+# SQLite databases
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm

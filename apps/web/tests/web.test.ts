@@ -67,4 +67,21 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(content).toContain('ON CONFLICT(user_id, session_id)');
     expect(content).toContain('getDefaultDatabase');
   });
+
+  it('Next.js 設定應將 better-sqlite3 排除在 Webpack bundling 之外 (serverComponentsExternalPackages)', () => {
+    const nextConfigPath = path.join(__dirname, '..', 'next.config.mjs');
+    const content = fs.readFileSync(nextConfigPath, 'utf-8');
+
+    expect(content).toContain('serverComponentsExternalPackages');
+    expect(content).toContain('better-sqlite3');
+  });
+
+  it('應用端應能成功實例化 getDefaultDatabase 且無 bindings 載入錯誤', async () => {
+    const { getDefaultDatabase } = await import('@stubbook/database');
+    const db = getDefaultDatabase();
+    expect(db).toBeDefined();
+
+    const row = db.prepare('SELECT 1 + 1 as sum').get() as { sum: number };
+    expect(row.sum).toBe(2);
+  });
 });
