@@ -646,15 +646,15 @@ export default function HomePage() {
       )}
 
       {/* 頂部功能頁籤導覽 */}
-      <div className="flex justify-center">
-        <div className="inline-flex bg-gray-900 border border-gray-800 p-1 rounded-2xl shadow-lg">
+      <div className="w-full max-w-full overflow-x-auto scrollbar-none py-1 px-2 flex justify-start sm:justify-center">
+        <div className="inline-flex bg-gray-900 border border-gray-800 p-1 rounded-2xl shadow-lg shrink-0 gap-1">
           <button
             type="button"
             onClick={() => {
               setActiveTab('scrape');
               haptics.light();
             }}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'scrape'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-400 hover:text-gray-200'
@@ -670,7 +670,7 @@ export default function HomePage() {
               loadSavedEvents();
               haptics.light();
             }}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'journal'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-400 hover:text-gray-200'
@@ -691,7 +691,7 @@ export default function HomePage() {
               setEventsVersion((v) => v + 1);
               haptics.light();
             }}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'calendar'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-400 hover:text-gray-200'
@@ -706,7 +706,7 @@ export default function HomePage() {
               setActiveTab('seats');
               haptics.light();
             }}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'seats'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-400 hover:text-gray-200'
@@ -721,7 +721,7 @@ export default function HomePage() {
               setActiveTab('analytics');
               haptics.light();
             }}
-            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === 'analytics'
                 ? 'bg-indigo-600 text-white shadow-md'
                 : 'text-gray-400 hover:text-gray-200'
@@ -1182,12 +1182,21 @@ export default function HomePage() {
                   <div className="p-5 bg-gradient-to-r from-gray-950 via-gray-900 to-gray-950 border-b border-gray-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-start space-x-4">
                       {ev.posterUrl ? (
-                        <div className="w-14 h-20 bg-gray-950 rounded-lg border border-gray-700/60 flex items-center justify-center overflow-hidden flex-shrink-0 relative group">
+                        <div className="w-14 h-20 bg-gray-950 rounded-lg border border-gray-700/60 flex items-center justify-center overflow-hidden flex-shrink-0 relative group p-0.5">
                           <img
                             src={ev.posterUrl}
                             alt={ev.title}
                             className="w-full h-full object-contain"
                           />
+                          <a
+                            href={ev.posterUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
+                            title="檢視原圖"
+                          >
+                            <Eye className="w-4 h-4 text-indigo-300" />
+                          </a>
                         </div>
                       ) : (
                         <div className="w-14 h-20 bg-gray-800 rounded-lg flex items-center justify-center flex-shrink-0 text-gray-500">
@@ -1726,7 +1735,7 @@ export default function HomePage() {
                     <img
                       src={attendanceForm.ticketStubUrl}
                       alt="Ticket stub preview"
-                      className="w-16 h-12 object-cover rounded-lg border border-gray-700/80"
+                      className="w-16 h-12 object-contain bg-black/60 rounded-lg border border-gray-700/80 p-0.5"
                     />
                     <div className="flex-1 space-y-1 text-xs">
                       <div className="text-gray-300 font-medium line-clamp-1">已典藏票根相片</div>
