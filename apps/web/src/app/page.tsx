@@ -29,6 +29,7 @@ import {
   WifiOff,
   Share2,
   Eye,
+  ListMusic,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -37,6 +38,7 @@ import { MerchManagerModal } from '../components/MerchManagerModal';
 import { MediaGalleryModal } from '../components/MediaGalleryModal';
 import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
 import { SeatViewModal } from '../components/SeatViewModal';
+import { SetlistModal } from '../components/SetlistModal';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal' | 'seats';
@@ -218,6 +220,15 @@ export default function HomePage() {
       attendanceId: attendanceId || null,
     });
   };
+
+  // 現場歌單 Modal 狀態
+  const [viewingSetlistSession, setViewingSetlistSession] = useState<{
+    sessionId: string;
+    eventTitle: string;
+    artistName?: string;
+    venueName?: string | null;
+    sessionDate?: string;
+  } | null>(null);
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -1029,6 +1040,14 @@ export default function HomePage() {
                     activeLiveSession.session.attendance?.id
                   );
                 }}
+                onOpenSetlist={() =>
+                  setViewingSetlistSession({
+                    sessionId: activeLiveSession.session.id,
+                    eventTitle: activeLiveSession.event.title,
+                    venueName: activeLiveSession.session.venueName,
+                    sessionDate: activeLiveSession.session.sessionDate,
+                  })
+                }
               />
             </div>
           )}
@@ -1236,6 +1255,21 @@ export default function HomePage() {
                                   >
                                     <Eye className="h-3 w-3 mr-1 text-cyan-400" />
                                     視野圖庫
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setViewingSetlistSession({
+                                        sessionId: session.id,
+                                        eventTitle: ev.title,
+                                        venueName: session.venueName,
+                                        sessionDate: session.sessionDate,
+                                      })
+                                    }
+                                    className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-amber-950/80 hover:bg-amber-900 text-amber-300 border border-amber-800/80 transition-colors"
+                                  >
+                                    <ListMusic className="h-3 w-3 mr-1 text-amber-400" />
+                                    現場歌單
                                   </button>
                                 </div>
                                 {att.notes && (
@@ -1795,6 +1829,20 @@ export default function HomePage() {
           onViewAdded={() => {
             loadSavedEvents();
           }}
+        />
+      )}
+
+      {/* 現場演出歌單 Modal */}
+      {viewingSetlistSession && (
+        <SetlistModal
+          isOpen={Boolean(viewingSetlistSession)}
+          sessionId={viewingSetlistSession.sessionId}
+          eventTitle={viewingSetlistSession.eventTitle}
+          artistName={viewingSetlistSession.artistName}
+          venueName={viewingSetlistSession.venueName}
+          sessionDate={viewingSetlistSession.sessionDate}
+          onClose={() => setViewingSetlistSession(null)}
+          onUpdated={loadSavedEvents}
         />
       )}
     </div>

@@ -133,3 +133,33 @@ export interface SeatViewPhoto {
   created_at: string;
   updated_at: string;
 }
+
+// ── 9. Event Setlists (現場演出歌單) ──────────────────────────────────────
+export interface SetlistSong {
+  name: string;
+  isEncore?: boolean;
+  encoreNumber?: number; // 1 for Encore 1, 2 for Encore 2...
+  coverOf?: string; // 原唱歌手（若為翻唱歌曲）
+  info?: string; // 特別備註（例如：吉他 solo / 初次公開新曲）
+}
+
+export type SetlistSource = 'SETLIST_FM' | 'MANUAL' | 'COMMUNITY';
+
+export interface EventSetlist {
+  id: string;
+  session_id: string;
+  user_id: string;
+  artist_name: string;
+  tour_name: string | null;
+  venue_name: string | null;
+  session_date: string | null;
+  source: SetlistSource;
+  source_url: string | null;
+  songs: string; // JSON string of SetlistSong[]
+  spotify_playlist_url: string | null;
+  apple_music_url: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+

@@ -164,4 +164,36 @@ CREATE TRIGGER IF NOT EXISTS tr_seat_view_photos_updated_at
   BEGIN
     UPDATE seat_view_photos SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
+
+-- 9. Event Setlists (演唱會現場歌單 / 演出曲目)
+CREATE TABLE IF NOT EXISTS event_setlists (
+  id                    TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  session_id            TEXT NOT NULL REFERENCES event_sessions(id) ON DELETE CASCADE,
+  user_id               TEXT NOT NULL DEFAULT 'local',
+  artist_name           TEXT NOT NULL,
+  tour_name             TEXT,
+  venue_name            TEXT,
+  session_date          TEXT,
+  source                TEXT NOT NULL DEFAULT 'MANUAL' CHECK (
+    source IN ('SETLIST_FM', 'MANUAL', 'COMMUNITY')
+  ),
+  source_url            TEXT,
+  songs                 TEXT NOT NULL DEFAULT '[]',
+  spotify_playlist_url  TEXT,
+  apple_music_url       TEXT,
+  notes                 TEXT,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE (session_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_setlists_session ON event_setlists(session_id);
+CREATE INDEX IF NOT EXISTS idx_setlists_artist ON event_setlists(artist_name);
+
+CREATE TRIGGER IF NOT EXISTS tr_event_setlists_updated_at
+  AFTER UPDATE ON event_setlists
+  FOR EACH ROW
+  BEGIN
+    UPDATE event_setlists SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
 `;
