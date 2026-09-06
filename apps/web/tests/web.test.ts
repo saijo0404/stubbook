@@ -541,4 +541,51 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(content).toContain('salePhases');
     expect(content).toContain('salePhaseRows');
   });
+
+  it('Calendar API 路由應正確聚合演出日、售票時程並支援年月過濾與倒數雷達', async () => {
+    const calendarRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'calendar', 'route.ts');
+    expect(fs.existsSync(calendarRoute)).toBe(true);
+
+    const content = fs.readFileSync(calendarRoute, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('event_sessions');
+    expect(content).toContain('event_sale_phases');
+    expect(content).toContain('user_attendances');
+    expect(content).toContain('upcomingRadar');
+    expect(content).toContain('eventsByDate');
+    expect(content).toContain('urgencyLevel');
+
+    // 實例化呼叫 GET 測試聚合邏輯
+    const { GET } = await import('../src/app/api/calendar/route');
+    const req = new Request('http://localhost:3000/api/calendar?type=all');
+    const res = await GET(req as any);
+    expect(res.status).toBe(200);
+
+    const json = await res.json();
+    expect(json.success).toBe(true);
+    expect(Array.isArray(json.items)).toBe(true);
+    expect(typeof json.eventsByDate).toBe('object');
+    expect(Array.isArray(json.upcomingRadar)).toBe(true);
+    expect(json.summary).toBeDefined();
+    expect(typeof json.summary.totalItems).toBe('number');
+  });
+
+  it('前端應完整實作 CalendarDashboard 組件並整合至首頁', () => {
+    const dashboardPath = path.join(__dirname, '..', 'src', 'components', 'CalendarDashboard.tsx');
+    expect(fs.existsSync(dashboardPath)).toBe(true);
+
+    const dashContent = fs.readFileSync(dashboardPath, 'utf-8');
+    expect(dashContent).toContain('export const CalendarDashboard');
+    expect(dashContent).toContain('搶票倒數雷達');
+    expect(dashContent).toContain('formatCountdown');
+    expect(dashContent).toContain('calendarGrid');
+    expect(dashContent).toContain('currentWeekDays');
+    expect(dashContent).toContain('手帳智慧行事曆');
+
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('CalendarDashboard');
+    expect(pageContent).toContain("activeTab === 'calendar'");
+    expect(pageContent).toContain('手帳行事曆');
+  });
 });
