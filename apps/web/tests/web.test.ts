@@ -676,4 +676,79 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     const pageContent = fs.readFileSync(pagePath, 'utf-8');
     expect(pageContent).toContain('AddToCalendarMenu');
   });
+
+  it('Events API 與前端應實作防重複入庫 (Upsert) 與活動整筆刪除級聯機制', async () => {
+    // 1. 驗證 Events API 支援 DELETE 與防重複入庫
+    const eventsRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'events', 'route.ts');
+    const routeContent = fs.readFileSync(eventsRoute, 'utf-8');
+    expect(routeContent).toContain('export async function DELETE');
+    expect(routeContent).toContain('PRAGMA foreign_keys = ON;');
+    expect(routeContent).toContain('DELETE FROM events WHERE id = ?');
+    expect(routeContent).toContain('SELECT id, title FROM events WHERE source_url = ?');
+    expect(routeContent).toContain('isUpdated');
+
+    // 2. 驗證前端 page.tsx 具備刪除確認彈窗與刪除觸發按鈕
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('handleDeleteEvent');
+    expect(pageContent).toContain('deletingEvent');
+    expect(pageContent).toContain('確認刪除活動？');
+    expect(pageContent).toContain('Trash2');
+
+    // 3. 測試 SQLite 資料庫級聯刪除與資料一致性 (外鍵開啟下刪除活動應連帶刪除 sessions 與 attendances)
+    const { getDatabase } = await import('@stubbook/database');
+    const db = getDatabase({ inMemory: true });
+    db.prepare('PRAGMA foreign_keys = ON;').run();
+
+    // 插入測試活動
+    db.prepare(
+      `INSERT INTO events (id, title, platform, source_url) VALUES ('ev-del', 'Concert To Delete', 'KKTIX', 'https://test.com/del')`
+    ).run();
+
+    // 插入關聯場次
+    db.prepare(
+      `INSERT INTO event_sessions (id, event_id, session_title, session_date, ticket_platform) VALUES ('sess-del', 'ev-del', 'Day 1', '2026-12-01', 'KKTIX')`
+    ).run();
+
+    // 插入關聯手帳出席紀錄
+    db.prepare(
+      `INSERT INTO user_attendances (id, user_id, session_id, status) VALUES ('att-del', 'local', 'sess-del', 'CONFIRMED')`
+    ).run();
+
+    // 插入售票階段
+    db.prepare(
+      `INSERT INTO event_sale_phases (id, event_id, phase_name, sale_start) VALUES ('sale-del', 'ev-del', '公開發售', '2026-11-01T12:00:00')`
+    ).run();
+
+    // 驗證插入成功
+    expect(db.prepare('SELECT count(*) as c FROM events WHERE id = ?').get('ev-del')).toEqual({
+      c: 1,
+    });
+    expect(
+      db.prepare('SELECT count(*) as c FROM event_sessions WHERE event_id = ?').get('ev-del')
+    ).toEqual({ c: 1 });
+    expect(
+      db.prepare('SELECT count(*) as c FROM user_attendances WHERE session_id = ?').get('sess-del')
+    ).toEqual({ c: 1 });
+    expect(
+      db.prepare('SELECT count(*) as c FROM event_sale_phases WHERE event_id = ?').get('ev-del')
+    ).toEqual({ c: 1 });
+
+    // 執行刪除
+    db.prepare('DELETE FROM events WHERE id = ?').run('ev-del');
+
+    // 驗證級聯刪除生效
+    expect(db.prepare('SELECT count(*) as c FROM events WHERE id = ?').get('ev-del')).toEqual({
+      c: 0,
+    });
+    expect(
+      db.prepare('SELECT count(*) as c FROM event_sessions WHERE event_id = ?').get('ev-del')
+    ).toEqual({ c: 0 });
+    expect(
+      db.prepare('SELECT count(*) as c FROM user_attendances WHERE session_id = ?').get('sess-del')
+    ).toEqual({ c: 0 });
+    expect(
+      db.prepare('SELECT count(*) as c FROM event_sale_phases WHERE event_id = ?').get('ev-del')
+    ).toEqual({ c: 0 });
+  });
 });

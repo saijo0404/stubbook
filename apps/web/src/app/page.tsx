@@ -141,6 +141,8 @@ export default function HomePage() {
   // 手帳列表狀態
   const [savedEvents, setSavedEvents] = useState<SavedEvent[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
+  const [deletingEvent, setDeletingEvent] = useState<SavedEvent | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // 參戰記錄彈窗狀態
   const [editingSession, setEditingSession] = useState<{
@@ -362,6 +364,27 @@ export default function HomePage() {
       setError((err as Error).message);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteEvent = async () => {
+    if (!deletingEvent) return;
+    try {
+      setDeleting(true);
+      const res = await fetch(`/api/events?id=${deletingEvent.id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '刪除活動失敗');
+      }
+      haptics.success();
+      setDeletingEvent(null);
+      await loadSavedEvents();
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -1189,8 +1212,19 @@ export default function HomePage() {
                         </a>
                       </div>
                     </div>
-                    <div className="text-xs text-gray-400 sm:text-right">
-                      <span>包含 {ev.sessions.length} 場次</span>
+                    <div className="flex items-center space-x-3 sm:text-right">
+                      <span className="text-xs text-gray-400">包含 {ev.sessions.length} 場次</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDeletingEvent(ev);
+                          haptics.warning();
+                        }}
+                        className="p-1.5 rounded-lg bg-gray-800/80 hover:bg-rose-950/80 text-gray-400 hover:text-rose-300 border border-gray-700/60 hover:border-rose-800 transition-colors"
+                        title="刪除此活動"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
 
@@ -1963,6 +1997,60 @@ export default function HomePage() {
           onClose={() => setViewingSetlistSession(null)}
           onUpdated={loadSavedEvents}
         />
+      )}
+
+      {/* 刪除活動確認 Modal */}
+      {deletingEvent && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center space-x-3 text-rose-400">
+              <div className="p-3 bg-rose-950/80 rounded-xl border border-rose-800/80">
+                <Trash2 className="h-6 w-6 text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-white">確認刪除活動？</h3>
+                <p className="text-xs text-gray-400">此動作將永久移除該活動紀錄</p>
+              </div>
+            </div>
+
+            <div className="bg-gray-950/60 p-3.5 rounded-xl border border-gray-800 space-y-1.5 text-xs text-gray-300">
+              <div className="font-semibold text-white truncate">{deletingEvent.title}</div>
+              <p className="text-gray-400 leading-relaxed">
+                將同時刪除此活動關聯的 {deletingEvent.sessions.length}{' '}
+                個場次、搶票時程、現場手帳紀錄、照片回憶與周邊清單。此動作無法復原。
+              </p>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 pt-2">
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setDeletingEvent(null)}
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={handleDeleteEvent}
+                className="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors disabled:opacity-50"
+              >
+                {deleting ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" />
+                    刪除中...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                    確認刪除
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
