@@ -42,6 +42,7 @@ import { SeatViewModal } from '../components/SeatViewModal';
 import { SetlistModal } from '../components/SetlistModal';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { CalendarDashboard } from '../components/CalendarDashboard';
+import { AddToCalendarMenu } from '../components/AddToCalendarMenu';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics';
@@ -912,6 +913,24 @@ export default function HomePage() {
                             minute: '2-digit',
                           })}
                         </div>
+                        <div className="mt-2">
+                          <AddToCalendarMenu
+                            item={{
+                              id: `preview_${selectedSessionIndex}`,
+                              title: event.title,
+                              subTitle: event.sessions[selectedSessionIndex].sessionTitle,
+                              itemType: 'SHOW',
+                              startDate: event.sessions[selectedSessionIndex].sessionDate,
+                              venueName: event.sessions[selectedSessionIndex].venueName,
+                              bookingUrl:
+                                event.sessions[selectedSessionIndex].bookingUrl || event.sourceUrl,
+                              platform:
+                                event.sessions[selectedSessionIndex].ticketPlatform ||
+                                event.platform,
+                            }}
+                            compact
+                          />
+                        </div>
                       </div>
                     </div>
 
@@ -1336,7 +1355,22 @@ export default function HomePage() {
                           </div>
 
                           {/* 右側：動作按鈕 */}
-                          <div className="flex items-center justify-end">
+                          <div className="flex items-center justify-end gap-2">
+                            <AddToCalendarMenu
+                              item={{
+                                id: session.id,
+                                title: ev.title,
+                                subTitle: session.sessionTitle,
+                                itemType: 'SHOW',
+                                startDate: session.sessionDate,
+                                venueName: session.venueName,
+                                bookingUrl: session.bookingUrl,
+                                platform: session.ticketPlatform,
+                                seatInfo: att?.seatInfo,
+                                notes: att?.notes,
+                              }}
+                              compact
+                            />
                             <button
                               type="button"
                               onClick={() => openAttendanceModal(ev, session)}

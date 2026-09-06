@@ -22,9 +22,12 @@ import {
   Radio,
   CalendarDays,
   CalendarRange,
+  Download,
 } from 'lucide-react';
 import { CalendarItem, CalendarRadarItem } from '../app/api/calendar/route';
 import { haptics } from '../utils/haptics';
+import { AddToCalendarMenu } from './AddToCalendarMenu';
+import { generateICalendar, downloadICS } from '../utils/calendarSync';
 
 interface CalendarDashboardProps {
   onNavigateToJournal?: (eventId: string, sessionId?: string) => void;
@@ -249,6 +252,39 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  // 匯出當前月份全行程為 .ics
+  const handleExportCurrentMonthICS = () => {
+    haptics.success();
+    const monthPadded = String(currentMonth + 1).padStart(2, '0');
+    const prefix = `${currentYear}-${monthPadded}`;
+    const monthItems = calendarItems.filter((i) => i.dateKey.startsWith(prefix));
+
+    if (monthItems.length === 0) {
+      alert(`${currentYear} 年 ${currentMonth + 1} 月暫無已入庫之行程！`);
+      return;
+    }
+
+    const exportItems = monthItems.map((item) => ({
+      id: item.id,
+      title: item.eventTitle,
+      subTitle: item.subTitle,
+      itemType: item.itemType,
+      startDate: item.date,
+      endDate: item.endDate,
+      venueName: item.venueName,
+      bookingUrl: item.bookingUrl,
+      platform: item.platform,
+      seatInfo: item.attendance?.seatInfo,
+      notes: item.attendance?.notes,
+    }));
+
+    const ics = generateICalendar(
+      exportItems,
+      `票根手帳_${currentYear}年${currentMonth + 1}月演唱會行事曆`
+    );
+    downloadICS(`StubBook_${currentYear}_${monthPadded}_Calendar.ics`, ics);
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* ─────────────────── 頂部標題與狀態雷達摘要 ─────────────────── */}
@@ -328,6 +364,16 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
               )}
             </button>
           </div>
+
+          <button
+            type="button"
+            onClick={handleExportCurrentMonthICS}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-gray-850 hover:bg-gray-800 border border-gray-700/60 rounded-xl text-indigo-300 transition-colors text-xs font-semibold"
+            title="匯出當前月份全行程為 .ics 行事曆檔"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">匯出月行程 (.ics)</span>
+          </button>
 
           <button
             type="button"
@@ -430,18 +476,35 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                       <span>{formatCountdown(radar.date)}</span>
                     </div>
 
-                    {radar.bookingUrl && (
-                      <a
-                        href={radar.bookingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => haptics.medium()}
-                        className="inline-flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-sm"
-                      >
-                        <span>搶票去</span>
-                        <ExternalLink className="h-3 w-3" />
-                      </a>
-                    )}
+                    <div className="flex items-center space-x-1.5">
+                      <AddToCalendarMenu
+                        item={{
+                          id: radar.id,
+                          title: radar.eventTitle,
+                          subTitle: radar.subTitle,
+                          itemType: radar.itemType,
+                          startDate: radar.date,
+                          endDate: radar.endDate,
+                          venueName: radar.venueName,
+                          bookingUrl: radar.bookingUrl,
+                          platform: radar.platform,
+                          notes: radar.eligibilityNotes,
+                        }}
+                        compact
+                      />
+                      {radar.bookingUrl && (
+                        <a
+                          href={radar.bookingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => haptics.medium()}
+                          className="inline-flex items-center space-x-1 px-2.5 py-1 text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white rounded-lg transition-colors shadow-sm"
+                        >
+                          <span>搶票去</span>
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
@@ -827,18 +890,34 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                       </span>
                     </div>
 
-                    {radar.bookingUrl && (
-                      <a
-                        href={radar.bookingUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => haptics.medium()}
-                        className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5"
-                      >
-                        <span>搶票專區</span>
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </a>
-                    )}
+                    <div className="flex items-center space-x-2">
+                      <AddToCalendarMenu
+                        item={{
+                          id: radar.id,
+                          title: radar.eventTitle,
+                          subTitle: radar.subTitle,
+                          itemType: radar.itemType,
+                          startDate: radar.date,
+                          endDate: radar.endDate,
+                          venueName: radar.venueName,
+                          bookingUrl: radar.bookingUrl,
+                          platform: radar.platform,
+                          notes: radar.eligibilityNotes,
+                        }}
+                      />
+                      {radar.bookingUrl && (
+                        <a
+                          href={radar.bookingUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => haptics.medium()}
+                          className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5"
+                        >
+                          <span>搶票專區</span>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -934,6 +1013,23 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                   </div>
 
                   <div className="flex items-center space-x-2">
+                    <AddToCalendarMenu
+                      item={{
+                        id: item.id,
+                        title: item.eventTitle,
+                        subTitle: item.subTitle,
+                        itemType: item.itemType,
+                        startDate: item.date,
+                        endDate: item.endDate,
+                        venueName: item.venueName,
+                        bookingUrl: item.bookingUrl,
+                        platform: item.platform,
+                        seatInfo: item.attendance?.seatInfo,
+                        notes: item.attendance?.notes,
+                      }}
+                      compact
+                    />
+
                     {item.bookingUrl && (
                       <a
                         href={item.bookingUrl}
