@@ -87,9 +87,7 @@ export const AnalyticsDashboard: React.FC = () => {
 
   if (loading && !data) {
     return (
-      <div className="py-24 text-center text-xs text-zinc-500">
-        正在統計演唱會足跡與回憶數據...
-      </div>
+      <div className="py-24 text-center text-xs text-zinc-500">正在統計演唱會足跡與回憶數據...</div>
     );
   }
 
@@ -191,7 +189,8 @@ export const AnalyticsDashboard: React.FC = () => {
             <Ticket className="w-4 h-4 text-indigo-400" />
           </div>
           <div className="text-2xl sm:text-3xl font-black text-white">
-            {data.summary.totalAttended} <span className="text-xs font-normal text-zinc-500">場</span>
+            {data.summary.totalAttended}{' '}
+            <span className="text-xs font-normal text-zinc-500">場</span>
           </div>
           <div className="text-[11px] text-zinc-500 flex items-center space-x-2 pt-1 border-t border-zinc-800/80">
             <span>已參加 {data.summary.completedCount}</span>
@@ -270,10 +269,10 @@ export const AnalyticsDashboard: React.FC = () => {
                             idx === 0
                               ? 'text-amber-400'
                               : idx === 1
-                              ? 'text-zinc-300'
-                              : idx === 2
-                              ? 'text-amber-600'
-                              : 'text-zinc-500'
+                                ? 'text-zinc-300'
+                                : idx === 2
+                                  ? 'text-amber-600'
+                                  : 'text-zinc-500'
                           }`}
                         >
                           {idx + 1}
@@ -355,7 +354,8 @@ export const AnalyticsDashboard: React.FC = () => {
               <h3 className="text-sm font-bold text-white">周邊戰利品分類投資</h3>
             </div>
             <span className="text-[11px] text-purple-400 font-bold">
-              共 {data.spending.totalMerchCount} 件 · ${data.spending.merchSpending.toLocaleString()} TWD
+              共 {data.spending.totalMerchCount} 件 · $
+              {data.spending.merchSpending.toLocaleString()} TWD
             </span>
           </div>
 

@@ -95,7 +95,10 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ success: true, results: setlists });
           }
         } catch (fmErr) {
-          logger.warn(`Setlist.fm API 檢索失敗，啟動智慧降級: ${(fmErr as Error).message}`, 'SETLIST_API');
+          logger.warn(
+            `Setlist.fm API 檢索失敗，啟動智慧降級: ${(fmErr as Error).message}`,
+            'SETLIST_API'
+          );
         }
       }
 
@@ -270,10 +273,14 @@ export async function POST(req: NextRequest) {
         notes ? String(notes).trim() : null
       ) as any;
 
-    logger.info(`現場歌單儲存成功: ${artistName} (${formattedSongs.length} 首曲目)`, 'SETLIST_API', {
-      sessionId,
-      songsCount: formattedSongs.length,
-    });
+    logger.info(
+      `現場歌單儲存成功: ${artistName} (${formattedSongs.length} 首曲目)`,
+      'SETLIST_API',
+      {
+        sessionId,
+        songsCount: formattedSongs.length,
+      }
+    );
 
     return NextResponse.json({
       success: true,

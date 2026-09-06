@@ -227,11 +227,7 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
 
     ctx.fillStyle = '#a1a1aa';
     ctx.font = '24px sans-serif';
-    ctx.fillText(
-      `造訪共 ${data.topVenues[0]?.visitsCount || 1} 次演出`,
-      vX + 35,
-      venueY + 180
-    );
+    ctx.fillText(`造訪共 ${data.topVenues[0]?.visitsCount || 1} 次演出`, vX + 35, venueY + 180);
 
     // 周邊開銷卡
     const mX = vX + subW + gapX;
@@ -283,11 +279,7 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
 
     ctx.fillStyle = '#71717a';
     ctx.font = '24px sans-serif';
-    ctx.fillText(
-      '私人本地 SQLite 驅動 · 票根典藏 · 視野圖庫 · 現場歌單',
-      W / 2,
-      1680
-    );
+    ctx.fillText('私人本地 SQLite 驅動 · 票根典藏 · 視野圖庫 · 現場歌單', W / 2, 1680);
 
     ctx.fillStyle = '#52525b';
     ctx.font = '22px sans-serif';
@@ -340,13 +332,9 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
       if (navigator.share) {
         canvas.toBlob(async (blob) => {
           if (blob) {
-            const file = new File(
-              [blob],
-              `StubBook_Wrapped_${data.selectedYear}.png`,
-              {
-                type: 'image/png',
-              }
-            );
+            const file = new File([blob], `StubBook_Wrapped_${data.selectedYear}.png`, {
+              type: 'image/png',
+            });
 
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
               await navigator.share({
@@ -405,10 +393,7 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
         {/* 預覽海報 Canvas 區塊 */}
         <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center bg-zinc-950/50">
           <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full object-contain block"
-            />
+            <canvas ref={canvasRef} className="w-full h-full object-contain block" />
           </div>
         </div>
 

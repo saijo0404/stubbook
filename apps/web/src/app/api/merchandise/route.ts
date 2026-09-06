@@ -55,7 +55,10 @@ export async function GET(req: NextRequest) {
       createdAt: string;
     }>;
 
-    const totalCost = items.reduce((sum, item) => sum + (item.price || 0) * (item.quantity || 1), 0);
+    const totalCost = items.reduce(
+      (sum, item) => sum + (item.price || 0) * (item.quantity || 1),
+      0
+    );
 
     return NextResponse.json({
       items,
@@ -125,7 +128,16 @@ export async function POST(req: NextRequest) {
           category, price, currency, quantity, photo_url as photoUrl, created_at as createdAt
       `
         )
-        .get(itemName.trim(), category, numericPrice, currency, numericQty, photoUrl, id, attendanceId);
+        .get(
+          itemName.trim(),
+          category,
+          numericPrice,
+          currency,
+          numericQty,
+          photoUrl,
+          id,
+          attendanceId
+        );
 
       logger.info(`周邊商品已更新: ${itemName.trim()} (ID: ${id})`, 'MERCHANDISE_API');
       return NextResponse.json({ item: updated });

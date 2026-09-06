@@ -398,7 +398,11 @@ export const SeatViewModal: React.FC<SeatViewModalProps> = ({
                         所有場館 ({venues.reduce((acc, v) => acc + v.count, 0)})
                       </option>
                       {venues.map((v) => (
-                        <option key={v.venueName} value={v.venueName} className="bg-zinc-900 text-white">
+                        <option
+                          key={v.venueName}
+                          value={v.venueName}
+                          className="bg-zinc-900 text-white"
+                        >
                           {v.venueName} ({v.count})
                         </option>
                       ))}
@@ -594,7 +598,9 @@ export const SeatViewModal: React.FC<SeatViewModalProps> = ({
               <div className="bg-gradient-to-r from-indigo-950/40 to-purple-950/40 border border-indigo-700/40 rounded-xl p-4 flex items-start space-x-3">
                 <Sparkles className="w-5 h-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                 <div className="text-xs text-indigo-200 leading-relaxed">
-                  <strong className="text-white block mb-0.5">共享真實視野，幫助更多樂迷選位</strong>
+                  <strong className="text-white block mb-0.5">
+                    共享真實視野，幫助更多樂迷選位
+                  </strong>
                   上傳你在現場拍下的舞台視角照片，並標註具體分區與排號。所有資料皆保存在本地資料庫中，離線也能快速檢視！
                 </div>
               </div>
@@ -692,9 +698,7 @@ export const SeatViewModal: React.FC<SeatViewModalProps> = ({
               {/* 排號與座位號 */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-zinc-300 mb-1.5">
-                    排號 (Row)
-                  </label>
+                  <label className="block text-xs font-bold text-zinc-300 mb-1.5">排號 (Row)</label>
                   <input
                     type="text"
                     value={newRow}

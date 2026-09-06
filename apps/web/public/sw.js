@@ -8,31 +8,39 @@ const STATIC_CACHE = `stubbook-static-${CACHE_VERSION}`;
 const DYNAMIC_CACHE = `stubbook-dynamic-${CACHE_VERSION}`;
 const IMAGE_CACHE = `stubbook-images-${CACHE_VERSION}`;
 
-const PRECACHE_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon.svg',
-];
+const PRECACHE_ASSETS = ['/', '/manifest.json', '/icons/icon.svg'];
 
 // 1. 安裝階段：預先快取核心 App Shell
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(STATIC_CACHE).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS);
-    }).then(() => self.skipWaiting())
+    caches
+      .open(STATIC_CACHE)
+      .then((cache) => {
+        return cache.addAll(PRECACHE_ASSETS);
+      })
+      .then(() => self.skipWaiting())
   );
 });
 
 // 2. 啟用階段：清除過期舊快取
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames
-          .filter((name) => name.startsWith('stubbook-') && name !== STATIC_CACHE && name !== DYNAMIC_CACHE && name !== IMAGE_CACHE)
-          .map((name) => caches.delete(name))
-      );
-    }).then(() => self.clients.claim())
+    caches
+      .keys()
+      .then((cacheNames) => {
+        return Promise.all(
+          cacheNames
+            .filter(
+              (name) =>
+                name.startsWith('stubbook-') &&
+                name !== STATIC_CACHE &&
+                name !== DYNAMIC_CACHE &&
+                name !== IMAGE_CACHE
+            )
+            .map((name) => caches.delete(name))
+        );
+      })
+      .then(() => self.clients.claim())
   );
 });
 
@@ -53,9 +61,11 @@ self.addEventListener('fetch', (event) => {
         const cachedResponse = await cache.match(request);
         if (cachedResponse) {
           // 背景嘗試更新最新檔案
-          fetch(request).then((networkResponse) => {
-            if (networkResponse.ok) cache.put(request, networkResponse.clone());
-          }).catch(() => {});
+          fetch(request)
+            .then((networkResponse) => {
+              if (networkResponse.ok) cache.put(request, networkResponse.clone());
+            })
+            .catch(() => {});
           return cachedResponse;
         }
 
@@ -75,7 +85,12 @@ self.addEventListener('fetch', (event) => {
   }
 
   // 策略 B: 資料 API (/api/events, /api/attendances 等) -> Network First，斷網時回傳快取
-  if (url.pathname.startsWith('/api/events') || url.pathname.startsWith('/api/attendances') || url.pathname.startsWith('/api/merchandise') || url.pathname.startsWith('/api/media')) {
+  if (
+    url.pathname.startsWith('/api/events') ||
+    url.pathname.startsWith('/api/attendances') ||
+    url.pathname.startsWith('/api/merchandise') ||
+    url.pathname.startsWith('/api/media')
+  ) {
     event.respondWith(
       fetch(request)
         .then(async (networkResponse) => {

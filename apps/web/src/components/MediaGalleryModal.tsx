@@ -238,7 +238,11 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
                     {selectedFile?.type.startsWith('video/') ? (
                       <video src={previewUrl} className="max-h-full max-w-full" controls />
                     ) : (
-                      <img src={previewUrl} alt="預覽" className="max-h-full max-w-full object-contain" />
+                      <img
+                        src={previewUrl}
+                        alt="預覽"
+                        className="max-h-full max-w-full object-contain"
+                      />
                     )}
                     <button
                       type="button"
@@ -259,8 +263,12 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
                     className="w-full aspect-video border-2 border-dashed border-zinc-700 hover:border-indigo-500 rounded-xl flex flex-col items-center justify-center p-4 text-center transition group bg-zinc-900/50"
                   >
                     <span className="text-2xl group-hover:scale-110 transition">📷</span>
-                    <span className="text-xs text-zinc-300 font-medium mt-2">點擊選擇照片 / 短片</span>
-                    <span className="text-[10px] text-zinc-500 mt-0.5">支援 JPG, PNG, WebP, MP4</span>
+                    <span className="text-xs text-zinc-300 font-medium mt-2">
+                      點擊選擇照片 / 短片
+                    </span>
+                    <span className="text-[10px] text-zinc-500 mt-0.5">
+                      支援 JPG, PNG, WebP, MP4
+                    </span>
                   </button>
                 )}
               </div>
@@ -268,7 +276,9 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
               {/* Caption & Captured At Inputs */}
               <div className="md:col-span-2 space-y-3">
                 <div>
-                  <label className="block text-xs text-zinc-400 mb-1">那刻的回憶註記 (Caption)</label>
+                  <label className="block text-xs text-zinc-400 mb-1">
+                    那刻的回憶註記 (Caption)
+                  </label>
                   <input
                     type="text"
                     value={caption}
@@ -280,7 +290,9 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs text-zinc-400 mb-1">記錄時間 (可留空或調整)</label>
+                  <label className="block text-xs text-zinc-400 mb-1">
+                    記錄時間 (可留空或調整)
+                  </label>
                   <input
                     type="datetime-local"
                     value={capturedAt}
@@ -353,11 +365,16 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
                     <div className="absolute inset-x-0 bottom-0 p-2 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-end justify-between">
                       <div className="min-w-0 pr-2">
                         {item.caption && (
-                          <p className="text-xs text-zinc-100 font-medium truncate">{item.caption}</p>
+                          <p className="text-xs text-zinc-100 font-medium truncate">
+                            {item.caption}
+                          </p>
                         )}
                         <p className="text-[10px] text-zinc-400">
                           {item.capturedAt
-                            ? new Date(item.capturedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ? new Date(item.capturedAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })
                             : new Date(item.createdAt).toLocaleDateString()}
                         </p>
                       </div>

@@ -161,54 +161,78 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     const db = getDatabase({ inMemory: true });
 
     // 1. 建立測試活動、場次與出席記錄
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO events (id, title, platform, source_url)
       VALUES ('ev-test', 'Test Live Concert', 'KKTIX', 'https://test.kktix.cc')
-    `).run();
+    `
+    ).run();
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO event_sessions (id, event_id, session_title, session_date, ticket_platform)
       VALUES ('sess-test', 'ev-test', 'Day 1', '2026-10-01', 'KKTIX')
-    `).run();
+    `
+    ).run();
 
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO user_attendances (id, user_id, session_id, status, ticket_price, currency)
       VALUES ('att-test', 'local', 'sess-test', 'CONFIRMED', 3800, 'TWD')
-    `).run();
+    `
+    ).run();
 
     // 2. 測試 merchandise_items 寫入與總額聚合
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO merchandise_items (id, attendance_id, item_name, category, price, currency, quantity)
       VALUES ('m-1', 'att-test', '應援手燈', 'LIGHTSTICK', 1200, 'TWD', 1),
              ('m-2', 'att-test', '紀念T恤', 'APPAREL', 900, 'TWD', 2)
-    `).run();
+    `
+    ).run();
 
-    const merchRows = db.prepare(`SELECT * FROM merchandise_items WHERE attendance_id = 'att-test'`).all();
+    const merchRows = db
+      .prepare(`SELECT * FROM merchandise_items WHERE attendance_id = 'att-test'`)
+      .all();
     expect(merchRows.length).toBe(2);
 
-    const totalCostRow = db.prepare(`
+    const totalCostRow = db
+      .prepare(
+        `
       SELECT SUM(price * quantity) as total FROM merchandise_items WHERE attendance_id = 'att-test'
-    `).get() as { total: number };
+    `
+      )
+      .get() as { total: number };
     expect(totalCostRow.total).toBe(1200 * 1 + 900 * 2); // 3000
 
     // 3. 測試 attendance_media 寫入與時序查詢
-    db.prepare(`
+    db.prepare(
+      `
       INSERT INTO attendance_media (id, attendance_id, media_url, media_type, captured_at, caption)
       VALUES ('med-1', 'att-test', '/uploads/media/pic1.jpg', 'PHOTO', '2026-10-01T18:00:00Z', '開場燈海'),
              ('med-2', 'att-test', '/uploads/media/vid1.mp4', 'VIDEO', '2026-10-01T20:30:00Z', '安可彩帶')
-    `).run();
+    `
+    ).run();
 
-    const mediaRows = db.prepare(`
+    const mediaRows = db
+      .prepare(
+        `
       SELECT * FROM attendance_media WHERE attendance_id = 'att-test' ORDER BY captured_at ASC
-    `).all() as any[];
+    `
+      )
+      .all() as any[];
     expect(mediaRows.length).toBe(2);
     expect(mediaRows[0].caption).toBe('開場燈海');
     expect(mediaRows[1].media_type).toBe('VIDEO');
 
     // 4. 測試級聯刪除 (Cascading Delete): 刪除 attendance 應同時清理周邊與媒體
     db.prepare(`DELETE FROM user_attendances WHERE id = 'att-test'`).run();
-    const remainingMerch = db.prepare(`SELECT COUNT(*) as count FROM merchandise_items WHERE attendance_id = 'att-test'`).get() as { count: number };
-    const remainingMedia = db.prepare(`SELECT COUNT(*) as count FROM attendance_media WHERE attendance_id = 'att-test'`).get() as { count: number };
+    const remainingMerch = db
+      .prepare(`SELECT COUNT(*) as count FROM merchandise_items WHERE attendance_id = 'att-test'`)
+      .get() as { count: number };
+    const remainingMedia = db
+      .prepare(`SELECT COUNT(*) as count FROM attendance_media WHERE attendance_id = 'att-test'`)
+      .get() as { count: number };
     expect(remainingMerch.count).toBe(0);
     expect(remainingMedia.count).toBe(0);
   });
@@ -231,9 +255,9 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(fs.existsSync(swPath)).toBe(true);
 
     const swContent = fs.readFileSync(swPath, 'utf-8');
-    expect(swContent).toContain('addEventListener(\'install\'');
-    expect(swContent).toContain('addEventListener(\'activate\'');
-    expect(swContent).toContain('addEventListener(\'fetch\'');
+    expect(swContent).toContain("addEventListener('install'");
+    expect(swContent).toContain("addEventListener('activate'");
+    expect(swContent).toContain("addEventListener('fetch'");
     expect(swContent).toContain('/uploads/');
     expect(swContent).toContain('/api/events');
     expect(swContent).toContain('/api/attendances');
@@ -332,15 +356,7 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
   });
 
   it('Seat Views API 路由檔案與安全性驗證應符合規範', () => {
-    const seatViewRoute = path.join(
-      __dirname,
-      '..',
-      'src',
-      'app',
-      'api',
-      'seat-views',
-      'route.ts'
-    );
+    const seatViewRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'seat-views', 'route.ts');
     expect(fs.existsSync(seatViewRoute)).toBe(true);
 
     const content = fs.readFileSync(seatViewRoute, 'utf-8');
@@ -488,13 +504,7 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
   });
 
   it('前端應完整實作 AnalyticsDashboard 與 ConcertWrappedModal 組件並整合至首頁', () => {
-    const dashboardPath = path.join(
-      __dirname,
-      '..',
-      'src',
-      'components',
-      'AnalyticsDashboard.tsx'
-    );
+    const dashboardPath = path.join(__dirname, '..', 'src', 'components', 'AnalyticsDashboard.tsx');
     expect(fs.existsSync(dashboardPath)).toBe(true);
 
     const dashContent = fs.readFileSync(dashboardPath, 'utf-8');
@@ -504,13 +514,7 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(dashContent).toContain('踩點場館足跡');
     expect(dashContent).toContain('周邊戰利品分類投資');
 
-    const wrappedPath = path.join(
-      __dirname,
-      '..',
-      'src',
-      'components',
-      'ConcertWrappedModal.tsx'
-    );
+    const wrappedPath = path.join(__dirname, '..', 'src', 'components', 'ConcertWrappedModal.tsx');
     expect(fs.existsSync(wrappedPath)).toBe(true);
 
     const wrappedContent = fs.readFileSync(wrappedPath, 'utf-8');
@@ -528,6 +532,3 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('數據回顧 & Wrapped');
   });
 });
-
-
-

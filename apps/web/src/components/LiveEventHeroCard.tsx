@@ -256,13 +256,18 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
                 {session.attendance?.seatInfo ? (
                   session.attendance.seatInfo
                 ) : (
-                  <span className="text-sm font-normal text-zinc-500 italic">尚未填寫座位資訊（可於手帳中補充）</span>
+                  <span className="text-sm font-normal text-zinc-500 italic">
+                    尚未填寫座位資訊（可於手帳中補充）
+                  </span>
                 )}
               </div>
               <div className="text-[11px] text-zinc-400 mt-1 flex items-center gap-2">
                 <span>票種：{session.attendance?.ticketType || 'DIGITAL'}</span>
                 {session.attendance?.ticketPrice && (
-                  <span>· 票價：${session.attendance.ticketPrice.toLocaleString()} {session.attendance.currency}</span>
+                  <span>
+                    · 票價：${session.attendance.ticketPrice.toLocaleString()}{' '}
+                    {session.attendance.currency}
+                  </span>
                 )}
               </div>
             </div>
@@ -316,7 +321,8 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
                 入場行前備忘清單
               </span>
               <span className="text-[10px] text-zinc-500">
-                {DEFAULT_CHECKLIST.filter((it) => checklist[it.id]).length} / {DEFAULT_CHECKLIST.length}
+                {DEFAULT_CHECKLIST.filter((it) => checklist[it.id]).length} /{' '}
+                {DEFAULT_CHECKLIST.length}
               </span>
             </div>
 
@@ -359,7 +365,9 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               <Camera className="w-4 h-4 text-pink-400" />
               <span>現場拍照</span>
               <span className="text-[10px] text-pink-400/80 font-normal">
-                {session.attendance?.mediaCount ? `${session.attendance.mediaCount} 則紀錄` : '回憶牆'}
+                {session.attendance?.mediaCount
+                  ? `${session.attendance.mediaCount} 則紀錄`
+                  : '回憶牆'}
               </span>
             </button>
 
@@ -374,7 +382,9 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               <ShoppingBag className="w-4 h-4 text-purple-400" />
               <span>周邊記帳</span>
               <span className="text-[10px] text-purple-400/80 font-normal">
-                {session.attendance?.merchCount ? `${session.attendance.merchCount} 件戰利品` : '記帳'}
+                {session.attendance?.merchCount
+                  ? `${session.attendance.merchCount} 件戰利品`
+                  : '記帳'}
               </span>
             </button>
 

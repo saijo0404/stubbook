@@ -163,9 +163,7 @@ export function TicketStubModal({
                   {eventTitle}
                 </h2>
                 {sessionTitle && (
-                  <div className="text-xs md:text-sm font-bold text-indigo-400">
-                    {sessionTitle}
-                  </div>
+                  <div className="text-xs md:text-sm font-bold text-indigo-400">{sessionTitle}</div>
                 )}
               </div>
 
