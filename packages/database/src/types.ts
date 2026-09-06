@@ -111,3 +111,25 @@ export interface AttendanceMedia {
   caption: string | null;
   created_at: string;
 }
+
+// ── 8. Seat View Photos (場館座位視野照片與視角資料庫) ────────────────────────
+export type SeatVisibility = 'CLEAR' | 'GOOD' | 'PARTIAL' | 'OBSTRUCTED' | 'DISTANCE';
+
+export interface SeatViewPhoto {
+  id: string;
+  user_id: string;
+  venue_name: string;
+  venue_id: string | null;
+  session_id: string | null;
+  attendance_id: string | null;
+  event_title: string | null;
+  section: string;
+  row_number: string | null;
+  seat_number: string | null;
+  photo_url: string;
+  view_rating: number | null;
+  visibility: SeatVisibility;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}

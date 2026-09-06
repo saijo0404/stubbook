@@ -15,7 +15,7 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
   'video/mp4': '.mp4',
 };
 
-const ALLOWED_FOLDERS = ['ticket-stubs', 'merch', 'media'] as const;
+const ALLOWED_FOLDERS = ['ticket-stubs', 'merch', 'media', 'seat-views'] as const;
 type AllowedFolder = (typeof ALLOWED_FOLDERS)[number];
 
 // 驗證檔案開頭之 Magic Bytes

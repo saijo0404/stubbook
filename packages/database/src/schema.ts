@@ -108,6 +108,28 @@ CREATE TABLE IF NOT EXISTS attendance_media (
   created_at      TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- 8. Seat View Photos (場館座位視野照片與視角資料庫)
+CREATE TABLE IF NOT EXISTS seat_view_photos (
+  id                TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id           TEXT NOT NULL DEFAULT 'local',
+  venue_name        TEXT NOT NULL,
+  venue_id          TEXT REFERENCES venues(id) ON DELETE SET NULL,
+  session_id        TEXT REFERENCES event_sessions(id) ON DELETE SET NULL,
+  attendance_id     TEXT REFERENCES user_attendances(id) ON DELETE SET NULL,
+  event_title       TEXT,
+  section           TEXT NOT NULL,
+  row_number        TEXT,
+  seat_number       TEXT,
+  photo_url         TEXT NOT NULL,
+  view_rating       INTEGER CHECK (view_rating BETWEEN 1 AND 5),
+  visibility        TEXT NOT NULL DEFAULT 'CLEAR' CHECK (
+    visibility IN ('CLEAR', 'GOOD', 'PARTIAL', 'OBSTRUCTED', 'DISTANCE')
+  ),
+  notes             TEXT,
+  created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at        TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Indexes
 CREATE INDEX IF NOT EXISTS idx_events_artist ON events(artist_id);
 CREATE INDEX IF NOT EXISTS idx_events_platform ON events(platform);
@@ -117,6 +139,9 @@ CREATE INDEX IF NOT EXISTS idx_user_attendances_user ON user_attendances(user_id
 CREATE INDEX IF NOT EXISTS idx_user_attendances_session ON user_attendances(session_id);
 CREATE INDEX IF NOT EXISTS idx_merchandise_attendance ON merchandise_items(attendance_id);
 CREATE INDEX IF NOT EXISTS idx_attendance_media_attendance ON attendance_media(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_seat_view_venue ON seat_view_photos(venue_name);
+CREATE INDEX IF NOT EXISTS idx_seat_view_section ON seat_view_photos(section);
+CREATE INDEX IF NOT EXISTS idx_seat_view_session ON seat_view_photos(session_id);
 
 -- Triggers for updated_at
 CREATE TRIGGER IF NOT EXISTS tr_events_updated_at
@@ -131,5 +156,12 @@ CREATE TRIGGER IF NOT EXISTS tr_user_attendances_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE user_attendances SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+CREATE TRIGGER IF NOT EXISTS tr_seat_view_photos_updated_at
+  AFTER UPDATE ON seat_view_photos
+  FOR EACH ROW
+  BEGIN
+    UPDATE seat_view_photos SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
 `;

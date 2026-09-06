@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Flame,
   CheckCircle2,
+  Eye,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
 
@@ -64,6 +65,7 @@ interface LiveEventHeroCardProps {
   onViewTicketStub: () => void;
   onOpenMediaGallery: () => void;
   onOpenMerchManager: () => void;
+  onOpenSeatViews?: (venueName?: string, seatInfo?: string) => void;
 }
 
 interface CountdownState {
@@ -87,6 +89,7 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
   onViewTicketStub,
   onOpenMediaGallery,
   onOpenMerchManager,
+  onOpenSeatViews,
 }) => {
   const [countdown, setCountdown] = useState<CountdownState>({
     status: 'COUNTDOWN',
@@ -261,18 +264,36 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               </div>
             </div>
 
-            {/* 一鍵查看擬真票根按鈕 */}
-            <button
-              type="button"
-              onClick={() => {
-                haptics.medium();
-                onViewTicketStub();
-              }}
-              className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-zinc-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-transform active:scale-95"
-            >
-              <Ticket className="w-4 h-4 text-zinc-950" />
-              出示擬真票根
-            </button>
+            {/* 操作按鈕組：出示票根與視角速查 */}
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {onOpenSeatViews && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.medium();
+                    onOpenSeatViews(
+                      session.venueName || undefined,
+                      session.attendance?.seatInfo || undefined
+                    );
+                  }}
+                  className="w-full sm:w-auto px-3.5 py-2.5 bg-zinc-900 hover:bg-zinc-800 text-indigo-300 font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 border border-indigo-500/30 transition-transform active:scale-95"
+                >
+                  <Eye className="w-3.5 h-3.5 text-indigo-400" />
+                  查看此排視野
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.medium();
+                  onViewTicketStub();
+                }}
+                className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-zinc-950 font-black rounded-xl text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 transition-transform active:scale-95"
+              >
+                <Ticket className="w-4 h-4 text-zinc-950" />
+                出示擬真票根
+              </button>
+            </div>
           </div>
 
           {/* 場館天氣與環境智慧提醒 */}
