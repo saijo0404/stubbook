@@ -311,18 +311,27 @@ export async function GET(req: NextRequest) {
       .filter((it) => it.urgencyLevel !== 'PASSED')
       .sort((a, b) => a.timeUntilMs - b.timeUntilMs);
 
-    return NextResponse.json({
-      success: true,
-      items: filteredItems,
-      eventsByDate,
-      upcomingRadar: radarItems,
-      summary: {
-        totalItems: filteredItems.length,
-        totalShows: filteredItems.filter((i) => i.itemType === 'SHOW').length,
-        totalSales: filteredItems.filter((i) => i.itemType !== 'SHOW').length,
-        radarCount: radarItems.length,
+    return NextResponse.json(
+      {
+        success: true,
+        items: filteredItems,
+        eventsByDate,
+        upcomingRadar: radarItems,
+        summary: {
+          totalItems: filteredItems.length,
+          totalShows: filteredItems.filter((i) => i.itemType === 'SHOW').length,
+          totalSales: filteredItems.filter((i) => i.itemType !== 'SHOW').length,
+          radarCount: radarItems.length,
+        },
       },
-    });
+      {
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
+    );
   } catch (error) {
     const err = error as Error;
     logger.error(`日曆 API 查詢失敗: ${err.message}`, 'CALENDAR_API', err);
@@ -335,7 +344,14 @@ export async function GET(req: NextRequest) {
         upcomingRadar: [],
         summary: { totalItems: 0, totalShows: 0, totalSales: 0, radarCount: 0 },
       },
-      { status: 500 }
+      {
+        status: 500,
+        headers: {
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      }
     );
   }
 }

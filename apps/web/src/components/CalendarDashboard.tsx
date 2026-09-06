@@ -32,6 +32,7 @@ import { generateICalendar, downloadICS } from '../utils/calendarSync';
 interface CalendarDashboardProps {
   onNavigateToJournal?: (eventId: string, sessionId?: string) => void;
   onNavigateToScrape?: () => void;
+  refreshTrigger?: number;
 }
 
 const WEEKDAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
@@ -39,6 +40,7 @@ const WEEKDAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '�
 export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
   onNavigateToJournal,
   onNavigateToScrape,
+  refreshTrigger,
 }) => {
   const today = useMemo(() => new Date(), []);
   const [currentYear, setCurrentYear] = useState<number>(today.getFullYear());
@@ -87,8 +89,11 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
       const params = new URLSearchParams();
       if (typeFilter !== 'all') params.append('type', typeFilter);
       if (attendanceOnly) params.append('attendanceOnly', 'true');
+      params.append('_t', Date.now().toString());
 
-      const res = await fetch(`/api/calendar?${params.toString()}`);
+      const res = await fetch(`/api/calendar?${params.toString()}`, {
+        cache: 'no-store',
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
 
@@ -109,7 +114,7 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
 
   useEffect(() => {
     fetchCalendarData();
-  }, [typeFilter, attendanceOnly]);
+  }, [typeFilter, attendanceOnly, refreshTrigger]);
 
   // 月曆切換按鈕
   const handlePrevMonth = () => {
