@@ -5,6 +5,7 @@
 ---
 
 ## 🧭 目錄
+
 1. [開發環境準備](#1-開發環境準備)
 2. [目錄與專案架構](#2-目錄與專案架構)
 3. [分支管理規範 (Git Workflow)](#3-分支管理規範-git-workflow)
@@ -17,6 +18,7 @@
 ## 1. 開發環境準備
 
 確保您的開發環境已安裝以下基礎工具：
+
 - **Node.js**: `>= 20.0.0`
 - **Package Manager**: `pnpm >= 9.0.0`
 - **Git**: 最新版
@@ -62,10 +64,12 @@ stubbook/
 ## 3. 分支管理規範 (Git Workflow)
 
 我們採用精簡的 **GitHub Flow** 模式：
+
 - `main` 為主要穩定分支，隨時保持可部署狀態。
 - 所有的開發任務、Bug 修復或新適配器均應自 `main` 建立獨立功能分支。
 
 ### 分支命名格式：
+
 - 新功能：`feat/功能簡述` (例如：`feat/tixcraft-scraper`, `feat/ticket-privacy-mask`)
 - 錯誤修復：`fix/問題簡述` (例如：`fix/kktix-session-timezone`)
 - 爬蟲適配器更新：`scraper/網站名稱` (例如：`scraper/ticket-plus-adapter`)
@@ -87,6 +91,7 @@ stubbook/
 ```
 
 ### 支援的 Type：
+
 - `feat`: 新增功能 (例如：`feat(scraper): add support for tixCraft multi-session parsing`)
 - `fix`: 修復 Bug (例如：`fix(auth): handle expired supabase session correctly`)
 - `scraper`: 爬蟲與網頁解析專屬更新 (例如：`scraper(kktix): update DOM selectors for new layout`)

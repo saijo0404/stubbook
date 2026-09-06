@@ -32,49 +32,55 @@
 ```
 
 ### 1. 🕷️ 三層式網頁解析管線 (3-Tier Parsing Pipeline)
-* **Tier 1 (輕量標籤優先)**：高速解析 HTML Meta、Open Graph 及 `schema.org/MusicEvent` (JSON-LD)。
-* **Tier 2 (首批專屬適配器)**：
+
+- **Tier 1 (輕量標籤優先)**：高速解析 HTML Meta、Open Graph 及 `schema.org/MusicEvent` (JSON-LD)。
+- **Tier 2 (首批專屬適配器)**：
   - **KKTIX Scraper**：精確抽取演出者、時間多場次、售票狀態與組織者。
   - **拓元售票 (tixCraft) Scraper**：自動解析多場次表格、啟售倒數時間、實名制說明與分區票價。
-* **Tier 3 (動態渲染保護)**：Playwright Stealth 引擎應對 SPA 與客戶端動態渲染。
+- **Tier 3 (動態渲染保護)**：Playwright Stealth 引擎應對 SPA 與客戶端動態渲染。
 
 ### 2. 🎫 巡迴與多場次結構 (Tour & Session Architecture)
-* 完整支援單一巡迴包含多個場次（例如：連續開唱三天或跨城市巡迴）。
-* 使用者可精確標記自己參加的具體場次與座位（如：特A區 3排 12號），避免重複建檔。
+
+- 完整支援單一巡迴包含多個場次（例如：連續開唱三天或跨城市巡迴）。
+- 使用者可精確標記自己參加的具體場次與座位（如：特A區 3排 12號），避免重複建檔。
 
 ### 3. 🛡️ 票根典藏與條碼個資自動遮罩 (Ticket Stub Privacy Shield)
-* 支援實體票、電子票截圖與手環數位典藏。
-* **智慧隱私防護**：上傳時前端自動偵測條碼 (Barcode/QR Code) 及敏感資訊，提供一鍵高斯模糊與遮罩，放心曬票無資安疑慮。
-* 擬真手帳畫布（Skeuomorphic Canvas）：撕票齒孔、微立體光影與質感排版。
+
+- 支援實體票、電子票截圖與手環數位典藏。
+- **智慧隱私防護**：上傳時前端自動偵測條碼 (Barcode/QR Code) 及敏感資訊，提供一鍵高斯模糊與遮罩，放心曬票無資安疑慮。
+- 擬真手帳畫布（Skeuomorphic Canvas）：撕票齒孔、微立體光影與質感排版。
 
 ### 4. 💰 全旅程記帳與周邊管理 (Merch & Expense Tracker)
-* 記錄手燈、場刊、T恤、毛巾等周邊物件，附購買照片與金額。
-* 完整記錄門票、手續費、交通與住宿開銷，支援多幣別換算（跨國參戰必備）。
+
+- 記錄手燈、場刊、T恤、毛巾等周邊物件，附購買照片與金額。
+- 完整記錄門票、手續費、交通與住宿開銷，支援多幣別換算（跨國參戰必備）。
 
 ### 5. 📱 跨平台多端與現場離線票夾 (Cross-Platform & Offline Mode)
-* **PC Desktop**：大螢幕長文遊記排版、資料庫批次管理與詳細花費儀表板。
-* **Mobile (PWA / Capacitor 原生殼)**：
+
+- **PC Desktop**：大螢幕長文遊記排版、資料庫批次管理與詳細花費儀表板。
+- **Mobile (PWA / Capacitor 原生殼)**：
   - **分享頁擴充 (Share Extension)**：手機瀏覽售票網時，點擊瀏覽器「分享」即可一鍵送入 StubBook。
   - **現場離線票夾 (Offline Wallet)**：數萬人場館網路癱瘓時，依然能離線秒開座位號與入場須知。
 
 ### 6. 🎵 歌單串接與年度回顧 (Setlists & Concert Wrapped)
-* 串接 **Setlist.fm API**：演出散場後自動同步當晚現場真實演奏曲目。
-* 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 存為串流歌單。
-* **年度回顧 (StubBook Wrapped)**：年終自動生成專屬 IG Story / Threads 高顏值分享卡片。
+
+- 串接 **Setlist.fm API**：演出散場後自動同步當晚現場真實演奏曲目。
+- 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 存為串流歌單。
+- **年度回顧 (StubBook Wrapped)**：年終自動生成專屬 IG Story / Threads 高顏值分享卡片。
 
 ---
 
 ## 🛠️ 技術選型 (Tech Stack)
 
-| 領域 | 技術棧 | 說明 |
-| --- | --- | --- |
-| **架構架構** | Turborepo + pnpm Monorepo | 高效模組解耦、共享型別與程式碼 |
-| **全端應用 (方案 A)** | Next.js 14+ (App Router), Tailwind CSS, shadcn/ui | 統一程式碼庫，支援桌面 Web 與 Mobile PWA |
-| **行動端原生外殼** | Capacitor (@capacitor/core, @capacitor/cli) | 提供 iOS/Android 原生相機、分享延伸模組 (Share Extension) |
-| **網頁擷取管線** | Cheerio, Playwright Stealth, Zod | 輕重型動態解析、結構化 Schema 驗證 |
-| **後端與資料庫** | PostgreSQL + Supabase (RLS) | 嚴格 Row-Level Security 權限隔離 |
-| **認證系統** | Supabase Auth | 支援 Email、Google 與 Apple 快速登入 |
-| **多媒體儲存** | Supabase Storage | 票根、周邊物品與現場照片雲端保存 |
+| 領域                  | 技術棧                                            | 說明                                                      |
+| --------------------- | ------------------------------------------------- | --------------------------------------------------------- |
+| **架構架構**          | Turborepo + pnpm Monorepo                         | 高效模組解耦、共享型別與程式碼                            |
+| **全端應用 (方案 A)** | Next.js 14+ (App Router), Tailwind CSS, shadcn/ui | 統一程式碼庫，支援桌面 Web 與 Mobile PWA                  |
+| **行動端原生外殼**    | Capacitor (@capacitor/core, @capacitor/cli)       | 提供 iOS/Android 原生相機、分享延伸模組 (Share Extension) |
+| **網頁擷取管線**      | Cheerio, Playwright Stealth, Zod                  | 輕重型動態解析、結構化 Schema 驗證                        |
+| **後端與資料庫**      | PostgreSQL + Supabase (RLS)                       | 嚴格 Row-Level Security 權限隔離                          |
+| **認證系統**          | Supabase Auth                                     | 支援 Email、Google 與 Apple 快速登入                      |
+| **多媒體儲存**        | Supabase Storage                                  | 票根、周邊物品與現場照片雲端保存                          |
 
 ---
 
@@ -108,10 +114,12 @@ stubbook/
 ## 🚀 快速開始 (Quick Start)
 
 ### 1. 前置需求
+
 - Node.js `>= 20.0.0`
 - pnpm `>= 9.0.0`
 
 ### 2. 安裝與執行
+
 ```bash
 # Clone 本儲存庫
 git clone https://github.com/saijo0404/stubbook.git
@@ -132,6 +140,7 @@ pnpm dev
 ## 🗺️ 開發路線圖 (Roadmap)
 
 詳細的階段規劃與待辦清單請參閱 [ROADMAP.md](ROADMAP.md)：
+
 - **Phase 1**：核心資料結構與三層解析管線 (KKTIX, tixCraft)
 - **Phase 2**：個人回憶手帳、票根自動隱私遮罩與多媒體週邊記帳
 - **Phase 3**：跨平台 PWA、Capacitor Share Extension 與現場無網路離線票夾

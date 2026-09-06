@@ -11,12 +11,9 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "test": "turbo run test",
+    "test:scrapers": "pnpm --filter @stubbook/scraper-core test",
     "typecheck": "turbo run typecheck"
   },
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
   "devDependencies": {
     "prettier": "^3.3.0",
     "turbo": "^2.0.0"
