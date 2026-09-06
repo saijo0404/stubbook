@@ -65,8 +65,11 @@ playwright-report/
 test-results/
 
 # Runtime logs
-logs/
+/logs/
+apps/*/logs/
+packages/*/logs/
 *.log
+!**/api/logs/**
 *.tsbuildinfo
 
 # SQLite databases
