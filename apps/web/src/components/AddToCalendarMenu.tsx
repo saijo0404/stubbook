@@ -24,6 +24,7 @@ interface AddToCalendarMenuProps {
   className?: string;
   buttonLabel?: string;
   compact?: boolean;
+  align?: 'left' | 'right';
 }
 
 export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
@@ -31,6 +32,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
   className = '',
   buttonLabel = '加入行事曆',
   compact = false,
+  align = 'right',
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -99,15 +101,17 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-gray-900 border border-gray-750 shadow-2xl z-50 overflow-hidden animate-scaleIn text-xs">
-          <div className="px-3 py-2 border-b border-gray-800 bg-gray-950/60 flex items-center justify-between">
-            <span className="font-bold text-gray-300 flex items-center gap-1">
+        <div
+          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} mt-2 w-64 sm:w-72 rounded-2xl bg-gray-900/95 backdrop-blur-md border border-gray-750 shadow-2xl z-50 overflow-hidden animate-scaleIn text-xs`}
+        >
+          <div className="px-3.5 py-2.5 border-b border-gray-800 bg-gray-950/70 flex items-center justify-between">
+            <span className="font-bold text-gray-200 flex items-center gap-1.5">
               <Calendar className="h-3.5 w-3.5 text-indigo-400" />
               同步至日曆應用
             </span>
-            <span className="text-[10px] text-amber-400/90 font-mono flex items-center gap-0.5">
-              <BellRing className="h-3 w-3" />
-              含鬧鐘
+            <span className="text-[10px] text-amber-300 bg-amber-950/80 px-1.5 py-0.5 rounded border border-amber-800/60 font-mono flex items-center gap-0.5">
+              <BellRing className="h-2.5 w-2.5" />
+              含鬧鐘推播
             </span>
           </div>
 
@@ -116,15 +120,15 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             <button
               type="button"
               onClick={handleExportICS}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors group"
+              className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors group text-left"
             >
-              <div className="flex items-center gap-2">
-                <Download className="h-3.5 w-3.5 text-indigo-400 group-hover:text-white" />
-                <div className="text-left">
-                  <div className="font-semibold">Apple / iCalendar 檔</div>
-                  <div className="text-[10px] text-gray-400 group-hover:text-indigo-100">
-                    下載 .ics (含搶票推播鬧鐘)
-                  </div>
+              <Download className="h-4 w-4 text-indigo-400 group-hover:text-white shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-100 group-hover:text-white">
+                  Apple / iCalendar 檔
+                </div>
+                <div className="text-[10px] text-gray-400 group-hover:text-indigo-100 leading-normal mt-0.5">
+                  下載 .ics 檔案（內建搶票 / 演出推播鬧鐘）
                 </div>
               </div>
             </button>
@@ -133,15 +137,15 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             <button
               type="button"
               onClick={handleGoogleCalendar}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors group"
+              className="w-full flex items-start gap-2.5 px-3 py-2.5 rounded-xl text-gray-200 hover:bg-indigo-600 hover:text-white transition-colors group text-left"
             >
-              <div className="flex items-center gap-2">
-                <ExternalLink className="h-3.5 w-3.5 text-cyan-400 group-hover:text-white" />
-                <div className="text-left">
-                  <div className="font-semibold">Google 行事曆</div>
-                  <div className="text-[10px] text-gray-400 group-hover:text-indigo-100">
-                    直接於網頁新增至 Google
-                  </div>
+              <ExternalLink className="h-4 w-4 text-cyan-400 group-hover:text-white shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="font-semibold text-gray-100 group-hover:text-white">
+                  Google 行事曆
+                </div>
+                <div className="text-[10px] text-gray-400 group-hover:text-indigo-100 leading-normal mt-0.5">
+                  直接於瀏覽器分頁開啟並新增至日曆
                 </div>
               </div>
             </button>
@@ -150,16 +154,16 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
             <button
               type="button"
               onClick={handleCopySchedule}
-              className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-gray-200 hover:bg-gray-800 transition-colors"
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-gray-200 hover:bg-gray-800 transition-colors text-left"
             >
-              <div className="flex items-center gap-2">
-                {copied ? (
-                  <Check className="h-3.5 w-3.5 text-emerald-400" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5 text-gray-400" />
-                )}
-                <span>{copied ? '已複製日程資訊！' : '複製行程純文字'}</span>
-              </div>
+              {copied ? (
+                <Check className="h-4 w-4 text-emerald-400 shrink-0" />
+              ) : (
+                <Copy className="h-4 w-4 text-gray-400 shrink-0" />
+              )}
+              <span className="font-medium text-xs">
+                {copied ? '已複製行程資訊！' : '複製行程純文字'}
+              </span>
             </button>
           </div>
         </div>
