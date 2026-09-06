@@ -18,6 +18,7 @@ import {
   ListMusic,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
+import { AddToCalendarMenu } from './AddToCalendarMenu';
 
 export interface SavedSession {
   id: string;
@@ -243,6 +244,21 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
                   <span className="truncate max-w-sm">{session.venueName}</span>
                 </div>
               )}
+              <AddToCalendarMenu
+                item={{
+                  id: session.id,
+                  title: event.title,
+                  subTitle: session.sessionTitle,
+                  itemType: 'SHOW',
+                  startDate: session.sessionDate,
+                  venueName: session.venueName,
+                  bookingUrl: session.bookingUrl,
+                  platform: session.ticketPlatform,
+                  seatInfo: session.attendance?.seatInfo,
+                  notes: session.attendance?.notes,
+                }}
+                compact
+              />
             </div>
           </div>
 

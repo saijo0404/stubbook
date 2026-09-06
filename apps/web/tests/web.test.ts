@@ -588,4 +588,92 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain("activeTab === 'calendar'");
     expect(pageContent).toContain('手帳行事曆');
   });
+
+  it('calendarSync 應符合 RFC 5545 規範並生成 VALARM 鬧鐘與 Google 日曆連結', async () => {
+    const syncUtilPath = path.join(__dirname, '..', 'src', 'utils', 'calendarSync.ts');
+    expect(fs.existsSync(syncUtilPath)).toBe(true);
+
+    const { generateICalendar, formatToICSUtcDate, escapeICSText, generateGoogleCalendarUrl } =
+      await import('../src/utils/calendarSync');
+
+    // 1. 測試轉義字元
+    expect(escapeICSText('台北, 台灣; 小巨蛋\n特區\\A')).toBe('台北\\, 台灣\\; 小巨蛋\\n特區\\\\A');
+
+    // 2. 測試單一搶票時程之 iCalendar 與 VALARM 鬧鐘
+    const saleItem = {
+      id: 'sale-001',
+      title: 'YOASOBI 2026 台北演唱會',
+      subTitle: '國泰卡友優先購',
+      itemType: 'SALE' as const,
+      startDate: '2026-09-10T12:00:00',
+      venueName: '台北小巨蛋',
+      bookingUrl: 'https://tixcraft.com/activity/detail/26_yoasobi',
+      platform: '拓元售票',
+      notes: '記得備好卡號',
+    };
+
+    const icsSale = generateICalendar([saleItem], '搶票測試行事曆');
+    expect(icsSale).toContain('BEGIN:VCALENDAR');
+    expect(icsSale).toContain('VERSION:2.0');
+    expect(icsSale).toContain('BEGIN:VEVENT');
+    expect(icsSale).toContain('SUMMARY:【購票開賣】 YOASOBI 2026 台北演唱會 - 國泰卡友優先購');
+    expect(icsSale).toContain('BEGIN:VALARM');
+    expect(icsSale).toContain('TRIGGER:-PT10M'); // 10 分鐘前提醒
+    expect(icsSale).toContain('TRIGGER:-PT60M'); // 1 小時前提醒
+    expect(icsSale).toContain('LOCATION:台北小巨蛋');
+    expect(icsSale).toContain('END:VEVENT');
+    expect(icsSale).toContain('END:VCALENDAR');
+
+    // 3. 測試演出日之 iCalendar 與 VALARM 鬧鐘 (前 1 天與前 2 小時)
+    const showItem = {
+      id: 'show-001',
+      title: 'YOASOBI 2026 台北演唱會',
+      itemType: 'SHOW' as const,
+      startDate: '2026-11-20T19:30:00',
+      venueName: '台北小巨蛋',
+      seatInfo: '黃2B區 5排 12號',
+    };
+
+    const icsShow = generateICalendar([showItem]);
+    expect(icsShow).toContain('SUMMARY:【演出】 YOASOBI 2026 台北演唱會');
+    expect(icsShow).toContain('TRIGGER:-P1D'); // 前 1 天提醒
+    expect(icsShow).toContain('TRIGGER:-PT2H'); // 前 2 小時提醒
+    expect(icsShow).toContain('黃2B區 5排 12號');
+
+    // 4. 測試 Google Calendar 產生之 URL
+    const gUrl = generateGoogleCalendarUrl(saleItem);
+    expect(gUrl).toContain('https://calendar.google.com/calendar/render?action=TEMPLATE');
+    expect(gUrl).toContain('text=');
+    expect(gUrl).toContain('dates=');
+    expect(gUrl).toContain('location=');
+  });
+
+  it('前端應完整實作 AddToCalendarMenu 組件並整合至卡片與手帳', () => {
+    const menuPath = path.join(__dirname, '..', 'src', 'components', 'AddToCalendarMenu.tsx');
+    expect(fs.existsSync(menuPath)).toBe(true);
+
+    const menuContent = fs.readFileSync(menuPath, 'utf-8');
+    expect(menuContent).toContain('export const AddToCalendarMenu');
+    expect(menuContent).toContain('handleExportICS');
+    expect(menuContent).toContain('handleGoogleCalendar');
+    expect(menuContent).toContain('handleCopySchedule');
+    expect(menuContent).toContain('Apple / iCalendar 檔');
+    expect(menuContent).toContain('Google 行事曆');
+
+    // 驗證 LiveEventHeroCard 整合 AddToCalendarMenu
+    const heroPath = path.join(__dirname, '..', 'src', 'components', 'LiveEventHeroCard.tsx');
+    const heroContent = fs.readFileSync(heroPath, 'utf-8');
+    expect(heroContent).toContain('AddToCalendarMenu');
+
+    // 驗證 CalendarDashboard 整合 AddToCalendarMenu 與月行程匯出
+    const dashPath = path.join(__dirname, '..', 'src', 'components', 'CalendarDashboard.tsx');
+    const dashContent = fs.readFileSync(dashPath, 'utf-8');
+    expect(dashContent).toContain('AddToCalendarMenu');
+    expect(dashContent).toContain('handleExportCurrentMonthICS');
+
+    // 驗證 page.tsx 整合 AddToCalendarMenu
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('AddToCalendarMenu');
+  });
 });
