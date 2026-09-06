@@ -76,9 +76,9 @@
 
 > **目標**：自動留存現場 Setlist，年終產出高顏值演唱會足跡分享卡。
 
-- [ ] **Setlist 現場歌單串接**
-  - [ ] 串接 **Setlist.fm API**：表演結束後自動檢索並匯入當日演唱曲目
-  - [ ] 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 轉存為個人播放清單
+- [x] **Setlist 現場歌單串接**
+  - [x] 串接 **Setlist.fm API**：表演結束後自動檢索並匯入當日演唱曲目
+  - [x] 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 轉存為個人播放清單
 - [ ] **統計儀表板 (Analytics & Insights)**
   - [ ] 累計參戰總場次、踩點場館數、看過最多次的歌手排行
   - [ ] 演唱會年度總花費統計（門票、交通、住宿、周邊圓餅圖）
