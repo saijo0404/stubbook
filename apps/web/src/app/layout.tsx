@@ -1,16 +1,31 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import { ServiceWorkerRegister } from '../components/ServiceWorkerRegister';
 
 export const metadata: Metadata = {
   title: 'StubBook (票根手帳) - 演唱會歷程與資訊記錄',
   description: '精準售票網頁解析管線 × 結構化個人回憶資料庫 × 跨平台擬真手帳',
   manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'StubBook',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#4f46e5',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-TW">
       <body className="antialiased selection:bg-indigo-500 selection:text-white">
+        <ServiceWorkerRegister />
         <header className="border-b border-gray-800/80 bg-gray-950/60 backdrop-blur-md sticky top-0 z-50">
           <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
             <div className="flex items-center space-x-3">

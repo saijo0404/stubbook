@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312e81" />
+      <stop offset="50%" stop-color="#4338ca" />
+      <stop offset="100%" stop-color="#0f172a" />
+    </linearGradient>
+    <linearGradient id="ticketGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ec4899" />
+      <stop offset="50%" stop-color="#8b5cf6" />
+      <stop offset="100%" stop-color="#3b82f6" />
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+  
+  <!-- App Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  
+  <!-- Inner Glow Border -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="4" />
+  
+  <!-- Concert Ticket Graphic -->
+  <g filter="url(#shadow)" transform="translate(64, 116)">
+    <!-- Main Ticket Body -->
+    <path d="M 0,24 C 0,10.75 10.75,0 24,0 L 250,0 C 250,22 268,40 290,40 C 312,40 330,22 330,0 L 360,0 C 373.25,0 384,10.75 384,24 L 384,256 C 384,269.25 373.25,280 360,280 L 330,280 C 330,258 312,240 290,240 C 268,240 250,258 250,280 L 24,280 C 10.75,280 0,269.25 0,256 Z" fill="url(#ticketGlow)" />
+    
+    <!-- Dashed Tear Line -->
+    <line x1="290" y1="40" x2="290" y2="240" stroke="#ffffff" stroke-width="4" stroke-dasharray="10 10" opacity="0.6" />
+    
+    <!-- Ticket Content Icon -->
+    <text x="130" y="155" font-family="system-ui, -apple-system, sans-serif" font-size="76" text-anchor="middle" fill="#ffffff" font-weight="900" letter-spacing="2">STUB</text>
+    <text x="130" y="195" font-family="system-ui, -apple-system, sans-serif" font-size="20" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-weight="600" letter-spacing="4">CONCERT PASS</text>
+    
+    <!-- Barcode simulation -->
+    <g transform="translate(40, 225)" opacity="0.8">
+      <rect x="0" y="0" width="4" height="26" fill="#fff" />
+      <rect x="8" y="0" width="8" height="26" fill="#fff" />
+      <rect x="20" y="0" width="4" height="26" fill="#fff" />
+      <rect x="28" y="0" width="12" height="26" fill="#fff" />
+      <rect x="44" y="0" width="4" height="26" fill="#fff" />
+      <rect x="52" y="0" width="16" height="26" fill="#fff" />
+      <rect x="72" y="0" width="4" height="26" fill="#fff" />
+      <rect x="80" y="0" width="10" height="26" fill="#fff" />
+      <rect x="94" y="0" width="6" height="26" fill="#fff" />
+      <rect x="104" y="0" width="4" height="26" fill="#fff" />
+      <rect x="112" y="0" width="12" height="26" fill="#fff" />
+      <rect x="128" y="0" width="6" height="26" fill="#fff" />
+      <rect x="138" y="0" width="8" height="26" fill="#fff" />
+      <rect x="150" y="0" width="4" height="26" fill="#fff" />
+      <rect x="158" y="0" width="14" height="26" fill="#fff" />
+      <rect x="176" y="0" width="4" height="26" fill="#fff" />
+    </g>
+    
+    <!-- Perforated Stub Side -->
+    <text x="337" y="145" font-family="system-ui, -apple-system, sans-serif" font-size="36" text-anchor="middle" fill="#ffffff" font-weight="900">PASS</text>
+    <text x="337" y="180" font-family="system-ui, -apple-system, sans-serif" font-size="14" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-weight="600">VIP A</text>
+  </g>
+</svg>
