@@ -34,6 +34,7 @@ import { TicketMaskModal } from '../components/TicketMaskModal';
 import { TicketStubModal } from '../components/TicketStubModal';
 import { MerchManagerModal } from '../components/MerchManagerModal';
 import { MediaGalleryModal } from '../components/MediaGalleryModal';
+import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal';
@@ -482,6 +483,38 @@ export default function HomePage() {
     }
   }
 
+  // 找出即將舉行或今日舉行的「現場模式」場次 (Live Event Mode)
+  const activeLiveSession = (() => {
+    const list: Array<{ event: SavedEvent; session: SavedSession; diffMs: number }> = [];
+    const now = Date.now();
+
+    for (const ev of savedEvents) {
+      for (const s of ev.sessions) {
+        if (s.attendance && ['CONFIRMED', 'ATTENDED', 'TICKETING'].includes(s.attendance.status)) {
+          const sessionTime = new Date(s.sessionDate).getTime();
+          const diff = sessionTime - now;
+          list.push({ event: ev, session: s, diffMs: diff });
+        }
+      }
+    }
+
+    if (list.length === 0) return null;
+
+    list.sort((a, b) => {
+      const aIsNear = a.diffMs > -14400000 && a.diffMs < 86400000;
+      const bIsNear = b.diffMs > -14400000 && b.diffMs < 86400000;
+      if (aIsNear && !bIsNear) return -1;
+      if (!aIsNear && bIsNear) return 1;
+
+      if (a.diffMs >= 0 && b.diffMs >= 0) return a.diffMs - b.diffMs;
+      if (a.diffMs >= 0 && b.diffMs < 0) return -1;
+      if (a.diffMs < 0 && b.diffMs >= 0) return 1;
+      return b.diffMs - a.diffMs;
+    });
+
+    return list[0];
+  })();
+
   return (
     <div className="space-y-8 pb-12">
       {/* 現場離線票夾模式 (Offline Wallet) 橫幅提示 */}
@@ -902,6 +935,39 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* 今日/近期演唱會 · 現場模式 Hero Card */}
+          {activeLiveSession && (
+            <div className="max-w-4xl mx-auto">
+              <LiveEventHeroCard
+                event={activeLiveSession.event}
+                session={activeLiveSession.session}
+                onViewTicketStub={() =>
+                  setViewingStubSession({
+                    event: activeLiveSession.event,
+                    session: activeLiveSession.session,
+                  })
+                }
+                onOpenMediaGallery={() => {
+                  if (activeLiveSession.session.attendance) {
+                    setViewingMediaSession({
+                      attendanceId: activeLiveSession.session.attendance.id,
+                      eventTitle: activeLiveSession.event.title,
+                      sessionDate: activeLiveSession.session.sessionDate,
+                    });
+                  }
+                }}
+                onOpenMerchManager={() => {
+                  if (activeLiveSession.session.attendance) {
+                    setViewingMerchSession({
+                      attendanceId: activeLiveSession.session.attendance.id,
+                      eventTitle: activeLiveSession.event.title,
+                    });
+                  }
+                }}
+              />
+            </div>
+          )}
 
           {/* 活動清單 */}
           <div className="max-w-4xl mx-auto space-y-6">
