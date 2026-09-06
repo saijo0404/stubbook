@@ -30,6 +30,7 @@ import {
   Share2,
   Eye,
   ListMusic,
+  BarChart3,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -39,9 +40,10 @@ import { MediaGalleryModal } from '../components/MediaGalleryModal';
 import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
 import { SeatViewModal } from '../components/SeatViewModal';
 import { SetlistModal } from '../components/SetlistModal';
+import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { haptics } from '../utils/haptics';
 
-type TabMode = 'scrape' | 'journal' | 'seats';
+type TabMode = 'scrape' | 'journal' | 'seats' | 'analytics';
 
 interface SessionAttendance {
   id: string;
@@ -666,6 +668,21 @@ export default function HomePage() {
           >
             <Eye className="h-4 w-4" />
             <span>視角資料庫</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('analytics');
+              haptics.light();
+            }}
+            className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === 'analytics'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <BarChart3 className="h-4 w-4" />
+            <span>數據回顧 & Wrapped</span>
           </button>
         </div>
       </div>
@@ -1388,6 +1405,9 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
+      {/* ─────────────────── TAB 4: 數據回顧 & WRAPPED ─────────────────── */}
+      {activeTab === 'analytics' && <AnalyticsDashboard />}
 
       {/* ─────────────────── 參戰手帳記錄彈窗 (ATTENDANCE MODAL) ─────────────────── */}
       {editingSession && (
