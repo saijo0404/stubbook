@@ -1,0 +1,40 @@
+{
+  "name": "StubBook · 演唱會票根手帳",
+  "short_name": "StubBook",
+  "description": "專為演唱會熱血樂迷打造的現場票根典藏、條碼隱私保護與參戰回憶手帳",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#4f46e5",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "share_target": {
+    "action": "/",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  },
+  "shortcuts": [
+    {
+      "name": "我的參戰手帳",
+      "url": "/?tab=journal",
+      "description": "查看所有已記錄的演唱會手帳與擬真票根"
+    },
+    {
+      "name": "活動解析入庫",
+      "url": "/?tab=scrape",
+      "description": "貼上售票網址快速解析入庫"
+    }
+  ]
+}

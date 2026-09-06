@@ -26,12 +26,15 @@ import {
   ShieldCheck,
   ShoppingBag,
   Camera,
+  WifiOff,
+  Share2,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
 import { TicketStubModal } from '../components/TicketStubModal';
 import { MerchManagerModal } from '../components/MerchManagerModal';
 import { MediaGalleryModal } from '../components/MediaGalleryModal';
+import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal';
 
@@ -196,6 +199,51 @@ export default function HomePage() {
     }
   };
 
+  // 離線票夾模式與 Web Share Target 接收提示狀態
+  const [isOffline, setIsOffline] = useState(false);
+  const [shareTargetNotice, setShareTargetNotice] = useState<string | null>(null);
+
+  // 離線狀態偵測 (Offline Wallet Mode)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setIsOffline(!navigator.onLine);
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => {
+      setIsOffline(true);
+      haptics.warning();
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Web Share Target API: 接收手機瀏覽器或原生分享送入之售票網址
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const sharedParam = params.get('url') || params.get('text');
+
+    if (sharedParam) {
+      const match = sharedParam.match(/https?:\/\/[^\s]+/);
+      const targetUrl = match ? match[0] : sharedParam;
+
+      if (targetUrl.includes('kktix.cc') || targetUrl.includes('tixcraft.com')) {
+        setUrl(targetUrl);
+        setActiveTab('scrape');
+        setShareTargetNotice(`已由系統分享接收售票網址: ${targetUrl}`);
+        haptics.medium();
+        window.history.replaceState({}, '', window.location.pathname);
+        handleScrape(targetUrl);
+      }
+    }
+  }, []);
+
   useEffect(() => {
     loadSavedEvents();
   }, []);
@@ -328,6 +376,7 @@ export default function HomePage() {
         ticketStubUrl: data.url,
         stubPrivacyMasked: isMasked,
       }));
+      haptics.success();
     } catch (err) {
       alert((err as Error).message);
     } finally {
@@ -349,6 +398,7 @@ export default function HomePage() {
           seatInfo: attendanceForm.seatInfo.trim() || null,
           ticketType: attendanceForm.ticketType,
           ticketPrice: attendanceForm.ticketPrice ? Number(attendanceForm.ticketPrice) : null,
+          currency: 'TWD',
           rating: attendanceForm.rating,
           notes: attendanceForm.notes.trim() || null,
           ticketStubUrl: attendanceForm.ticketStubUrl || null,
@@ -363,6 +413,7 @@ export default function HomePage() {
 
       setEditingSession(null);
       await loadSavedEvents();
+      haptics.success();
     } catch (err) {
       alert((err as Error).message);
     } finally {
@@ -386,6 +437,7 @@ export default function HomePage() {
 
       setEditingSession(null);
       await loadSavedEvents();
+      haptics.warning();
     } catch (err) {
       alert((err as Error).message);
     } finally {
@@ -408,6 +460,7 @@ export default function HomePage() {
   const copyLogToClipboard = () => {
     navigator.clipboard.writeText(logSnippet);
     setCopiedLog(true);
+    haptics.light();
     setTimeout(() => setCopiedLog(false), 2000);
   };
 
@@ -431,12 +484,60 @@ export default function HomePage() {
 
   return (
     <div className="space-y-8 pb-12">
+      {/* 現場離線票夾模式 (Offline Wallet) 橫幅提示 */}
+      {isOffline && (
+        <div className="p-3.5 bg-amber-950/70 border border-amber-500/40 rounded-2xl flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="flex items-center space-x-3">
+            <WifiOff className="h-5 w-5 text-amber-400 flex-shrink-0" />
+            <div>
+              <div className="text-xs font-bold text-amber-200 flex items-center gap-1.5">
+                <span>現場離線票夾模式已啟動</span>
+                <span className="text-[10px] bg-amber-900 text-amber-300 px-1.5 py-0.5 rounded font-mono">OFFLINE</span>
+              </div>
+              <div className="text-[11px] text-amber-300/80 mt-0.5">
+                現場 4G/5G 網路壅塞或無連線中。已由本機 Service Worker 載入快取票夾，您依然能出示擬真票根、排號與座位資訊。
+              </div>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('journal');
+              haptics.light();
+            }}
+            className="text-xs font-bold px-3 py-1.5 bg-amber-900/60 hover:bg-amber-850 text-amber-200 border border-amber-600/50 rounded-lg transition"
+          >
+            開啟離線手帳
+          </button>
+        </div>
+      )}
+
+      {/* Web Share Target 系統分享網址提示 */}
+      {shareTargetNotice && (
+        <div className="p-3 bg-indigo-950/80 border border-indigo-500/50 rounded-2xl flex items-center justify-between shadow-lg animate-fadeIn">
+          <div className="flex items-center space-x-2.5">
+            <Share2 className="h-4 w-4 text-indigo-400 flex-shrink-0" />
+            <span className="text-xs text-indigo-200">{shareTargetNotice}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setShareTargetNotice(null)}
+            className="text-xs text-indigo-400 hover:text-indigo-200 px-2 py-0.5"
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
       {/* 頂部功能頁籤導覽 */}
       <div className="flex justify-center">
         <div className="inline-flex bg-gray-900 border border-gray-800 p-1 rounded-2xl shadow-lg">
           <button
             type="button"
-            onClick={() => setActiveTab('scrape')}
+            onClick={() => {
+              setActiveTab('scrape');
+              haptics.light();
+            }}
             className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               activeTab === 'scrape'
                 ? 'bg-indigo-600 text-white shadow-md'
@@ -451,6 +552,7 @@ export default function HomePage() {
             onClick={() => {
               setActiveTab('journal');
               loadSavedEvents();
+              haptics.light();
             }}
             className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               activeTab === 'journal'

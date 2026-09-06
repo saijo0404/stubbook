@@ -60,13 +60,14 @@
 > **目標**：以 Capacitor 封裝行動端原生殼，並在網路癱瘓的現場提供可靠的離線票夾體驗。
 
 - [ ] **行動端與 Capacitor 整合**
-  - [ ] PWA (Progressive Web App) 完整支援與離線快取（Service Worker + IndexedDB）
+  - [x] PWA (Progressive Web App) 完整支援與離線快取（Service Worker + CacheStorage）
   - [ ] **系統級分享延伸模組 (Share Extension)**：
-    - [ ] Web Share Target API（手機瀏覽器點分享直接送入 StubBook）
+    - [x] Web Share Target API（手機瀏覽器點分享直接送入 StubBook）
     - [ ] Capacitor 系統級 Share Target 插件（iOS / Android 原生接收分享）
+  - [x] 行動端觸覺回饋（Haptics 震動互動體驗）
 - [ ] **現場模式 (Live Event Mode / Offline Wallet)**
   - [ ] 「今日演唱會」卡片：倒數入場、天氣提醒、交通建議
-  - [ ] 離線座位與票券快取（基地台斷網時一秒出示座位號與注意事項）
+  - [x] 離線座位與票券快取（基地台斷網時一秒出示座位號與注意事項）
 - [ ] **視角資料庫 (View From My Seat)**
   - [ ] 整合場館座位圖，上傳視野照片形成社群視角圖庫
 

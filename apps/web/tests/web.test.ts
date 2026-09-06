@@ -212,4 +212,54 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(remainingMerch.count).toBe(0);
     expect(remainingMedia.count).toBe(0);
   });
+
+  it('PWA Web App Manifest 應正確配置 share_target 與獨立視窗模式', () => {
+    const manifestPath = path.join(__dirname, '..', 'public', 'manifest.json');
+    expect(fs.existsSync(manifestPath)).toBe(true);
+
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
+    expect(manifest.short_name).toBe('StubBook');
+    expect(manifest.display).toBe('standalone');
+    expect(manifest.start_url).toBe('/');
+    expect(manifest.share_target).toBeDefined();
+    expect(manifest.share_target.action).toBe('/');
+    expect(manifest.share_target.params.url).toBe('url');
+  });
+
+  it('Service Worker 應具備靜態資源快取、離線票夾降級與圖片快取策略', () => {
+    const swPath = path.join(__dirname, '..', 'public', 'sw.js');
+    expect(fs.existsSync(swPath)).toBe(true);
+
+    const swContent = fs.readFileSync(swPath, 'utf-8');
+    expect(swContent).toContain('addEventListener(\'install\'');
+    expect(swContent).toContain('addEventListener(\'activate\'');
+    expect(swContent).toContain('addEventListener(\'fetch\'');
+    expect(swContent).toContain('/uploads/');
+    expect(swContent).toContain('/api/events');
+    expect(swContent).toContain('/api/attendances');
+    expect(swContent).toContain('現場網路離線');
+  });
+
+  it('行動端觸覺震動工具 (haptics) 應提供完整回饋等級', async () => {
+    const { haptics } = await import('../src/utils/haptics');
+    expect(haptics).toBeDefined();
+    expect(typeof haptics.light).toBe('function');
+    expect(typeof haptics.medium).toBe('function');
+    expect(typeof haptics.success).toBe('function');
+    expect(typeof haptics.warning).toBe('function');
+
+    // 在 Node 測試環境中應安全降級不拋出異常
+    expect(() => haptics.light()).not.toThrow();
+    expect(() => haptics.success()).not.toThrow();
+  });
+
+  it('前端首頁應完整整合離線票夾模式與 Web Share Target 網址自動接收入庫', () => {
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+
+    expect(pageContent).toContain('isOffline');
+    expect(pageContent).toContain('現場離線票夾模式已啟動');
+    expect(pageContent).toContain('shareTargetNotice');
+    expect(pageContent).toContain('已由系統分享接收售票網址');
+  });
 });
