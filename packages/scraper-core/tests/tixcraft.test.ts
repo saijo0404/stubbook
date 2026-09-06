@@ -74,4 +74,76 @@ describe('TixcraftScraperAdapter', () => {
     // 場次也應綁定開賣時間
     expect(event.sessions[0].ticketSaleTime).toBe(presale.saleStart);
   });
+
+  it('應能相容全形標點、中午時制與 .alert 警語區塊中的開賣時間', () => {
+    const alertHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Maroon 5 高雄世運演唱會 - 拓元售票系統</title>
+        <meta property="og:title" content="Maroon 5 高雄世運演唱會">
+      </head>
+      <body>
+        <h2 class="activity-name">Maroon 5 高雄世運演唱會</h2>
+        <div class="alert alert-info">
+          注意事項：售票時間：２０２６年０９月１５日（週二）中午１２：００ Live Nation會員預購
+        </div>
+        <div class="alert alert-warning">
+          開賣時間：2026/09/16 (三) 12:00 拓元售票系統全面開賣
+        </div>
+        <table id="gameList">
+          <tbody>
+            <tr>
+              <td>2026/12/28 (一) 19:30</td>
+              <td>高雄世運場</td>
+              <td>高雄國家體育場</td>
+              <td><button>立即購票</button></td>
+            </tr>
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    const event = adapter.parseHtml(alertHtml, 'https://tixcraft.com/activity/detail/26_M5');
+    expect(event.salePhases).toHaveLength(2);
+
+    const [presale, general] = event.salePhases;
+    expect(presale.saleType).toBe('PRESALE');
+    expect(presale.phaseName).toContain('Live Nation會員預購');
+    expect(new Date(presale.saleStart).getDate()).toBe(15);
+    expect(new Date(presale.saleStart).getHours()).toBe(12);
+
+    expect(general.saleType).toBe('GENERAL');
+    expect(general.phaseName).toContain('全面開賣');
+    expect(new Date(general.saleStart).getDate()).toBe(16);
+
+    // 場次開賣時間
+    expect(event.sessions[0].ticketSaleTime).toBe(presale.saleStart);
+  });
+
+  it('應能由 Meta Description 中成功備援抽取開賣日程', () => {
+    const metaHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Ed Sheeran 巡演 - 拓元售票系統</title>
+        <meta property="og:description" content="全城矚目！啟售時間：2026.10.20 (二) 下午 13:00 正式開賣">
+      </head>
+      <body>
+        <h2 class="activity-name">Ed Sheeran 巡演</h2>
+      </body>
+      </html>
+    `;
+
+    const event = adapter.parseHtml(metaHtml, 'https://tixcraft.com/activity/detail/26_EDS');
+    expect(event.salePhases).toHaveLength(1);
+    expect(event.salePhases[0].saleType).toBe('GENERAL');
+
+    const dt = new Date(event.salePhases[0].saleStart);
+    expect(dt.getFullYear()).toBe(2026);
+    expect(dt.getMonth()).toBe(9); // 10月
+    expect(dt.getDate()).toBe(20);
+    expect(dt.getHours()).toBe(13);
+  });
 });

@@ -8,6 +8,7 @@ import {
   ScrapedSalePhase,
   SaleType,
 } from '../types';
+import { parseChineseDateTime, extractSalePhasesFromContent } from '../utils/datetime';
 
 export class TixcraftScraperAdapter implements BaseScraperAdapter {
   readonly name = 'TixcraftScraperAdapter';
@@ -124,21 +125,8 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
   }
 
   private parseDateString(dateStr: string): string {
-    // 拓元常見格式：2026/12/05 (六) 19:30 或 2026/08/15 19:00
-    const match = dateStr.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2}).*?(\d{1,2}):(\d{2})/);
-    if (match) {
-      const [_, y, m, d, hh, mm] = match;
-      const isoStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:00+08:00`;
-      const dt = new Date(isoStr);
-      if (!isNaN(dt.getTime())) return dt.toISOString();
-    }
-
-    const fallbackMatch = dateStr.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
-    if (fallbackMatch) {
-      const [_, y, m, d] = fallbackMatch;
-      const dt = new Date(`${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T19:30:00+08:00`);
-      if (!isNaN(dt.getTime())) return dt.toISOString();
-    }
+    const parsed = parseChineseDateTime(dateStr, 19, 30);
+    if (parsed) return parsed;
 
     return new Date().toISOString();
   }
@@ -208,84 +196,40 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
   private extractSalePhases($: cheerio.CheerioAPI, html: string, url: string): ScrapedSalePhase[] {
     const phases: ScrapedSalePhase[] = [];
 
-    // 拓元常見售票時間描述：
-    // 售票時間：2026/09/10 (四) 12:00 國泰世華CUBE卡友優先購票
-    // 售票時間：2026/09/12 (六) 12:00 拓元售票系統全面開賣
-    const saleLineRegex =
-      /(?:售票時間|開賣時間|啟售時間|預售時間|優先購票|會員預購|登記抽票|全面開賣)[：:]\s*([^\n\r<]+)/gi;
-    const matches = html.match(saleLineRegex);
-
-    if (matches) {
-      for (const match of matches) {
-        const phase = this.parseSalePhaseText(match, url);
+    const addUniquePhases = (found: ScrapedSalePhase[]) => {
+      for (const p of found) {
         if (
-          phase &&
-          !phases.some((p) => p.phaseName === phase.phaseName && p.saleStart === phase.saleStart)
+          !phases.some(
+            (existing) => existing.saleStart === p.saleStart && existing.phaseName === p.phaseName
+          )
         ) {
-          phases.push(phase);
+          phases.push(p);
         }
       }
-    }
-
-    return phases;
-  }
-
-  private parseSalePhaseText(text: string, url: string): ScrapedSalePhase | null {
-    // 匹配日期與時間：2026/09/10 (四) 12:00 或 2026-09-10 12:00
-    const match = text.match(
-      /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:[^\d]*?(\d{1,2}):(\d{2})(?::(\d{2}))?)?/
-    );
-    if (!match) return null;
-
-    const [_, y, m, d, hh = '12', mm = '00', ss = '00'] = match;
-    const isoStr = `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}T${hh.padStart(2, '0')}:${mm.padStart(2, '0')}:${ss.padStart(2, '0')}+08:00`;
-    const dt = new Date(isoStr);
-    if (isNaN(dt.getTime())) return null;
-
-    let saleType: SaleType = 'GENERAL';
-    if (
-      text.includes('優先') ||
-      text.includes('會員') ||
-      text.includes('預購') ||
-      text.includes('卡友') ||
-      text.includes('先行')
-    ) {
-      saleType = 'PRESALE';
-    } else if (text.includes('抽票') || text.includes('登記') || text.includes('抽選')) {
-      saleType = 'LOTTERY';
-    } else if (text.includes('清票') || text.includes('釋票')) {
-      saleType = 'RERELEASE';
-    }
-
-    // 階段名稱判定
-    let phaseName = '拓元全面開賣';
-    const stripped = text
-      .replace(
-        /(?:售票時間|開賣時間|啟售時間|預售時間|優先購票|會員預購|登記抽票|全面開賣)[：:]\s*/i,
-        ''
-      )
-      .replace(
-        /(\d{4})[/-](\d{1,2})[/-](\d{1,2})(?:\s*\([^\)]+\))?\s*(?:\d{1,2}:\d{2}(?::\d{2})?)?/,
-        ''
-      )
-      .trim();
-
-    if (stripped) {
-      phaseName = stripped;
-    } else if (saleType === 'PRESALE') {
-      phaseName = '拓元會員/優先預購';
-    } else if (saleType === 'LOTTERY') {
-      phaseName = '拓元實名制登記抽票';
-    }
-
-    return {
-      phaseName,
-      saleType,
-      saleStart: dt.toISOString(),
-      ticketingPlatform: 'TIXCRAFT',
-      bookingUrl: url,
-      eligibilityNotes: text.replace(/\s+/g, ' ').trim(),
-      isLottery: saleType === 'LOTTERY',
     };
+
+    // 1. 簡介與警語區塊 (#intro, .activity-intro, .alert, .panel-body)
+    $(
+      '#intro, .activity-intro, .activity-content, .news-content, .panel-body, .alert, .alert-info, .alert-danger, .alert-warning'
+    ).each((_, el) => {
+      const text = $(el).text().trim();
+      addUniquePhases(extractSalePhasesFromContent(text, url, 'TIXCRAFT'));
+    });
+
+    // 2. Meta Tags (description, og:description)
+    const metaDesc =
+      $('meta[name="description"]').attr('content') ||
+      $('meta[property="og:description"]').attr('content') ||
+      '';
+    addUniquePhases(extractSalePhasesFromContent(metaDesc, url, 'TIXCRAFT'));
+
+    // 3. 全文備援掃描 (若上述特定區塊未找到開賣時程)
+    if (phases.length === 0) {
+      addUniquePhases(extractSalePhasesFromContent(html, url, 'TIXCRAFT'));
+    }
+
+    // 依開賣時間先後排序
+    phases.sort((a, b) => new Date(a.saleStart).getTime() - new Date(b.saleStart).getTime());
+    return phases;
   }
 }
