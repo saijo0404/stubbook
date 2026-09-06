@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Search,
   Calendar,
@@ -22,8 +22,12 @@ import {
   DollarSign,
   X,
   Layers,
+  Image as ImageIcon,
+  ShieldCheck,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
+import { TicketMaskModal } from '../components/TicketMaskModal';
+import { TicketStubModal } from '../components/TicketStubModal';
 
 type TabMode = 'scrape' | 'journal';
 
@@ -36,6 +40,8 @@ interface SessionAttendance {
   currency: string;
   rating: number | null;
   notes: string | null;
+  ticketStubUrl?: string | null;
+  stubPrivacyMasked?: boolean;
 }
 
 interface SavedSession {
@@ -129,6 +135,8 @@ export default function HomePage() {
     ticketPrice: string;
     rating: number;
     notes: string;
+    ticketStubUrl: string | null;
+    stubPrivacyMasked: boolean;
   }>({
     status: 'CONFIRMED',
     seatInfo: '',
@@ -136,8 +144,20 @@ export default function HomePage() {
     ticketPrice: '',
     rating: 5,
     notes: '',
+    ticketStubUrl: null,
+    stubPrivacyMasked: false,
   });
   const [savingAttendance, setSavingAttendance] = useState(false);
+
+  // 票根遮罩與擬真票券狀態
+  const [maskModalOpen, setMaskModalOpen] = useState(false);
+  const [tempImageSrc, setTempImageSrc] = useState<string | null>(null);
+  const [uploadingStub, setUploadingStub] = useState(false);
+  const [viewingStubSession, setViewingStubSession] = useState<{
+    event: SavedEvent;
+    session: SavedSession;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -236,6 +256,8 @@ export default function HomePage() {
           session.attendance.ticketPrice !== null ? String(session.attendance.ticketPrice) : '',
         rating: session.attendance.rating || 5,
         notes: session.attendance.notes || '',
+        ticketStubUrl: session.attendance.ticketStubUrl || null,
+        stubPrivacyMasked: Boolean(session.attendance.stubPrivacyMasked),
       });
     } else {
       setAttendanceForm({
@@ -245,7 +267,55 @@ export default function HomePage() {
         ticketPrice: '',
         rating: 5,
         notes: '',
+        ticketStubUrl: null,
+        stubPrivacyMasked: false,
       });
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('請上傳 5MB 以內之圖片');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setTempImageSrc(reader.result as string);
+      setMaskModalOpen(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  };
+
+  const handleApplyMask = async (maskedBlob: Blob, isMasked: boolean) => {
+    setUploadingStub(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', maskedBlob, 'ticket_stub.jpg');
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || '上傳失敗');
+      }
+
+      setAttendanceForm((prev) => ({
+        ...prev,
+        ticketStubUrl: data.url,
+        stubPrivacyMasked: isMasked,
+      }));
+    } catch (err) {
+      alert((err as Error).message);
+    } finally {
+      setUploadingStub(false);
     }
   };
 
@@ -265,6 +335,8 @@ export default function HomePage() {
           ticketPrice: attendanceForm.ticketPrice ? Number(attendanceForm.ticketPrice) : null,
           rating: attendanceForm.rating,
           notes: attendanceForm.notes.trim() || null,
+          ticketStubUrl: attendanceForm.ticketStubUrl || null,
+          stubPrivacyMasked: attendanceForm.stubPrivacyMasked ? 1 : 0,
         }),
       });
 
@@ -862,6 +934,19 @@ export default function HomePage() {
                                       ))}
                                     </div>
                                   )}
+                                  {att.ticketStubUrl && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setViewingStubSession({ event: ev, session })}
+                                      className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/80 transition-colors"
+                                    >
+                                      <Ticket className="h-3 w-3 mr-1 text-indigo-400" />
+                                      查看擬真票根
+                                      {att.stubPrivacyMasked && (
+                                        <ShieldCheck className="h-3 w-3 ml-1 text-emerald-400" />
+                                      )}
+                                    </button>
+                                  )}
                                 </div>
                                 {att.notes && (
                                   <p className="text-gray-400 italic bg-gray-900/60 p-2 rounded-lg border border-gray-800">
@@ -1045,6 +1130,88 @@ export default function HomePage() {
                   className="w-full bg-gray-950 border border-gray-800 rounded-xl p-3 text-xs focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                 />
               </div>
+
+              {/* 票根相片典藏與條碼隱私遮罩 */}
+              <div className="space-y-2 pt-2 border-t border-gray-800">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-300 flex items-center">
+                    <Ticket className="h-3.5 w-3.5 mr-1 text-indigo-400" />
+                    票根典藏與條碼隱私遮罩
+                  </label>
+                  {attendanceForm.stubPrivacyMasked && (
+                    <span className="text-[10px] text-emerald-400 font-bold flex items-center">
+                      <ShieldCheck className="h-3 w-3 mr-1" />
+                      條碼遮罩已啟用
+                    </span>
+                  )}
+                </div>
+
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+
+                {attendanceForm.ticketStubUrl ? (
+                  <div className="flex items-center space-x-3 bg-gray-950 p-2.5 rounded-xl border border-gray-800">
+                    <img
+                      src={attendanceForm.ticketStubUrl}
+                      alt="Ticket stub preview"
+                      className="w-16 h-12 object-cover rounded-lg border border-gray-700/80"
+                    />
+                    <div className="flex-1 space-y-1 text-xs">
+                      <div className="text-gray-300 font-medium line-clamp-1">已典藏票根相片</div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTempImageSrc(attendanceForm.ticketStubUrl);
+                            setMaskModalOpen(true);
+                          }}
+                          className="text-[11px] text-indigo-400 hover:text-indigo-300 font-semibold"
+                        >
+                          塗抹/調整遮罩
+                        </button>
+                        <span className="text-gray-600">·</span>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setAttendanceForm((prev) => ({
+                              ...prev,
+                              ticketStubUrl: null,
+                              stubPrivacyMasked: false,
+                            }))
+                          }
+                          className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold"
+                        >
+                          移除相片
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadingStub}
+                    className="w-full py-3 px-4 border border-dashed border-gray-700 hover:border-indigo-500 bg-gray-950/60 hover:bg-gray-950 rounded-xl text-center text-xs text-gray-300 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {uploadingStub ? (
+                      <>
+                        <Loader2 className="animate-spin h-4 w-4 mr-1 text-indigo-400" />
+                        處理中...
+                      </>
+                    ) : (
+                      <>
+                        <ImageIcon className="h-4 w-4 text-indigo-400" />
+                        <span>上傳實體票照片或電子票截圖 (開啟條碼遮罩保護)</span>
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Modal Footer */}
@@ -1146,6 +1313,36 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 條碼隱私遮罩畫布 Modal */}
+      {maskModalOpen && tempImageSrc && (
+        <TicketMaskModal
+          isOpen={maskModalOpen}
+          imageSrc={tempImageSrc}
+          onClose={() => setMaskModalOpen(false)}
+          onApplyMask={handleApplyMask}
+        />
+      )}
+
+      {/* 擬真票根展示 Modal */}
+      {viewingStubSession && (
+        <TicketStubModal
+          isOpen={Boolean(viewingStubSession)}
+          eventTitle={viewingStubSession.event.title}
+          organizer={viewingStubSession.event.organizer}
+          platform={viewingStubSession.event.platform}
+          sessionTitle={viewingStubSession.session.sessionTitle}
+          sessionDate={viewingStubSession.session.sessionDate}
+          venueName={viewingStubSession.session.venueName}
+          seatInfo={viewingStubSession.session.attendance?.seatInfo}
+          ticketPrice={viewingStubSession.session.attendance?.ticketPrice}
+          currency={viewingStubSession.session.attendance?.currency}
+          ticketType={viewingStubSession.session.attendance?.ticketType}
+          ticketStubUrl={viewingStubSession.session.attendance?.ticketStubUrl}
+          stubPrivacyMasked={viewingStubSession.session.attendance?.stubPrivacyMasked}
+          onClose={() => setViewingStubSession(null)}
+        />
       )}
     </div>
   );

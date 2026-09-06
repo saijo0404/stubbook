@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
           id, user_id as userId, session_id as sessionId, status,
           seat_info as seatInfo, ticket_type as ticketType,
           ticket_price as ticketPrice, currency, rating, notes,
+          ticket_stub_url as ticketStubUrl, stub_privacy_masked as stubPrivacyMasked,
           created_at as createdAt, updated_at as updatedAt
         FROM user_attendances
         WHERE session_id = ?
@@ -41,6 +42,8 @@ export async function GET(req: NextRequest) {
         a.currency,
         a.rating,
         a.notes,
+        a.ticket_stub_url as ticketStubUrl,
+        a.stub_privacy_masked as stubPrivacyMasked,
         a.created_at as createdAt,
         a.updated_at as updatedAt,
         s.session_title as sessionTitle,
@@ -79,6 +82,8 @@ export async function POST(req: NextRequest) {
       currency = 'TWD',
       rating = null,
       notes = null,
+      ticketStubUrl = null,
+      stubPrivacyMasked = 0,
       userId = 'local',
     } = body;
 
@@ -100,8 +105,9 @@ export async function POST(req: NextRequest) {
 
     const upsertStmt = db.prepare(`
       INSERT INTO user_attendances (
-        user_id, session_id, status, seat_info, ticket_type, ticket_price, currency, rating, notes
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        user_id, session_id, status, seat_info, ticket_type, ticket_price,
+        currency, rating, notes, ticket_stub_url, stub_privacy_masked
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, session_id) DO UPDATE SET
         status = excluded.status,
         seat_info = excluded.seat_info,
@@ -110,6 +116,8 @@ export async function POST(req: NextRequest) {
         currency = excluded.currency,
         rating = excluded.rating,
         notes = excluded.notes,
+        ticket_stub_url = excluded.ticket_stub_url,
+        stub_privacy_masked = excluded.stub_privacy_masked,
         updated_at = datetime('now')
       RETURNING *
     `);
@@ -123,7 +131,9 @@ export async function POST(req: NextRequest) {
       ticketPrice !== null && ticketPrice !== '' ? Number(ticketPrice) : null,
       currency,
       rating !== null && rating !== '' ? Number(rating) : null,
-      notes || null
+      notes || null,
+      ticketStubUrl || null,
+      stubPrivacyMasked ? 1 : 0
     ) as any;
 
     logger.info(`參戰手帳已記錄: Session ${sessionId} -> Status: ${status}`, 'ATTENDANCE_API');

@@ -84,4 +84,33 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     const row = db.prepare('SELECT 1 + 1 as sum').get() as { sum: number };
     expect(row.sum).toBe(2);
   });
+
+  it('Upload API 路由應實作嚴格安全性檢查 (大小上限、MIME 白名單、Magic Bytes 簽章、防路徑穿越)', () => {
+    const uploadRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'upload', 'route.ts');
+    expect(fs.existsSync(uploadRoute)).toBe(true);
+
+    const content = fs.readFileSync(uploadRoute, 'utf-8');
+    expect(content).toContain('validateMagicBytes');
+    expect(content).toContain('MAX_FILE_SIZE');
+    expect(content).toContain('ALLOWED_MIME_TYPES');
+    expect(content).toContain('crypto.randomBytes');
+    expect(content).toContain('startsWith(uploadDir');
+  });
+
+  it('前端應完整實作 TicketMaskModal 與 TicketStubModal 組件', () => {
+    const maskModalPath = path.join(__dirname, '..', 'src', 'components', 'TicketMaskModal.tsx');
+    const stubModalPath = path.join(__dirname, '..', 'src', 'components', 'TicketStubModal.tsx');
+
+    expect(fs.existsSync(maskModalPath)).toBe(true);
+    expect(fs.existsSync(stubModalPath)).toBe(true);
+
+    const maskContent = fs.readFileSync(maskModalPath, 'utf-8');
+    expect(maskContent).toContain('applyMosaic');
+    expect(maskContent).toContain('maskBottomBarcodeArea');
+    expect(maskContent).toContain('canvasRef');
+
+    const stubContent = fs.readFileSync(stubModalPath, 'utf-8');
+    expect(stubContent).toContain('STUB · 存根聯');
+    expect(stubContent).toContain('stubPrivacyMasked');
+  });
 });
