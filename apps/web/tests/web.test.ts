@@ -262,4 +262,22 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('shareTargetNotice');
     expect(pageContent).toContain('已由系統分享接收售票網址');
   });
+
+  it('前端應完整實作 LiveEventHeroCard 現場模式卡片與相關提醒', () => {
+    const cardPath = path.join(__dirname, '..', 'src', 'components', 'LiveEventHeroCard.tsx');
+    expect(fs.existsSync(cardPath)).toBe(true);
+
+    const cardContent = fs.readFileSync(cardPath, 'utf-8');
+    expect(cardContent).toContain('export const LiveEventHeroCard');
+    expect(cardContent).toContain('LIVE EVENT MODE · 現場模式');
+    expect(cardContent).toContain('DEFAULT_CHECKLIST');
+    expect(cardContent).toContain('入場座位快速出示');
+    expect(cardContent).toContain('updateCountdown');
+    expect(cardContent).toContain('stubbook_check_');
+
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('LiveEventHeroCard');
+    expect(pageContent).toContain('activeLiveSession');
+  });
 });
