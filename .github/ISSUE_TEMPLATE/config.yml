@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussion & Ideas
+    url: https://github.com/saijo0404/stubbook/discussions
+    about: 請在此討論功能構想、演唱會票務解析心得與技術選型。
+  - name: 📖 Documentation
+    url: https://github.com/saijo0404/stubbook/blob/main/README.md
+    about: 閱讀 StubBook 開發文件與架構指南。

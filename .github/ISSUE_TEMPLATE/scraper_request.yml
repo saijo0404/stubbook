@@ -1,0 +1,50 @@
+name: 🕷️ 售票網解析器需求/回報 (Scraper Adapter Request / Fix)
+description: 回報特定售票平台結構改版失效，或請求支援新的售票系統
+title: "[Scraper]: "
+labels: ["scraper", "data-pipeline"]
+body:
+  - type: dropdown
+    id: scraper_action
+    attributes:
+      label: 類型 (Action Type)
+      options:
+        - 🚨 現有解析器失效 (Broken Scraper)
+        - 🆕 請求新增售票平台支援 (New Platform Request)
+        - ⚡ 解析精準度優化 (Accuracy Improvement)
+    validations:
+      required: true
+  - type: input
+    id: platform_name
+    attributes:
+      label: 售票網站名稱 (Platform Name)
+      placeholder: 例如：拓元售票 (tixCraft)、KKTIX、寬宏售票、Ticket Plus 遠大、Lawson Ticket...
+    validations:
+      required: true
+  - type: textarea
+    id: target_urls
+    attributes:
+      label: 範例活動網址 (Sample URLs)
+      description: 請提供 1~3 個該平台的實際演唱會或活動頁面網址
+      placeholder: |
+        https://tixcraft.com/activity/detail/...
+        https://kktix.com/events/...
+    validations:
+      required: true
+  - type: textarea
+    id: extraction_issues
+    attributes:
+      label: 解析異常情況或期望擷取欄位 (Details)
+      description: 哪些欄位無法正確抓取（例如：日期錯誤、票價抓不到、多場次遺漏）？
+      placeholder: 拓元改版後，場次表格內的多場次時間與票價無法正確解析...
+    validations:
+      required: true
+  - type: dropdown
+    id: anti_bot
+    attributes:
+      label: 是否有防爬蟲驗證 (Anti-bot / Cloudflare)
+      options:
+        - 是 (含有 Cloudflare Turnstile / 等候室 / 驗證碼)
+        - 否 (一般純網頁渲染)
+        - 不確定 (Unsure)
+    validations:
+      required: true

@@ -1,0 +1,61 @@
+name: 🐛 Bug 回報 (Bug Report)
+description: 提交應用程式或後端服務的錯誤與異常
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感謝您花時間回報 Bug！請提供儘可能詳細的資訊以利重現與修復問題。
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 發生平台 (Platform)
+      description: 請選擇發生問題的環境
+      options:
+        - Web (Desktop - Chrome/Firefox/Safari/Edge)
+        - Web (Mobile Browser - iOS Safari / Android Chrome)
+        - PWA (Installed Progressive Web App)
+        - Mobile App (iOS)
+        - Mobile App (Android)
+        - Backend / Scraper Pipeline
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: 問題描述 (Description)
+      description: 請詳細說明遇到了什麼問題
+      placeholder: 例如：上傳票根照片時畫面卡住，無法儲存...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 重現步驟 (Steps to Reproduce)
+      description: 請依序列出重現該問題的步驟
+      placeholder: |
+        1. 進入 '...'
+        2. 點擊 '....'
+        3. 捲動至 '....'
+        4. 發現錯誤
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 預期行為 (Expected Behavior)
+      description: 正常情況下應該發生什麼？
+      placeholder: 例如：照片應正常壓縮並成功上傳至雲端儲存，畫面顯示票根卡片。
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: 螢幕截圖 / 記錄檔 (Screenshots / Logs)
+      description: 若有相關截圖、螢幕錄影或 Console Log，請拖曳貼上於此。
+  - type: input
+    id: environment
+    attributes:
+      label: 裝置與系統版本 (Device & OS)
+      placeholder: 例如：macOS 14.5 / iPhone 15 Pro iOS 17.4 / Chrome 125
