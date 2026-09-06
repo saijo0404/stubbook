@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDefaultDatabase } from '@stubbook/database';
 import { logger } from '@stubbook/logger';
 
+export const dynamic = 'force-dynamic';
+
 export interface SetlistSongInput {
   name: string;
   isEncore?: boolean;

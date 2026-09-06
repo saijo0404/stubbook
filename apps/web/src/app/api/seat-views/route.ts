@@ -5,6 +5,8 @@ import { logger } from '@stubbook/logger';
 const VALID_VISIBILITY_TYPES = ['CLEAR', 'GOOD', 'PARTIAL', 'OBSTRUCTED', 'DISTANCE'] as const;
 type VisibilityType = (typeof VALID_VISIBILITY_TYPES)[number];
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);

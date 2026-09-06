@@ -472,6 +472,62 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('SetlistModal');
     expect(pageContent).toContain('viewingSetlistSession');
   });
+
+  it('Analytics API 路由應正確聚合演唱會場次、花費、歌手與場館統計', () => {
+    const routePath = path.join(__dirname, '..', 'src', 'app', 'api', 'analytics', 'route.ts');
+    expect(fs.existsSync(routePath)).toBe(true);
+
+    const content = fs.readFileSync(routePath, 'utf-8');
+    expect(content).toContain('export async function GET');
+    expect(content).toContain('availableYears');
+    expect(content).toContain('totalTicketSpending');
+    expect(content).toContain('totalMerchSpending');
+    expect(content).toContain('topArtists');
+    expect(content).toContain('topVenues');
+    expect(content).toContain('fanTitle');
+  });
+
+  it('前端應完整實作 AnalyticsDashboard 與 ConcertWrappedModal 組件並整合至首頁', () => {
+    const dashboardPath = path.join(
+      __dirname,
+      '..',
+      'src',
+      'components',
+      'AnalyticsDashboard.tsx'
+    );
+    expect(fs.existsSync(dashboardPath)).toBe(true);
+
+    const dashContent = fs.readFileSync(dashboardPath, 'utf-8');
+    expect(dashContent).toContain('export const AnalyticsDashboard');
+    expect(dashContent).toContain('ConcertWrappedModal');
+    expect(dashContent).toContain('最常參戰歌手排行榜');
+    expect(dashContent).toContain('踩點場館足跡');
+    expect(dashContent).toContain('周邊戰利品分類投資');
+
+    const wrappedPath = path.join(
+      __dirname,
+      '..',
+      'src',
+      'components',
+      'ConcertWrappedModal.tsx'
+    );
+    expect(fs.existsSync(wrappedPath)).toBe(true);
+
+    const wrappedContent = fs.readFileSync(wrappedPath, 'utf-8');
+    expect(wrappedContent).toContain('export const ConcertWrappedModal');
+    expect(wrappedContent).toContain('drawPoster');
+    expect(wrappedContent).toContain('STUBBOOK · CONCERT WRAPPED');
+    expect(wrappedContent).toContain('handleDownload');
+    expect(wrappedContent).toContain('handleShare');
+
+    // 驗證 page.tsx 整合 Tab 4 數據回顧與 Wrapped
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('AnalyticsDashboard');
+    expect(pageContent).toContain("activeTab === 'analytics'");
+    expect(pageContent).toContain('數據回顧 & Wrapped');
+  });
 });
+
 
 
