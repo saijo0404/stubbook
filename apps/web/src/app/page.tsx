@@ -375,7 +375,7 @@ export default function HomePage() {
                   ) : (
                     <>
                       <Database className="h-4 w-4 mr-2" />
-                      確認入庫 (儲存至 Supabase)
+                      確認入庫 (儲存至本地資料庫)
                     </>
                   )}
                 </button>
