@@ -143,6 +143,7 @@ export default function HomePage() {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [deletingEvent, setDeletingEvent] = useState<SavedEvent | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [eventsVersion, setEventsVersion] = useState(0);
 
   // 參戰記錄彈窗狀態
   const [editingSession, setEditingSession] = useState<{
@@ -245,10 +246,11 @@ export default function HomePage() {
   const loadSavedEvents = async () => {
     setLoadingEvents(true);
     try {
-      const res = await fetch('/api/events');
+      const res = await fetch(`/api/events?_t=${Date.now()}`, { cache: 'no-store' });
       const data = await res.json();
       if (data.events) {
         setSavedEvents(data.events);
+        setEventsVersion((v) => v + 1);
       }
     } catch (err) {
       console.error('Failed to load events', err);
@@ -686,6 +688,7 @@ export default function HomePage() {
             type="button"
             onClick={() => {
               setActiveTab('calendar');
+              setEventsVersion((v) => v + 1);
               haptics.light();
             }}
             className={`flex items-center space-x-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
@@ -1443,6 +1446,7 @@ export default function HomePage() {
       {/* ─────────────────── TAB: 智慧手帳行事曆與搶票雷達 ─────────────────── */}
       {activeTab === 'calendar' && (
         <CalendarDashboard
+          refreshTrigger={eventsVersion}
           onNavigateToJournal={(eventId) => {
             setActiveTab('journal');
             loadSavedEvents();

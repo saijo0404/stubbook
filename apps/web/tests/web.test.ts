@@ -751,4 +751,35 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
       db.prepare('SELECT count(*) as c FROM event_sale_phases WHERE event_id = ?').get('ev-del')
     ).toEqual({ c: 0 });
   });
+
+  it('日曆 API 與組件應具備即時同步與快取失效機制 (Issue #46)', async () => {
+    const calendarRoutePath = path.join(
+      __dirname,
+      '..',
+      'src',
+      'app',
+      'api',
+      'calendar',
+      'route.ts'
+    );
+    const calendarRouteContent = fs.readFileSync(calendarRoutePath, 'utf-8');
+    expect(calendarRouteContent).toContain('no-store');
+    expect(calendarRouteContent).toContain('Cache-Control');
+
+    const calendarDashboardPath = path.join(
+      __dirname,
+      '..',
+      'src',
+      'components',
+      'CalendarDashboard.tsx'
+    );
+    const calendarDashboardContent = fs.readFileSync(calendarDashboardPath, 'utf-8');
+    expect(calendarDashboardContent).toContain('refreshTrigger');
+    expect(calendarDashboardContent).toContain("cache: 'no-store'");
+
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('eventsVersion');
+    expect(pageContent).toContain('refreshTrigger={eventsVersion}');
+  });
 });
