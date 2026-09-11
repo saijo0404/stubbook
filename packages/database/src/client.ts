@@ -20,16 +20,17 @@ export interface DatabaseOptions {
  *
  * @security 使用 parameterized queries 操作此實例，嚴禁字串拼接 SQL。
  */
+export function getDatabasePath(customPath?: string): string {
+  return customPath || process.env.DATABASE_PATH || path.join(process.cwd(), 'data', 'stubbook.db');
+}
+
 export function getDatabase(options?: DatabaseOptions): Database.Database {
   let db: Database.Database;
 
   if (options?.inMemory) {
     db = new Database(':memory:');
   } else {
-    const dbPath =
-      options?.dbPath ||
-      process.env.DATABASE_PATH ||
-      path.join(process.cwd(), 'data', 'stubbook.db');
+    const dbPath = getDatabasePath(options?.dbPath);
 
     // 確保目錄存在
     const dir = path.dirname(dbPath);
