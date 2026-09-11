@@ -14,12 +14,16 @@ const SAMPLE_MOCKS: Record<string, { html: string; title: string }> = {
   <title>2026 告五人 [宇宙的有趣] 巡迴演唱會 | KKTIX</title>
   <meta property="og:title" content="2026 告五人 [宇宙的有趣] 巡迴演唱會">
   <meta property="og:image" content="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=80">
-  <meta property="og:description" content="告五人全新巡迴演唱會，震撼登陸小巨蛋！">
+  <meta property="og:description" content="告五人全新巡迴演唱會，震撼登陸小巨蛋！啟售時間：2026/05/10 (日) 12:00 全面開賣。">
 </head>
 <body>
   <h1 class="header-title">2026 告五人 [宇宙的有趣] 巡迴演唱會</h1>
   <div class="host-name">相信音樂</div>
   <div class="event-time">2026/11/20 (五) 19:30</div>
+  <div class="tickets-header-info">
+    <div class="ticket-warning">粉絲會員優先購票：2026/05/09 (六) 12:00</div>
+    <div class="ticket-sale-time">啟售時間：2026/05/10 (日) 12:00 全面開賣</div>
+  </div>
   <div class="location">臺北小巨蛋</div>
   <div class="address">台北市松山區南京東路四段2號</div>
   <div class="tickets">
@@ -50,11 +54,13 @@ const SAMPLE_MOCKS: Record<string, { html: string; title: string }> = {
   <title>2026 周杰倫「嘉年華」世界巡迴演唱會 - 拓元售票系統</title>
   <meta property="og:title" content="2026 周杰倫「嘉年華」世界巡迴演唱會">
   <meta property="og:image" content="https://images.unsplash.com/photo-1470225620780-dba8ba36b745?w=800&auto=format&fit=crop&q=80">
-  <meta property="og:description" content="睽違多年，周杰倫重返臺北大巨蛋！">
+  <meta property="og:description" content="睽違多年，周杰倫重返臺北大巨蛋！優先購票：2026/09/19 (六) 10:00，全面開賣：2026/09/20 (日) 12:00。">
 </head>
 <body>
   <h2 class="activity-name">2026 周杰倫「嘉年華」世界巡迴演唱會</h2>
   <div id="intro">
+    <p>優先購票：2026/09/19 (六) 上午 10:00 國泰世華CUBE卡友優先購票</p>
+    <p>售票時間：2026/09/20 (日) 中午 12:00 拓元售票系統正式開賣</p>
     <p>演出地點：臺北大巨蛋（台北市信義區忠孝東路四段515號）</p>
     <p>票　　價：NT$ 6,880 / 5,880 / 4,880 / 3,880 / 2,280 / 1,880</p>
   </div>

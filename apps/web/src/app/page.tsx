@@ -31,6 +31,8 @@ import {
   Eye,
   ListMusic,
   BarChart3,
+  Clock,
+  Flame,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -934,8 +936,8 @@ export default function HomePage() {
               {/* 當前選中場次詳情 */}
               {event.sessions[selectedSessionIndex] && (
                 <div className="p-6 sm:p-8 space-y-6">
-                  {/* 日期與場館 */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-950/70 p-4 rounded-xl border border-gray-800/80">
+                  {/* 日期、開賣時程與場館 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 bg-gray-950/70 p-4 rounded-xl border border-gray-800/80">
                     <div className="flex items-start space-x-3">
                       <Calendar className="h-5 w-5 text-indigo-400 flex-shrink-0 mt-0.5" />
                       <div>
@@ -974,6 +976,69 @@ export default function HomePage() {
                     </div>
 
                     <div className="flex items-start space-x-3">
+                      <Clock className="h-5 w-5 text-rose-400 flex-shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-rose-300 font-medium flex items-center gap-1.5 flex-wrap">
+                          <span>開賣時間</span>
+                          {(event.salePhases?.[0]?.phaseName ||
+                            event.sessions[selectedSessionIndex].ticketSaleTime) && (
+                            <span className="px-1.5 py-0.2 rounded text-[10px] bg-rose-950 text-rose-300 border border-rose-800 font-bold truncate max-w-[120px]">
+                              {event.salePhases?.[0]?.phaseName || '公開啟售'}
+                            </span>
+                          )}
+                        </div>
+                        {event.salePhases?.[0]?.saleStart ||
+                        event.sessions[selectedSessionIndex].ticketSaleTime ? (
+                          <>
+                            <div className="text-sm font-semibold text-white">
+                              {new Date(
+                                event.salePhases?.[0]?.saleStart ||
+                                  event.sessions[selectedSessionIndex].ticketSaleTime!
+                              ).toLocaleString('zh-TW', {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </div>
+                            <div className="mt-2">
+                              <AddToCalendarMenu
+                                item={{
+                                  id: `sale_preview_${selectedSessionIndex}`,
+                                  title: `${event.title} - ${event.salePhases?.[0]?.phaseName || '開賣購票'}`,
+                                  subTitle: event.salePhases?.[0]?.phaseName || '開賣搶票日程',
+                                  itemType:
+                                    event.salePhases?.[0]?.saleType === 'LOTTERY'
+                                      ? 'LOTTERY'
+                                      : event.salePhases?.[0]?.saleType === 'RERELEASE'
+                                        ? 'RERELEASE'
+                                        : 'SALE',
+                                  startDate:
+                                    event.salePhases?.[0]?.saleStart ||
+                                    event.sessions[selectedSessionIndex].ticketSaleTime!,
+                                  bookingUrl:
+                                    event.salePhases?.[0]?.bookingUrl ||
+                                    event.sessions[selectedSessionIndex].bookingUrl ||
+                                    event.sourceUrl,
+                                  platform:
+                                    event.salePhases?.[0]?.ticketingPlatform ||
+                                    event.sessions[selectedSessionIndex].ticketPlatform ||
+                                    event.platform,
+                                }}
+                                compact
+                                align="left"
+                                buttonLabel="加入搶票提醒"
+                              />
+                            </div>
+                          </>
+                        ) : (
+                          <div className="text-xs text-gray-500 italic mt-1">待售票平台公佈</div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex items-start space-x-3">
                       <MapPin className="h-5 w-5 text-purple-400 flex-shrink-0 mt-0.5" />
                       <div>
                         <div className="text-xs text-gray-400 font-medium">場地 / 場館</div>
@@ -988,6 +1053,72 @@ export default function HomePage() {
                       </div>
                     </div>
                   </div>
+
+                  {/* 多階段售票時程清單 */}
+                  {event.salePhases && event.salePhases.length > 1 && (
+                    <div className="bg-rose-950/20 border border-rose-900/40 rounded-xl p-3.5 space-y-2.5">
+                      <div className="text-xs font-bold text-rose-300 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">
+                          <Flame className="h-3.5 w-3.5 text-rose-400" />
+                          多階段售票時程 ({event.salePhases.length} 個階段)
+                        </span>
+                        <span className="text-[10px] text-gray-400">依時程先後排序</span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {event.salePhases.map((phase, pIdx) => (
+                          <div
+                            key={pIdx}
+                            className="bg-gray-900/90 border border-gray-800 p-2.5 rounded-lg flex items-center justify-between text-xs gap-2"
+                          >
+                            <div className="space-y-0.5 min-w-0">
+                              <div className="font-semibold text-gray-200 truncate">
+                                {phase.phaseName}
+                              </div>
+                              <div className="text-[11px] text-rose-300 font-mono">
+                                {new Date(phase.saleStart).toLocaleString('zh-TW', {
+                                  year: 'numeric',
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-rose-950 text-rose-300 border border-rose-800 font-semibold whitespace-nowrap">
+                                {phase.saleType === 'PRESALE'
+                                  ? '優先預購'
+                                  : phase.saleType === 'LOTTERY'
+                                    ? '抽選登記'
+                                    : phase.saleType === 'RERELEASE'
+                                      ? '釋票清票'
+                                      : '全面開賣'}
+                              </span>
+                              <AddToCalendarMenu
+                                item={{
+                                  id: `phase_${pIdx}`,
+                                  title: `${event.title} - ${phase.phaseName}`,
+                                  subTitle: phase.phaseName,
+                                  itemType:
+                                    phase.saleType === 'LOTTERY'
+                                      ? 'LOTTERY'
+                                      : phase.saleType === 'RERELEASE'
+                                        ? 'RERELEASE'
+                                        : 'SALE',
+                                  startDate: phase.saleStart,
+                                  bookingUrl: phase.bookingUrl || event.sourceUrl,
+                                  platform: phase.ticketingPlatform || event.platform,
+                                }}
+                                compact
+                                align="right"
+                                buttonLabel="加入日曆"
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* 票價分區列表 */}
                   <div className="space-y-3">

@@ -208,22 +208,41 @@ export class TixcraftScraperAdapter implements BaseScraperAdapter {
       }
     };
 
-    // 1. 簡介與警語區塊 (#intro, .activity-intro, .alert, .panel-body)
+    // 1. 簡介與警語區塊 (#intro, .activity-intro, .alert, .panel-body, etc.)
     $(
-      '#intro, .activity-intro, .activity-content, .news-content, .panel-body, .alert, .alert-info, .alert-danger, .alert-warning'
+      '#intro, .activity-intro, .activity-content, .news-content, .panel-body, .alert, .alert-info, .alert-danger, .alert-warning, .notice, .note, #news, .announcement'
     ).each((_, el) => {
       const text = $(el).text().trim();
       addUniquePhases(extractSalePhasesFromContent(text, url, 'TIXCRAFT'));
     });
 
-    // 2. Meta Tags (description, og:description)
+    // 2. 表格與定義列表
+    $('table:not(#gameList) tr').each((_, el) => {
+      const rowText = $(el)
+        .find('th, td')
+        .map((_, item) => $(item).text().trim())
+        .get()
+        .join(' ');
+      addUniquePhases(extractSalePhasesFromContent(rowText, url, 'TIXCRAFT'));
+    });
+
+    $('dl').each((_, el) => {
+      const text = $(el)
+        .find('dt, dd')
+        .map((_, item) => $(item).text().trim())
+        .get()
+        .join(' ');
+      addUniquePhases(extractSalePhasesFromContent(text, url, 'TIXCRAFT'));
+    });
+
+    // 3. Meta Tags (description, og:description)
     const metaDesc =
       $('meta[name="description"]').attr('content') ||
       $('meta[property="og:description"]').attr('content') ||
       '';
     addUniquePhases(extractSalePhasesFromContent(metaDesc, url, 'TIXCRAFT'));
 
-    // 3. 全文備援掃描 (若上述特定區塊未找到開賣時程)
+    // 4. 全文備援掃描 (若上述特定區塊未找到開賣時程)
     if (phases.length === 0) {
       addUniquePhases(extractSalePhasesFromContent(html, url, 'TIXCRAFT'));
     }

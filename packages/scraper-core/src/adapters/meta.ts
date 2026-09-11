@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import { BaseScraperAdapter } from './base';
 import { ScrapedEvent, ScrapedSession, TicketTier } from '../types';
+import { extractSalePhasesFromContent } from '../utils/datetime';
 
 export class MetaScraperAdapter implements BaseScraperAdapter {
   readonly name = 'MetaScraperAdapter';
@@ -34,11 +35,18 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       $('meta[property="og:description"]').attr('content') ||
       $('meta[name="description"]').attr('content');
 
+    const salePhases = extractSalePhasesFromContent(
+      `${ogDescription || ''}\n${$('body').text()}`,
+      url,
+      'OTHER'
+    );
+
     const session: ScrapedSession = {
       sessionDate: new Date().toISOString(),
       venueName: '待定 / 未知場館',
       ticketPlatform: 'OTHER',
       ticketTiers: [],
+      ticketSaleTime: salePhases[0]?.saleStart,
       bookingUrl: url,
     };
 
@@ -49,7 +57,7 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       description: ogDescription,
       platform: 'OTHER',
       sessions: [session],
-      salePhases: [],
+      salePhases,
     };
   }
 
@@ -125,12 +133,19 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       }
     }
 
+    const salePhases = extractSalePhasesFromContent(
+      `${description || ''}\n${$('body').text()}`,
+      url,
+      'OTHER'
+    );
+
     const session: ScrapedSession = {
       sessionDate,
       venueName,
       venueAddress,
       ticketPlatform: 'OTHER',
       ticketTiers,
+      ticketSaleTime: salePhases[0]?.saleStart,
       bookingUrl: data.offers?.url || url,
     };
 
@@ -143,7 +158,7 @@ export class MetaScraperAdapter implements BaseScraperAdapter {
       organizer: data.organizer?.name,
       platform: 'OTHER',
       sessions: [session],
-      salePhases: [],
+      salePhases,
       rawMetadata: data,
     };
   }

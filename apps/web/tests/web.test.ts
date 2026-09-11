@@ -809,4 +809,50 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     );
     expect(calendarDashboardContent).toContain('object-contain bg-gray-950/80');
   });
+
+  it('售票網址解析與快速範例應完整包含開賣時間與售票時程 (Issue #48)', async () => {
+    // 1. 驗證 Scrape API route 中的快速範例包含售票階段與場次開賣時間
+    const scrapeRoutePath = path.join(__dirname, '..', 'src', 'app', 'api', 'scrape', 'route.ts');
+    const scrapeRouteContent = fs.readFileSync(scrapeRoutePath, 'utf-8');
+    expect(scrapeRouteContent).toContain('ticket-sale-time');
+    expect(scrapeRouteContent).toContain('粉絲會員優先購票');
+    expect(scrapeRouteContent).toContain('國泰世華CUBE卡友優先購票');
+    expect(scrapeRouteContent).toContain('SAMPLE_MOCKS');
+
+    // 2. 測試 POST /api/scrape 快速範例解析
+    const { POST } = await import('../src/app/api/scrape/route');
+    const kktixReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://kktix.cc/events/sample-accupass' }),
+    });
+    const kktixRes = await POST(kktixReq as any);
+    expect(kktixRes.status).toBe(200);
+    const kktixData = await kktixRes.json();
+    expect(kktixData.success).toBe(true);
+    expect(kktixData.event.salePhases).toBeDefined();
+    expect(kktixData.event.salePhases.length).toBeGreaterThanOrEqual(2);
+    expect(kktixData.event.sessions[0].ticketSaleTime).toBeDefined();
+
+    const tixcraftReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://tixcraft.com/activity/detail/26_JAY' }),
+    });
+    const tixcraftRes = await POST(tixcraftReq as any);
+    expect(tixcraftRes.status).toBe(200);
+    const tixcraftData = await tixcraftRes.json();
+    expect(tixcraftData.success).toBe(true);
+    expect(tixcraftData.event.salePhases).toBeDefined();
+    expect(tixcraftData.event.salePhases.length).toBeGreaterThanOrEqual(2);
+    expect(tixcraftData.event.sessions[0].ticketSaleTime).toBeDefined();
+
+    // 3. 驗證前端頁面展示開賣時間預覽與行事曆同步入口
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('<span>開賣時間</span>');
+    expect(pageContent).toContain('加入搶票提醒');
+    expect(pageContent).toContain('多階段售票時程');
+    expect(pageContent).toContain('event.salePhases.map');
+  });
 });
