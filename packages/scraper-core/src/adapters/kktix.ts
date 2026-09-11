@@ -203,19 +203,38 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
 
     // 1. Selector-based lookup: 特殊開賣時間容器
     $(
-      '.ticket-sale-time, .sale-time, .start-sale-time, .tickets-header-info, .ticket-sales, .ticket-warning, .tickets-note'
+      '.ticket-sale-time, .sale-time, .start-sale-time, .tickets-header-info, .ticket-sales, .ticket-warning, .tickets-note, .tickets-notice, .countdown, .time-countdown, .sale-countdown'
     ).each((_, el) => {
       const text = $(el).text().trim();
       addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
     });
 
-    // 2. Alert, Notice, Announcement 結構
-    $('.alert, .notice, .warning, .announcement, .info-box, .custom-html').each((_, el) => {
+    // 2. Definition Lists (dl, dt, dd) 與表格 (table tr)
+    $('dl, .dl-horizontal, .event-info-list').each((_, el) => {
+      const text = $(el)
+        .find('dt, dd')
+        .map((_, item) => $(item).text().trim())
+        .get()
+        .join(' ');
+      addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
+    });
+
+    $('table:not(.tickets) tr').each((_, el) => {
+      const rowText = $(el)
+        .find('th, td')
+        .map((_, item) => $(item).text().trim())
+        .get()
+        .join(' ');
+      addUniquePhases(extractSalePhasesFromContent(rowText, url, 'KKTIX'));
+    });
+
+    // 3. Alert, Notice, Announcement 結構
+    $('.alert, .notice, .warning, .announcement, .info-box, .custom-html, .intro').each((_, el) => {
       const text = $(el).text().trim();
       addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
     });
 
-    // 3. Description 與 Meta Tags
+    // 4. Description 與 Meta Tags
     const metaDesc =
       $('meta[name="description"]').attr('content') ||
       $('meta[property="og:description"]').attr('content') ||
@@ -224,7 +243,7 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
     addUniquePhases(extractSalePhasesFromContent(metaDesc, url, 'KKTIX'));
     addUniquePhases(extractSalePhasesFromContent(descText, url, 'KKTIX'));
 
-    // 4. 若仍未找到，全 HTML 全文掃描作為最終備援
+    // 5. 若仍未找到，全 HTML 全文掃描作為最終備援
     if (phases.length === 0) {
       addUniquePhases(extractSalePhasesFromContent(html, url, 'KKTIX'));
     }

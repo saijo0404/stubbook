@@ -121,5 +121,33 @@ describe('Chinese DateTime & Sale Phase Parser', () => {
       expect(phases[0].isLottery).toBe(true);
       expect(phases[0].phaseName).toContain('官方會員實名制抽票登記');
     });
+
+    it('應能解析時間在日期前方之字串與民國年 (Issue #48)', () => {
+      // 時間在日期前方
+      const beforeDate = parseChineseDateTime('中午12:00 2026/05/10');
+      expect(beforeDate).toBe('2026-05-10T04:00:00.000Z');
+
+      // 民國年支援 (115年 = 2026年)
+      const roc = parseChineseDateTime('民國115年5月10日 12:00');
+      expect(roc).toBe('2026-05-10T04:00:00.000Z');
+    });
+
+    it('應能處理粗括號【】與中英雙語售票關鍵字 (Issue #48)', () => {
+      const text = `
+        【售票時間】2026/05/10 (日) 中午12:00 全面開賣
+        【優先購票】2026/05/09 (六) 上午10:00 卡友優先預購
+        Ticket On Sale: 2026/06/01 12:00 General Sale
+      `;
+      const phases = extractSalePhasesFromContent(text, url, 'KKTIX');
+      expect(phases.length).toBeGreaterThanOrEqual(3);
+
+      expect(phases[0].saleType).toBe('PRESALE');
+      expect(phases[0].phaseName).toContain('卡友優先預購');
+
+      expect(phases[1].saleType).toBe('GENERAL');
+      expect(phases[1].phaseName).toContain('全面開賣');
+
+      expect(phases[2].saleStart).toBe('2026-06-01T04:00:00.000Z');
+    });
   });
 });
