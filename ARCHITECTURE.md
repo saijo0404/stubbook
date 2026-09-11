@@ -212,3 +212,98 @@ erDiagram
    - 爬蟲管線僅擷取公開演出時間與售票資訊，嚴禁儲存個人訂票個資；設定合理 Rate Limiting 與 User-Agent 宣告。
 3. **媒體本地安全儲存與敏感資訊遮罩**:
    - 票根與照片直接儲存於本機安全目錄，前端上傳時強制執行條碼 (Barcode) 與個人資料自動高斯模糊遮罩，防止隱私洩漏。
+
+---
+
+## 7. 本地資料安全、備份還原與 `.stubbook` 容器規格 (Data Portability & Backup Engine)
+
+### 7.1 資料主權與全量備份架構理念 (Data Sovereignty)
+
+StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用者記錄的票根、回憶日記、消費記帳與實名制入場時程完全存放於本地端 SQLite 與檔案系統。為提供跨裝置遷移與災難復原能力，系統建構了 **純本地備份與還原引擎（Backup & Restore Subsystem）**：
+
+```
+┌────────────────────────────────────────────────────────────────────────┐
+│                        .stubbook 容器 (ZIP Archive)                    │
+│                                                                        │
+│  ├── manifest.json        (規格版本、產出時間戳、資料筆數統計、SHA-256 數位簽章)   │
+│  ├── database.sqlite      (透過 SQLite 'VACUUM INTO' 產出的一致性無鎖快照)   │
+│  └── uploads/             (遞迴封裝所有本機上傳票根、相片、影片與視野視角)     │
+│       ├── stubs/                                                       │
+│       ├── photos/                                                      │
+│       ├── seatviews/                                                   │
+│       └── videos/                                                      │
+└────────────────────────────────────────────────────────────────────────┘
+```
+
+### 7.2 `.stubbook` 容器與檔案規格 (Container Specification)
+
+1. **容器格式 (Format)**：標準 ZIP 二進位壓縮檔，副檔名為 `.stubbook`。
+2. **`manifest.json` 綱要 (Manifest Schema)**：
+   ```json
+   {
+     "formatVersion": "1.0.0",
+     "appName": "StubBook",
+     "appVersion": "1.2.0",
+     "createdAt": "2026-09-12T00:00:00.000Z",
+     "database": {
+       "filename": "database.sqlite",
+       "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+       "size": 131072,
+       "counts": {
+         "events": 12,
+         "sessions": 18,
+         "attendances": 8,
+         "merchandise": 5,
+         "media": 24,
+         "seatViews": 6,
+         "setlists": 3,
+         "salePhases": 14
+       }
+     },
+     "mediaFiles": [
+       {
+         "path": "uploads/stubs/ticket-123.webp",
+         "sha256": "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+         "size": 45120
+       }
+     ]
+   }
+   ```
+3. **資料庫無鎖快照 (`VACUUM INTO`)**：
+   - 不採用單純複製使用中的 `.sqlite` 檔案（避免 WAL 模式下鎖定與髒讀）。
+   - 調用 SQLite 3.27+ 原生指令 `VACUUM INTO ?`，產出完全重組（De-fragmented）、無 WAL 依賴、完整提交的一致性單一檔案快照。
+4. **多媒體資產遞迴封裝**：
+   - 走訪 `public/uploads` 目錄，將票根圖、現場相片、場館視野圖等靜態資源按原始路徑層級寫入 ZIP，並為每一份媒體檔計算 SHA-256 雜湊登記於清單。
+
+### 7.3 安全性與強健防護 (Security Hardening)
+
+1. **SHA-256 數位簽章與防竄改驗證 (Integrity Check)**：
+   - 還原時優先解出 `manifest.json`，並對 `database.sqlite` 與解壓縮之媒體資產計算即時雜湊值。
+   - 若 SHA-256 簽章不吻合，系統拒絕還原並回傳警告，防止檔案毀損或中途遭篡改。
+2. **Zip Slip (路徑穿越攻擊 Path Traversal) 嚴格防禦**：
+   - 封裝解壓模組實作 `assertSafePath(baseDir, relativePath)`。
+   - 嚴格解析絕對規範化路徑（`path.resolve`），確保解壓目標嚴格位於安全隔離基底目錄內（`resolved.startsWith(safePrefix + path.sep)`），杜絕利用 `../` 覆蓋系統敏感檔案之攻擊風險。
+3. **交易一致性與災難回滾備份 (`.bak` Fallback)**：
+   - 在執行全量覆蓋還原前，系統自動於本地建立 `.bak` 備份檔（如 `database.sqlite.bak`）。
+   - 若在還原寫入或外鍵檢查階段發生任何例外，立即自動回滾至原先資料庫與媒體庫，保障資料零毀損。
+
+### 7.4 多模式智慧還原 (Restore Strategies)
+
+還原引擎支援三種作業策略：
+
+- **`OVERWRITE` (全量覆蓋替換)**：
+  關閉既有資料庫連線，以快照檔案完整替換目前資料庫與媒體檔案，適合跨裝置無痛整機轉移。
+- **`MERGE` (增量合併)**：
+  透過 SQLite `ATTACH DATABASE` 技術，在單一交易內比對主鍵與外鍵關聯，以 `INSERT OR IGNORE` 匯入不重複的藝人、場館、演出、個人參戰回憶與歌單。既有資料保留不被覆蓋。
+- **`DIFF` (乾跑預覽與差異檢視)**：
+  支援 `dryRun: true` 模式，解構備份檔並與目前資料庫比對，回傳新活動數、新回憶數與重複項目數，讓使用者在確認還原前一目了然。
+
+### 7.5 API 端點規範 (API Specification)
+
+| 端點           | 方法   | 參數                  | 說明                                                                        |
+| :------------- | :----- | :-------------------- | :-------------------------------------------------------------------------- |
+| `/api/backup`  | `GET`  | `overview=true`       | 取得目前本地資料筆數、資料庫大小與媒體用量總覽 (JSON)                       |
+| `/api/backup`  | `GET`  | `format=stubbook`     | 一鍵匯出並下載 `.stubbook` 全量封裝二進位壓縮檔 (ZIP)                       |
+| `/api/backup`  | `GET`  | `format=json`         | 匯出跨平台標準純文字 JSON 資料庫內容 (Portable JSON)                        |
+| `/api/restore` | `POST` | `multipart/form-data` | 上傳 `.stubbook` 二進位封裝檔，支援 `dryRun` 預覽與 `mode=OVERWRITE\|MERGE` |
+| `/api/restore` | `POST` | `application/json`    | 上傳 JSON 備份物件進行快速文字型資料匯入與合併                              |

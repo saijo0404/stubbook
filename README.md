@@ -68,6 +68,19 @@
 - 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 存為串流歌單。
 - **年度回顧 (StubBook Wrapped)**：年終自動生成專屬 IG Story / Threads 高顏值分享卡片。
 
+### 7. 📅 智慧行事曆與搶票倒數雷達 (Smart Calendar & Ticketing Radar)
+
+- **搶票倒數雷達**：多階段啟售提醒（會員優先購、全面啟售）、精確開賣倒數計時與作戰筆記。
+- **雙向日曆整合**：標準 iCalendar (`.ics`) 格式匯出，一鍵同步至 Google Calendar、Apple Calendar 與 Outlook。
+- **現代化互動行事曆**：直覺依「啟售日」與「演出日」分類篩選，並以時間軸色彩視覺化排程。
+
+### 8. 💾 資料主權、備份還原與 `.stubbook` 容器 (Data Sovereignty & Portable Backups)
+
+- **100% 純本地單機運作**：資料零雲端依賴，完全存放於本地 SQLite 與私有媒體目錄，捍衛樂迷資料主權。
+- **`.stubbook` 全量打包封裝**：調用 SQLite 原生 `VACUUM INTO` 產出無鎖一致性資料庫快照，遞迴封裝所有票根、現場相片與場館視野。
+- **SHA-256 數位簽章與 Zip Slip 防護**：內建數位指紋完整性檢查與嚴格路徑穿越防禦，支援自動 `.bak` 災難回滾備份。
+- **智慧多模式還原**：支援全量覆蓋 (Overwrite)、增量合併 (Merge) 與乾跑預覽 (Dry-run Diff)，亦提供通用 JSON 匯出匯入。
+
 ---
 
 ## 🛠️ 技術選型 (Tech Stack)
@@ -141,10 +154,15 @@ pnpm dev
 
 詳細的階段規劃與待辦清單請參閱 [ROADMAP.md](ROADMAP.md)：
 
-- **Phase 1**：核心資料結構與三層解析管線 (KKTIX, tixCraft)
-- **Phase 2**：個人回憶手帳、票根自動隱私遮罩與多媒體週邊記帳
-- **Phase 3**：跨平台 PWA、Capacitor Share Extension 與現場無網路離線票夾
-- **Phase 4**：Setlist.fm 串接、Spotify 播放清單同步與年度演唱會 Wrapped
+- **Phase 1**：核心資料結構與三層解析管線 (KKTIX, tixCraft) (`v0.2.0` ✅)
+- **Phase 2**：個人回憶手帳、票根自動隱私遮罩與多媒體週邊記帳 (`v0.3.0` ✅)
+- **Phase 3**：跨平台 PWA、Capacitor Share Extension 與現場無網路離線票夾 (`v0.4.0` ✅)
+- **Phase 4**：Setlist.fm 串接、Spotify 播放清單同步與年度演唱會 Wrapped (`v1.0.0` ✅)
+- **Phase 5**：智慧行事曆排程、搶票倒數雷達與 .ics 雙向匯出 (`v1.1.0` ✅)
+- **Phase 6**：純本地資料安全、.stubbook 全量封裝備份與智慧還原中心 (`v1.2.0` ✅)
+- **Phase 7**：全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX) (`v1.3.0` 📋)
+- **Phase 8**：串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) (`v1.4.0` 📋)
+- **Phase 9**：原生行動雙端封裝發行 (Android APK/AAB, iOS) (`v2.0.0` 📋)
 
 ---
 
