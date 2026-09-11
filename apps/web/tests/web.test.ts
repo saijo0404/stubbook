@@ -855,4 +855,128 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('多階段售票時程');
     expect(pageContent).toContain('event.salePhases.map');
   });
+
+  it('資料備份與還原引擎應具備完整打包、SHA-256 校驗與防 Zip Slip 安全防護 (Phase 6: Issues #52, #53)', async () => {
+    const {
+      assertSafePath,
+      computeSha256,
+      exportStructuredJson,
+      exportStubbookArchive,
+      inspectBackup,
+      restoreFromBackup,
+      getBackupOverview,
+    } = await import('../src/utils/backupEngine');
+
+    // 1. 測試 Zip Slip 安全防護函式
+    const safeDir = '/app/uploads';
+    expect(assertSafePath(safeDir, 'stubs/ticket.jpg')).toBe(
+      path.resolve(safeDir, 'stubs/ticket.jpg')
+    );
+    expect(() => assertSafePath(safeDir, '../../etc/passwd')).toThrow('Zip Slip');
+
+    // 2. 測試純文字 JSON 結構化匯出
+    const jsonBackup = exportStructuredJson();
+    expect(jsonBackup.formatVersion).toBe('1.0.0');
+    expect(jsonBackup.appName).toBe('StubBook');
+    expect(jsonBackup.data).toBeDefined();
+    expect(Array.isArray(jsonBackup.data.events)).toBe(true);
+    expect(Array.isArray(jsonBackup.data.event_sessions)).toBe(true);
+    expect(Array.isArray(jsonBackup.data.user_attendances)).toBe(true);
+
+    // 3. 測試 JSON 備份檢查 (inspectBackup)
+    const jsonBuffer = Buffer.from(JSON.stringify(jsonBackup), 'utf-8');
+    const inspectedJson = inspectBackup(jsonBuffer);
+    expect(inspectedJson.valid).toBe(true);
+    expect(inspectedJson.format).toBe('JSON');
+    expect(inspectedJson.counts).toBeDefined();
+
+    // 4. 測試全量 .stubbook 封裝匯出 (exportStubbookArchive)
+    const archiveBuffer = await exportStubbookArchive();
+    expect(Buffer.isBuffer(archiveBuffer)).toBe(true);
+    expect(archiveBuffer.length).toBeGreaterThan(0);
+
+    // 5. 測試 .stubbook 檔案解析與 SHA-256 驗證 (inspectBackup)
+    const inspectedArchive = inspectBackup(archiveBuffer);
+    expect(inspectedArchive.valid).toBe(true);
+    expect(inspectedArchive.format).toBe('STUBBOOK');
+    expect(inspectedArchive.counts.events).toBe(jsonBackup.summary.totalEvents);
+    expect(inspectedArchive.warnings.length).toBe(0);
+
+    // 6. 測試概況取得 (getBackupOverview)
+    const overview = getBackupOverview();
+    expect(overview.totalEvents).toBeDefined();
+    expect(overview.dbSizeBytes).toBeGreaterThan(0);
+
+    // 7. 測試 JSON 還原引擎 (MERGE 模式)
+    const restoreRes = await restoreFromBackup(jsonBuffer, { mode: 'MERGE' });
+    expect(restoreRes.success).toBe(true);
+    expect(restoreRes.mode).toBe('MERGE');
+  });
+
+  it('Backup 與 Restore API 路由應完整支援 .stubbook、JSON 與 Dry Run 預檢 (Phase 6: Issues #52, #53)', async () => {
+    const backupRoutePath = path.join(__dirname, '..', 'src', 'app', 'api', 'backup', 'route.ts');
+    const restoreRoutePath = path.join(__dirname, '..', 'src', 'app', 'api', 'restore', 'route.ts');
+    expect(fs.existsSync(backupRoutePath)).toBe(true);
+    expect(fs.existsSync(restoreRoutePath)).toBe(true);
+
+    // 1. 測試 GET /api/backup?overview=true
+    const { GET: backupGET } = await import('../src/app/api/backup/route');
+    const overviewReq = new Request('http://localhost:3000/api/backup?overview=true');
+    const overviewRes = await backupGET(overviewReq as any);
+    expect(overviewRes.status).toBe(200);
+    const overviewJson = await overviewRes.json();
+    expect(overviewJson.success).toBe(true);
+    expect(overviewJson.overview).toBeDefined();
+
+    // 2. 測試 GET /api/backup?format=json
+    const jsonReq = new Request('http://localhost:3000/api/backup?format=json');
+    const jsonRes = await backupGET(jsonReq as any);
+    expect(jsonRes.status).toBe(200);
+    expect(jsonRes.headers.get('Content-Type')).toContain('application/json');
+    expect(jsonRes.headers.get('Content-Disposition')).toContain('.json');
+
+    // 3. 測試 GET /api/backup?format=stubbook
+    const stubbookReq = new Request('http://localhost:3000/api/backup?format=stubbook');
+    const stubbookRes = await backupGET(stubbookReq as any);
+    expect(stubbookRes.status).toBe(200);
+    expect(stubbookRes.headers.get('Content-Type')).toBe('application/octet-stream');
+    expect(stubbookRes.headers.get('Content-Disposition')).toContain('.stubbook');
+
+    // 4. 測試 POST /api/restore (Dry Run 預檢)
+    const { POST: restorePOST } = await import('../src/app/api/restore/route');
+    const jsonText = await jsonRes.text();
+    const dryRunReq = new Request('http://localhost:3000/api/restore', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rawJson: jsonText, dryRun: true }),
+    });
+    const dryRunRes = await restorePOST(dryRunReq as any);
+    expect(dryRunRes.status).toBe(200);
+    const dryRunData = await dryRunRes.json();
+    expect(dryRunData.success).toBe(true);
+    expect(dryRunData.dryRun).toBe(true);
+    expect(dryRunData.inspection.format).toBe('JSON');
+  });
+
+  it('前端應完整整合「資料安全與手帳備份中心」UI 面板與還原引導精靈 (Phase 6: Issue #54)', () => {
+    const compPath = path.join(__dirname, '..', 'src', 'components', 'BackupRestoreDashboard.tsx');
+    expect(fs.existsSync(compPath)).toBe(true);
+
+    const compContent = fs.readFileSync(compPath, 'utf-8');
+    expect(compContent).toContain('全量封裝備份 (.stubbook)');
+    expect(compContent).toContain('純文字 JSON 匯出');
+    expect(compContent).toContain('手帳資料還原中心');
+    expect(compContent).toContain('智慧合併 (Merge)');
+    expect(compContent).toContain('全部覆蓋 (Overwrite)');
+    expect(compContent).toContain('handleExportStubbook');
+    expect(compContent).toContain('handleExportJson');
+    expect(compContent).toContain('handleConfirmRestore');
+
+    // 驗證 page.tsx 整合 activeTab === 'backup'
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('BackupRestoreDashboard');
+    expect(pageContent).toContain("activeTab === 'backup'");
+    expect(pageContent).toContain('備份與還原');
+  });
 });

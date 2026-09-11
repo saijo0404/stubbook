@@ -33,6 +33,7 @@ import {
   BarChart3,
   Clock,
   Flame,
+  HardDrive,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -45,9 +46,10 @@ import { SetlistModal } from '../components/SetlistModal';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { CalendarDashboard } from '../components/CalendarDashboard';
 import { AddToCalendarMenu } from '../components/AddToCalendarMenu';
+import { BackupRestoreDashboard } from '../components/BackupRestoreDashboard';
 import { haptics } from '../utils/haptics';
 
-type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics';
+type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics' | 'backup';
 
 interface SessionAttendance {
   id: string;
@@ -731,6 +733,21 @@ export default function HomePage() {
           >
             <BarChart3 className="h-4 w-4" />
             <span>數據回顧 & Wrapped</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('backup');
+              haptics.light();
+            }}
+            className={`flex items-center space-x-1.5 sm:space-x-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all shrink-0 whitespace-nowrap ${
+              activeTab === 'backup'
+                ? 'bg-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <HardDrive className="h-4 w-4" />
+            <span>備份與還原</span>
           </button>
         </div>
       </div>
@@ -1685,6 +1702,16 @@ export default function HomePage() {
 
       {/* ─────────────────── TAB 4: 數據回顧 & WRAPPED ─────────────────── */}
       {activeTab === 'analytics' && <AnalyticsDashboard />}
+
+      {/* ─────────────────── TAB 5: 資料安全與手帳備份還原 ─────────────────── */}
+      {activeTab === 'backup' && (
+        <BackupRestoreDashboard
+          onDataRestored={() => {
+            loadSavedEvents();
+            setEventsVersion((v) => v + 1);
+          }}
+        />
+      )}
 
       {/* ─────────────────── 參戰手帳記錄彈窗 (ATTENDANCE MODAL) ─────────────────── */}
       {editingSession && (
