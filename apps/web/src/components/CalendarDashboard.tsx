@@ -23,6 +23,8 @@ import {
   CalendarDays,
   CalendarRange,
   Download,
+  X,
+  Image as ImageIcon,
 } from 'lucide-react';
 import { CalendarItem, CalendarRadarItem } from '../app/api/calendar/route';
 import { haptics } from '../utils/haptics';
@@ -53,6 +55,10 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
   });
 
   const [viewMode, setViewMode] = useState<'month' | 'week' | 'radar'>('month');
+  const [calendarStyle, setCalendarStyle] = useState<'classic' | 'photo'>('photo');
+  const [showWallpaperModal, setShowWallpaperModal] = useState(false);
+  const [wallpaperGenerating, setWallpaperGenerating] = useState(false);
+  const [wallpaperDataUrl, setWallpaperDataUrl] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<'all' | 'show' | 'sale' | 'rerelease' | 'lottery'>(
     'all'
   );
@@ -290,6 +296,218 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
     downloadICS(`StubBook_${currentYear}_${monthPadded}_Calendar.ics`, ics);
   };
 
+  const MONTH_NAMES_EN = [
+    'JANUARY',
+    'FEBRUARY',
+    'MARCH',
+    'APRIL',
+    'MAY',
+    'JUNE',
+    'JULY',
+    'AUGUST',
+    'SEPTEMBER',
+    'OCTOBER',
+    'NOVEMBER',
+    'DECEMBER',
+  ];
+
+  // 生成當月 9:16 手帳手機桌布 (Canvas 1080x1920)
+  const handleOpenWallpaperModal = () => {
+    haptics.medium();
+    setShowWallpaperModal(true);
+    setWallpaperGenerating(true);
+
+    setTimeout(() => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 1080;
+        canvas.height = 1920;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Cannot get canvas context');
+
+        // 1. 背景漸層 (Deep space / midnight concert atmosphere)
+        const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
+        bgGrad.addColorStop(0, '#090818');
+        bgGrad.addColorStop(0.35, '#161138');
+        bgGrad.addColorStop(0.7, '#1b1442');
+        bgGrad.addColorStop(1, '#080c18');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, 1080, 1920);
+
+        // 裝飾光暈
+        const drawGlow = (x: number, y: number, r: number, color: string) => {
+          const glow = ctx.createRadialGradient(x, y, 0, x, y, r);
+          glow.addColorStop(0, color);
+          glow.addColorStop(1, 'transparent');
+          ctx.fillStyle = glow;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        };
+        drawGlow(300, 380, 350, 'rgba(99, 102, 241, 0.15)');
+        drawGlow(800, 950, 400, 'rgba(236, 72, 153, 0.12)');
+        drawGlow(400, 1500, 450, 'rgba(16, 185, 129, 0.1)');
+
+        // 2. 頂部標題區塊
+        ctx.fillStyle = '#818cf8';
+        ctx.font = 'bold 24px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('STUBBOOK · LIVE CONCERT JOURNAL', 540, 180);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 68px "Noto Sans TC", sans-serif';
+        ctx.fillText(`${MONTH_NAMES_EN[currentMonth]} ${currentYear}`, 540, 260);
+
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '24px "Noto Sans TC", sans-serif';
+        ctx.fillText(`${currentYear} 年 ${currentMonth + 1} 月 · 參戰月曆手帳與現場回憶`, 540, 310);
+
+        // 3. 日曆網格
+        const gridX = 80;
+        const gridY = 400;
+        const gridW = 920;
+        const cellW = gridW / 7;
+        const cellH = 135;
+
+        // 星期標頭
+        const weekLabels = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+        ctx.font = 'bold 22px monospace';
+        weekLabels.forEach((label, idx) => {
+          ctx.fillStyle = idx >= 5 ? '#f43f5e' : '#94a3b8';
+          ctx.textAlign = 'center';
+          ctx.fillText(label, gridX + idx * cellW + cellW / 2, gridY - 20);
+        });
+
+        // 繪製日期格子
+        calendarGrid.forEach((cell, i) => {
+          const col = i % 7;
+          const row = Math.floor(i / 7);
+          if (row >= 6) return;
+
+          const x = gridX + col * cellW;
+          const y = gridY + row * cellH;
+
+          // 格子底色
+          ctx.fillStyle = cell.isCurrentMonth ? 'rgba(30, 41, 59, 0.65)' : 'rgba(15, 23, 42, 0.35)';
+          ctx.roundRect
+            ? ctx.roundRect(x + 3, y + 3, cellW - 6, cellH - 6, 12)
+            : ctx.fillRect(x + 3, y + 3, cellW - 6, cellH - 6);
+          ctx.fill();
+
+          // 邊框
+          ctx.strokeStyle = cell.isToday ? '#6366f1' : 'rgba(51, 65, 85, 0.5)';
+          ctx.lineWidth = cell.isToday ? 2.5 : 1;
+          ctx.stroke();
+
+          // 日期數字
+          ctx.textAlign = 'left';
+          ctx.font = cell.isToday ? 'bold 22px monospace' : '20px monospace';
+          ctx.fillStyle = cell.isToday ? '#818cf8' : cell.isCurrentMonth ? '#cbd5e1' : '#475569';
+          ctx.fillText(String(cell.dayNumber), x + 10, y + 28);
+
+          // 檢查該日期是否有活動
+          const items = eventsByDate[cell.dateKey] || [];
+          if (items.length > 0) {
+            const hasShow = items.some((it) => it.itemType === 'SHOW');
+            ctx.fillStyle = hasShow ? 'rgba(6, 182, 212, 0.3)' : 'rgba(245, 158, 11, 0.3)';
+            ctx.roundRect
+              ? ctx.roundRect(x + 6, y + 36, cellW - 12, cellH - 44, 8)
+              : ctx.fillRect(x + 6, y + 36, cellW - 12, cellH - 44);
+            ctx.fill();
+
+            ctx.strokeStyle = hasShow ? 'rgba(6, 182, 212, 0.9)' : 'rgba(245, 158, 11, 0.9)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 14px "Noto Sans TC", sans-serif';
+            ctx.textAlign = 'center';
+            const title = items[0].eventTitle.slice(0, 5);
+            ctx.fillText(title, x + cellW / 2, y + 64);
+
+            if (items.length > 1) {
+              ctx.fillStyle = hasShow ? '#67e8f9' : '#fcd34d';
+              ctx.font = '12px monospace';
+              ctx.fillText(`+${items.length - 1} 項`, x + cellW / 2, y + 84);
+            }
+          }
+        });
+
+        // 4. 底部手帳統計資訊卡 (Summary Card)
+        const statsY = 1320;
+        const statsW = 920;
+        const statsH = 240;
+
+        const cardGrad = ctx.createLinearGradient(gridX, statsY, gridX + statsW, statsY + statsH);
+        cardGrad.addColorStop(0, 'rgba(30, 27, 75, 0.85)');
+        cardGrad.addColorStop(1, 'rgba(15, 23, 42, 0.85)');
+        ctx.fillStyle = cardGrad;
+        ctx.roundRect
+          ? ctx.roundRect(gridX, statsY, statsW, statsH, 24)
+          : ctx.fillRect(gridX, statsY, statsW, statsH);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(99, 102, 241, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        const monthPrefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+        const monthShows = calendarItems.filter(
+          (i) => i.dateKey.startsWith(monthPrefix) && i.itemType === 'SHOW'
+        ).length;
+        const monthSales = calendarItems.filter(
+          (i) => i.dateKey.startsWith(monthPrefix) && i.itemType !== 'SHOW'
+        ).length;
+
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#cbd5e1';
+        ctx.font = 'bold 22px "Noto Sans TC", sans-serif';
+        ctx.fillText('本月推活參戰足跡', gridX + 40, statsY + 55);
+
+        ctx.fillStyle = '#67e8f9';
+        ctx.font = 'bold 36px monospace';
+        ctx.fillText(`${monthShows}`, gridX + 40, statsY + 115);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '18px "Noto Sans TC", sans-serif';
+        ctx.fillText('場現場演出', gridX + 85, statsY + 115);
+
+        ctx.fillStyle = '#fcd34d';
+        ctx.font = 'bold 36px monospace';
+        ctx.fillText(`${monthSales}`, gridX + 280, statsY + 115);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '18px "Noto Sans TC", sans-serif';
+        ctx.fillText('場搶票開賣', gridX + 325, statsY + 115);
+
+        ctx.fillStyle = '#e2e8f0';
+        ctx.font = 'italic 20px "Noto Serif TC", serif';
+        ctx.fillText('“ 每一張票根，都是生活與熱愛共鳴的證明。 ”', gridX + 40, statsY + 180);
+
+        // 5. 底部防偽認證與版權字樣
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#64748b';
+        ctx.font = '16px monospace';
+        ctx.fillText('STUBBOOK CONCERT MEMORIES · MOBILE WALLPAPER EDITION', 540, 1720);
+        ctx.fillText(`GENERATED ON ${new Date().toISOString().slice(0, 10)}`, 540, 1750);
+
+        const url = canvas.toDataURL('image/png');
+        setWallpaperDataUrl(url);
+      } catch (err) {
+        console.error('Failed to generate wallpaper:', err);
+        alert('桌布生成失敗，請稍後重試');
+      } finally {
+        setWallpaperGenerating(false);
+      }
+    }, 150);
+  };
+
+  const handleDownloadWallpaper = () => {
+    if (!wallpaperDataUrl) return;
+    haptics.success();
+    const link = document.createElement('a');
+    link.download = `StubBook_Wallpaper_${currentYear}_${String(currentMonth + 1).padStart(2, '0')}.png`;
+    link.href = wallpaperDataUrl;
+    link.click();
+  };
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* ─────────────────── 頂部標題與狀態雷達摘要 ─────────────────── */}
@@ -378,6 +596,16 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
           >
             <Download className="h-4 w-4" />
             <span className="hidden sm:inline">匯出月行程 (.ics)</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleOpenWallpaperModal}
+            className="flex items-center space-x-1.5 px-3 py-2 bg-gradient-to-r from-purple-950 to-indigo-950 hover:from-purple-900 hover:to-indigo-900 border border-purple-700/60 rounded-xl text-purple-300 transition-colors text-xs font-semibold shadow"
+            title="匯出當月 9:16 手帳手機桌布"
+          >
+            <Sparkles className="h-4 w-4 text-purple-400" />
+            <span className="hidden sm:inline">匯出月份桌布</span>
           </button>
 
           <button
@@ -617,23 +845,59 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
               </button>
             </div>
 
-            <div className="flex items-center space-x-1">
-              <button
-                type="button"
-                onClick={handlePrevMonth}
-                className="p-2 rounded-xl bg-gray-850 hover:bg-gray-800 text-gray-300 transition-colors"
-                title="上個月"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                className="p-2 rounded-xl bg-gray-850 hover:bg-gray-800 text-gray-300 transition-colors"
-                title="下個月"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* 視覺相片模式 / 經典標籤模式切換 */}
+              <div className="inline-flex bg-gray-850 p-1 rounded-xl border border-gray-800 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCalendarStyle('photo');
+                    haptics.selection();
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-lg font-bold transition-all ${
+                    calendarStyle === 'photo'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <ImageIcon className="h-3 w-3" />
+                  <span>相片月曆</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCalendarStyle('classic');
+                    haptics.selection();
+                  }}
+                  className={`flex items-center space-x-1 px-2.5 py-1 text-xs rounded-lg font-bold transition-all ${
+                    calendarStyle === 'classic'
+                      ? 'bg-indigo-600 text-white shadow'
+                      : 'text-gray-400 hover:text-gray-200'
+                  }`}
+                >
+                  <Tag className="h-3 w-3" />
+                  <span>標籤月曆</span>
+                </button>
+              </div>
+
+              <div className="flex items-center space-x-1">
+                <button
+                  type="button"
+                  onClick={handlePrevMonth}
+                  className="p-2 rounded-xl bg-gray-850 hover:bg-gray-800 text-gray-300 transition-colors"
+                  title="上個月"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  className="p-2 rounded-xl bg-gray-850 hover:bg-gray-800 text-gray-300 transition-colors"
+                  title="下個月"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -659,6 +923,10 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                 const hasShows = itemsOnDate.some((i) => i.itemType === 'SHOW');
                 const hasSales = itemsOnDate.some((i) => i.itemType !== 'SHOW');
 
+                const photoItem = itemsOnDate.find((i) => i.posterUrl) || itemsOnDate[0];
+                const poster = photoItem?.posterUrl;
+                const isPhotoMode = calendarStyle === 'photo' && itemsOnDate.length > 0;
+
                 return (
                   <div
                     key={cell.dateKey}
@@ -666,7 +934,7 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                       setSelectedDateKey(cell.dateKey);
                       haptics.selection();
                     }}
-                    className={`min-h-[90px] sm:min-h-[110px] p-1.5 sm:p-2 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`min-h-[95px] sm:min-h-[115px] p-1.5 sm:p-2 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between relative overflow-hidden group ${
                       cell.isCurrentMonth ? 'bg-gray-850/70' : 'bg-gray-900/40 opacity-40'
                     } ${
                       isSelected
@@ -674,14 +942,32 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
                         : 'border-gray-800/80 hover:border-gray-700'
                     } ${cell.isToday ? 'border-indigo-400/80 shadow-md shadow-indigo-950/40' : ''}`}
                   >
-                    <div className="flex items-center justify-between">
+                    {/* 若為視覺相片模式且該日有活動，顯示全覆蓋背景海報與漸層 */}
+                    {isPhotoMode && (
+                      <>
+                        {poster ? (
+                          <img
+                            src={poster}
+                            alt=""
+                            className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 pointer-events-none"
+                          />
+                        ) : (
+                          <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-purple-950 to-gray-900 pointer-events-none" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/55 to-black/60 pointer-events-none" />
+                      </>
+                    )}
+
+                    <div className="flex items-center justify-between relative z-10">
                       <span
                         className={`text-xs font-mono font-bold rounded-md px-1.5 py-0.5 ${
                           cell.isToday
-                            ? 'bg-indigo-600 text-white'
+                            ? 'bg-indigo-600 text-white shadow'
                             : isSelected
-                              ? 'text-indigo-400 font-extrabold'
-                              : 'text-gray-300'
+                              ? 'text-indigo-300 font-extrabold bg-black/60'
+                              : isPhotoMode
+                                ? 'bg-black/70 text-white backdrop-blur-sm'
+                                : 'text-gray-300'
                         }`}
                       >
                         {cell.dayNumber}
@@ -689,40 +975,59 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
 
                       {/* 項目數量徽章 */}
                       {itemsOnDate.length > 0 && (
-                        <span className="flex space-x-1">
+                        <span className="flex space-x-1 items-center">
                           {hasShows && (
                             <span className="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse" />
                           )}
                           {hasSales && <span className="h-1.5 w-1.5 rounded-full bg-amber-400" />}
+                          {itemsOnDate.length > 1 && (
+                            <span className="text-[9px] font-mono px-1 py-0.2 bg-black/70 text-indigo-300 rounded backdrop-blur-sm">
+                              +{itemsOnDate.length}
+                            </span>
+                          )}
                         </span>
                       )}
                     </div>
 
-                    {/* 當日活動條目清單 */}
-                    <div className="space-y-1 mt-1 overflow-hidden">
-                      {itemsOnDate.slice(0, 2).map((it) => (
-                        <div
-                          key={it.id}
-                          className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium border ${
-                            it.itemType === 'SHOW'
-                              ? 'bg-cyan-950/80 border-cyan-800/80 text-cyan-300'
-                              : it.itemType === 'LOTTERY'
-                                ? 'bg-purple-950/80 border-purple-800/80 text-purple-300'
-                                : 'bg-amber-950/80 border-amber-800/80 text-amber-300'
-                          }`}
-                          title={`${it.timeString} ${it.eventTitle}`}
-                        >
-                          <span className="font-mono opacity-80 mr-1">{it.timeString}</span>
-                          <span>{it.eventTitle}</span>
+                    {/* 當日活動條目清單 (經典模式 vs 相片模式) */}
+                    {isPhotoMode ? (
+                      <div className="relative z-10 space-y-0.5 mt-auto pt-1">
+                        <div className="text-[10px] sm:text-[11px] font-black text-white line-clamp-1 drop-shadow-md leading-tight">
+                          {photoItem.eventTitle}
                         </div>
-                      ))}
+                        <div className="text-[9px] text-cyan-300 font-mono line-clamp-1 drop-shadow-sm flex items-center gap-1">
+                          <span>{photoItem.timeString}</span>
+                          {photoItem.venueName && (
+                            <span className="text-gray-300 truncate">@{photoItem.venueName}</span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-1 mt-1 overflow-hidden relative z-10">
+                        {itemsOnDate.slice(0, 2).map((it) => (
+                          <div
+                            key={it.id}
+                            className={`text-[10px] px-1.5 py-0.5 rounded truncate font-medium border ${
+                              it.itemType === 'SHOW'
+                                ? 'bg-cyan-950/80 border-cyan-800/80 text-cyan-300'
+                                : it.itemType === 'LOTTERY'
+                                  ? 'bg-purple-950/80 border-purple-800/80 text-purple-300'
+                                  : 'bg-amber-950/80 border-amber-800/80 text-amber-300'
+                            }`}
+                            title={`${it.timeString} ${it.eventTitle}`}
+                          >
+                            <span className="font-mono opacity-80 mr-1">{it.timeString}</span>
+                            <span>{it.eventTitle}</span>
+                          </div>
+                        ))}
 
-                      {itemsOnDate.length > 2 && (
-                        <div className="text-[9px] text-gray-400 text-right px-1 font-mono">
-                          +{itemsOnDate.length - 2} 項
-                        </div>
-                      )}
-                    </div>
+                        {itemsOnDate.length > 2 && (
+                          <div className="text-[9px] text-gray-400 text-right px-1 font-mono">
+                            +{itemsOnDate.length - 2} 項
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1066,6 +1371,79 @@ export const CalendarDashboard: React.FC<CalendarDashboardProps> = ({
           </div>
         )}
       </div>
+
+      {/* ─────────────────── 月份手帳桌布導出 Modal (9:16 Phone Wallpaper) ─────────────────── */}
+      {showWallpaperModal && (
+        <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/85 backdrop-blur-md flex min-h-full items-center justify-center">
+          <div className="bg-gray-900 border border-gray-700/80 rounded-3xl w-full max-w-lg my-auto p-6 shadow-2xl relative overflow-hidden flex flex-col max-h-[90dvh]">
+            <div className="flex items-center justify-between pb-4 border-b border-gray-800 sticky top-0 bg-gray-900/90 backdrop-blur z-20">
+              <div className="flex items-center space-x-2">
+                <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-indigo-600 text-white shadow">
+                  <Sparkles className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white flex items-center gap-1.5">
+                    月份手帳手機桌布
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-purple-950 text-purple-300 border border-purple-800 font-mono">
+                      9:16 HD
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-400">
+                    一鍵將 {currentYear} 年 {currentMonth + 1} 月參戰月曆繪製為手機鎖定畫面桌布
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowWallpaperModal(false)}
+                className="p-1.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors border border-gray-700"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <div className="overflow-y-auto space-y-4 pt-4 flex flex-col items-center">
+              {wallpaperGenerating ? (
+                <div className="h-96 flex flex-col items-center justify-center space-y-3">
+                  <RefreshCw className="h-8 w-8 text-indigo-400 animate-spin" />
+                  <span className="text-xs text-gray-400 font-semibold">
+                    正在繪製高解析 1080×1920 手帳桌布...
+                  </span>
+                </div>
+              ) : wallpaperDataUrl ? (
+                <div className="space-y-4 w-full flex flex-col items-center">
+                  <div className="relative rounded-2xl overflow-hidden border-2 border-indigo-500/50 shadow-2xl max-h-[55dvh] aspect-[9/16] bg-black">
+                    <img
+                      src={wallpaperDataUrl}
+                      alt="Wallpaper Preview"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+
+                  <div className="w-full flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={handleOpenWallpaperModal}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold border border-gray-700 transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      <span>重新生成</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleDownloadWallpaper}
+                      className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white text-xs font-bold shadow-lg transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Download className="h-4 w-4" />
+                      <span>下載高清桌布 (PNG)</span>
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -26,7 +26,17 @@ export interface CalendarItem {
   doorsOpenTime?: string | null;
   attendance?: {
     id: string;
-    status: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
+    status:
+      | 'WANT_TO_GO'
+      | 'TICKETING'
+      | 'CONFIRMED'
+      | 'ATTENDED'
+      | 'MISSED'
+      | 'PURCHASED'
+      | 'WAITING_TO_BUY'
+      | 'LOTTERY_ENTERED'
+      | 'TRANSFERRING'
+      | 'ABANDONED';
     seatInfo: string | null;
     ticketType: string;
     ticketPrice: number | null;

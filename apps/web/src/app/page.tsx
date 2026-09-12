@@ -34,6 +34,9 @@ import {
   Clock,
   Flame,
   HardDrive,
+  ArrowRightLeft,
+  ThumbsUp,
+  Lightbulb,
 } from 'lucide-react';
 import type { ScrapedEvent } from '@stubbook/scraper-core';
 import { TicketMaskModal } from '../components/TicketMaskModal';
@@ -54,12 +57,31 @@ type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics' | 'back
 
 interface SessionAttendance {
   id: string;
-  status: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
+  status:
+    | 'WANT_TO_GO'
+    | 'TICKETING'
+    | 'CONFIRMED'
+    | 'ATTENDED'
+    | 'MISSED'
+    | 'PURCHASED'
+    | 'WAITING_TO_BUY'
+    | 'LOTTERY_ENTERED'
+    | 'TRANSFERRING'
+    | 'ABANDONED';
   seatInfo: string | null;
   ticketType: 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
   ticketPrice: number | null;
   currency: string;
   rating: number | null;
+  ratingSound?: number | null;
+  ratingSight?: number | null;
+  ratingAtmosphere?: number | null;
+  ratingPerformance?: number | null;
+  pros?: string | null;
+  cons?: string | null;
+  tips?: string | null;
+  queueTimeMinutes?: number | null;
+  transferNotes?: string | null;
   notes: string | null;
   ticketStubUrl?: string | null;
   stubPrivacyMasked?: boolean;
@@ -100,34 +122,64 @@ const STATUS_CONFIG: Record<
   { label: string; color: string; badgeBg: string; border: string }
 > = {
   WANT_TO_GO: {
-    label: '想去',
-    color: 'text-purple-400',
-    badgeBg: 'bg-purple-950/70 text-purple-300',
-    border: 'border-purple-800/60',
-  },
-  TICKETING: {
-    label: '搶票中',
+    label: '想去 / 觀望中',
     color: 'text-amber-400',
     badgeBg: 'bg-amber-950/70 text-amber-300',
     border: 'border-amber-800/60',
   },
+  WAITING_TO_BUY: {
+    label: '待搶票 / 備戰中',
+    color: 'text-orange-400',
+    badgeBg: 'bg-orange-950/70 text-orange-300',
+    border: 'border-orange-800/60',
+  },
+  LOTTERY_ENTERED: {
+    label: '抽選登記中',
+    color: 'text-pink-400',
+    badgeBg: 'bg-pink-950/70 text-pink-300',
+    border: 'border-pink-800/60',
+  },
+  TICKETING: {
+    label: '搶票中',
+    color: 'text-blue-400',
+    badgeBg: 'bg-blue-950/70 text-blue-300',
+    border: 'border-blue-800/60',
+  },
+  PURCHASED: {
+    label: '已購票 / 已付款',
+    color: 'text-teal-400',
+    badgeBg: 'bg-teal-950/70 text-teal-300',
+    border: 'border-teal-800/60',
+  },
   CONFIRMED: {
-    label: '確定參加',
+    label: '確定參戰',
     color: 'text-indigo-400',
     badgeBg: 'bg-indigo-950/70 text-indigo-300',
     border: 'border-indigo-800/60',
   },
+  TRANSFERRING: {
+    label: '讓票 / 換票中',
+    color: 'text-purple-400',
+    badgeBg: 'bg-purple-950/70 text-purple-300',
+    border: 'border-purple-800/60',
+  },
+  ABANDONED: {
+    label: '未中籤 / 已放棄',
+    color: 'text-gray-400',
+    badgeBg: 'bg-gray-850 text-gray-400',
+    border: 'border-gray-700',
+  },
   ATTENDED: {
-    label: '已參加',
+    label: '已參戰',
     color: 'text-emerald-400',
     badgeBg: 'bg-emerald-950/70 text-emerald-300',
     border: 'border-emerald-800/60',
   },
   MISSED: {
-    label: '未參加',
-    color: 'text-gray-400',
-    badgeBg: 'bg-gray-850 text-gray-400',
-    border: 'border-gray-700',
+    label: '未前往',
+    color: 'text-rose-400',
+    badgeBg: 'bg-rose-950/70 text-rose-300',
+    border: 'border-rose-800/60',
   },
 };
 
@@ -156,11 +208,30 @@ export default function HomePage() {
     session: SavedSession;
   } | null>(null);
   const [attendanceForm, setAttendanceForm] = useState<{
-    status: 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
+    status:
+      | 'WANT_TO_GO'
+      | 'TICKETING'
+      | 'CONFIRMED'
+      | 'ATTENDED'
+      | 'MISSED'
+      | 'PURCHASED'
+      | 'WAITING_TO_BUY'
+      | 'LOTTERY_ENTERED'
+      | 'TRANSFERRING'
+      | 'ABANDONED';
     seatInfo: string;
     ticketType: 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
     ticketPrice: string;
     rating: number;
+    ratingSound: number;
+    ratingSight: number;
+    ratingAtmosphere: number;
+    ratingPerformance: number;
+    pros: string;
+    cons: string;
+    tips: string;
+    queueTimeMinutes: string;
+    transferNotes: string;
     notes: string;
     ticketStubUrl: string | null;
     stubPrivacyMasked: boolean;
@@ -170,6 +241,15 @@ export default function HomePage() {
     ticketType: 'DIGITAL',
     ticketPrice: '',
     rating: 5,
+    ratingSound: 5,
+    ratingSight: 5,
+    ratingAtmosphere: 5,
+    ratingPerformance: 5,
+    pros: '',
+    cons: '',
+    tips: '',
+    queueTimeMinutes: '',
+    transferNotes: '',
     notes: '',
     ticketStubUrl: null,
     stubPrivacyMasked: false,
@@ -411,6 +491,19 @@ export default function HomePage() {
         ticketPrice:
           session.attendance.ticketPrice !== null ? String(session.attendance.ticketPrice) : '',
         rating: session.attendance.rating || 5,
+        ratingSound: session.attendance.ratingSound || 5,
+        ratingSight: session.attendance.ratingSight || 5,
+        ratingAtmosphere: session.attendance.ratingAtmosphere || 5,
+        ratingPerformance: session.attendance.ratingPerformance || 5,
+        pros: session.attendance.pros || '',
+        cons: session.attendance.cons || '',
+        tips: session.attendance.tips || '',
+        queueTimeMinutes:
+          session.attendance.queueTimeMinutes !== null &&
+          session.attendance.queueTimeMinutes !== undefined
+            ? String(session.attendance.queueTimeMinutes)
+            : '',
+        transferNotes: session.attendance.transferNotes || '',
         notes: session.attendance.notes || '',
         ticketStubUrl: session.attendance.ticketStubUrl || null,
         stubPrivacyMasked: Boolean(session.attendance.stubPrivacyMasked),
@@ -422,6 +515,15 @@ export default function HomePage() {
         ticketType: 'DIGITAL',
         ticketPrice: '',
         rating: 5,
+        ratingSound: 5,
+        ratingSight: 5,
+        ratingAtmosphere: 5,
+        ratingPerformance: 5,
+        pros: '',
+        cons: '',
+        tips: '',
+        queueTimeMinutes: '',
+        transferNotes: '',
         notes: '',
         ticketStubUrl: null,
         stubPrivacyMasked: false,
@@ -432,11 +534,6 @@ export default function HomePage() {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('請上傳 5MB 以內之圖片');
-      return;
-    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -492,6 +589,17 @@ export default function HomePage() {
           ticketPrice: attendanceForm.ticketPrice ? Number(attendanceForm.ticketPrice) : null,
           currency: 'TWD',
           rating: attendanceForm.rating,
+          ratingSound: attendanceForm.ratingSound,
+          ratingSight: attendanceForm.ratingSight,
+          ratingAtmosphere: attendanceForm.ratingAtmosphere,
+          ratingPerformance: attendanceForm.ratingPerformance,
+          pros: attendanceForm.pros.trim() || null,
+          cons: attendanceForm.cons.trim() || null,
+          tips: attendanceForm.tips.trim() || null,
+          queueTimeMinutes: attendanceForm.queueTimeMinutes
+            ? Number(attendanceForm.queueTimeMinutes)
+            : null,
+          transferNotes: attendanceForm.transferNotes.trim() || null,
           notes: attendanceForm.notes.trim() || null,
           ticketStubUrl: attendanceForm.ticketStubUrl || null,
           stubPrivacyMasked: attendanceForm.stubPrivacyMasked ? 1 : 0,
@@ -1829,26 +1937,43 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* 參戰狀態選擇 */}
+              {/* 參戰狀態選擇 (全生命週期 10 種狀態) */}
               <div className="space-y-2">
-                <label className="text-xs font-semibold text-gray-300">參戰狀態</label>
-                <div className="grid grid-cols-3 sm:grid-cols-5 gap-1.5">
-                  {(['WANT_TO_GO', 'TICKETING', 'CONFIRMED', 'ATTENDED', 'MISSED'] as const).map(
-                    (st) => (
-                      <button
-                        key={st}
-                        type="button"
-                        onClick={() => setAttendanceForm({ ...attendanceForm, status: st })}
-                        className={`py-2 px-1 text-xs font-bold rounded-lg border transition-all text-center ${
-                          attendanceForm.status === st
-                            ? `${STATUS_CONFIG[st].badgeBg} ${STATUS_CONFIG[st].border} ring-2 ring-indigo-500`
-                            : 'bg-gray-950/60 border-gray-800 text-gray-400 hover:bg-gray-800'
-                        }`}
-                      >
-                        {STATUS_CONFIG[st].label}
-                      </button>
-                    )
-                  )}
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-semibold text-gray-300">票券與參戰生命週期</label>
+                  <span className="text-[10px] text-indigo-400 font-mono">
+                    {STATUS_CONFIG[attendanceForm.status]?.label}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
+                  {(
+                    [
+                      'WANT_TO_GO',
+                      'WAITING_TO_BUY',
+                      'LOTTERY_ENTERED',
+                      'TICKETING',
+                      'PURCHASED',
+                      'CONFIRMED',
+                      'TRANSFERRING',
+                      'ABANDONED',
+                      'ATTENDED',
+                      'MISSED',
+                    ] as const
+                  ).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => setAttendanceForm({ ...attendanceForm, status: st })}
+                      className={`py-1.5 px-1 text-[11px] font-bold rounded-lg border transition-all text-center truncate ${
+                        attendanceForm.status === st
+                          ? `${STATUS_CONFIG[st].badgeBg} ${STATUS_CONFIG[st].border} ring-2 ring-indigo-500`
+                          : 'bg-gray-950/60 border-gray-800 text-gray-400 hover:bg-gray-800'
+                      }`}
+                      title={STATUS_CONFIG[st].label}
+                    >
+                      {STATUS_CONFIG[st].label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
@@ -1887,44 +2012,238 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* 實付票價與評價星等 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300">實付票價 (TWD)</label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+              {/* 實付票價 */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-gray-300">實付票價 (TWD)</label>
+                <div className="relative">
+                  <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                  <input
+                    type="number"
+                    value={attendanceForm.ticketPrice}
+                    onChange={(e) =>
+                      setAttendanceForm({ ...attendanceForm, ticketPrice: e.target.value })
+                    }
+                    placeholder="例：4800"
+                    className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                  />
+                </div>
+              </div>
+
+              {/* 五維現場體驗評鑑 */}
+              <div className="bg-gray-950/70 border border-gray-800 p-3.5 rounded-2xl space-y-3">
+                <div className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                  <span className="flex items-center gap-1 text-amber-400">
+                    <Star className="h-4 w-4 fill-amber-400" />
+                    五維現場演出手帳評鑑 · 觀演星等評價
+                  </span>
+                  <span className="text-[11px] text-amber-300 font-bold font-mono">
+                    綜合評分: {attendanceForm.rating} / 5
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
+                  {/* 綜合評分 */}
+                  <div className="flex items-center justify-between bg-gray-900/80 p-2 rounded-xl border border-gray-800">
+                    <span className="text-gray-300">⭐ 綜合推薦度</span>
+                    <div className="flex items-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setAttendanceForm({ ...attendanceForm, rating: s })}
+                          className="p-0.5 text-gray-600 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              s <= attendanceForm.rating
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-700'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 音響音質 */}
+                  <div className="flex items-center justify-between bg-gray-900/80 p-2 rounded-xl border border-gray-800">
+                    <span className="text-gray-300">🎵 音響音質</span>
+                    <div className="flex items-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setAttendanceForm({ ...attendanceForm, ratingSound: s })}
+                          className="p-0.5 text-gray-600 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              s <= attendanceForm.ratingSound
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-700'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 視野角度 */}
+                  <div className="flex items-center justify-between bg-gray-900/80 p-2 rounded-xl border border-gray-800">
+                    <span className="text-gray-300">👀 視野角度</span>
+                    <div className="flex items-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => setAttendanceForm({ ...attendanceForm, ratingSight: s })}
+                          className="p-0.5 text-gray-600 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              s <= attendanceForm.ratingSight
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-700'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 現場氛圍 */}
+                  <div className="flex items-center justify-between bg-gray-900/80 p-2 rounded-xl border border-gray-800">
+                    <span className="text-gray-300">🔥 現場氛圍</span>
+                    <div className="flex items-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() =>
+                            setAttendanceForm({ ...attendanceForm, ratingAtmosphere: s })
+                          }
+                          className="p-0.5 text-gray-600 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              s <= attendanceForm.ratingAtmosphere
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-700'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* 演出表現 */}
+                  <div className="flex items-center justify-between bg-gray-900/80 p-2 rounded-xl border border-gray-800 sm:col-span-2">
+                    <span className="text-gray-300">🎤 藝人演出表現</span>
+                    <div className="flex items-center space-x-0.5">
+                      {[1, 2, 3, 4, 5].map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() =>
+                            setAttendanceForm({ ...attendanceForm, ratingPerformance: s })
+                          }
+                          className="p-0.5 text-gray-600 hover:text-amber-400 transition-colors"
+                        >
+                          <Star
+                            className={`h-4 w-4 ${
+                              s <= attendanceForm.ratingPerformance
+                                ? 'fill-amber-400 text-amber-400'
+                                : 'text-gray-700'
+                            }`}
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 結構化參戰手帳筆記範本 */}
+              <div className="space-y-3 bg-gray-950/70 border border-gray-800 p-3.5 rounded-2xl">
+                <div className="text-xs font-semibold text-gray-300 flex items-center justify-between">
+                  <span>結構化手帳筆記範本</span>
+                  <span className="text-[10px] text-gray-500">參戰回憶與避坑必備</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-gray-400 flex items-center gap-1">
+                      <Clock className="h-3 w-3 text-indigo-400" />
+                      入場 / 周邊排隊耗時 (分鐘)
+                    </label>
                     <input
                       type="number"
-                      value={attendanceForm.ticketPrice}
+                      value={attendanceForm.queueTimeMinutes}
                       onChange={(e) =>
-                        setAttendanceForm({ ...attendanceForm, ticketPrice: e.target.value })
+                        setAttendanceForm({ ...attendanceForm, queueTimeMinutes: e.target.value })
                       }
-                      placeholder="例：4800"
-                      className="w-full bg-gray-950 border border-gray-800 rounded-xl pl-8 pr-3 py-2 text-xs focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
+                      placeholder="例：45"
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] text-purple-300 flex items-center gap-1">
+                      <ArrowRightLeft className="h-3 w-3 text-purple-400" />
+                      讓票 / 換票流轉備忘
+                    </label>
+                    <input
+                      type="text"
+                      value={attendanceForm.transferNotes}
+                      onChange={(e) =>
+                        setAttendanceForm({ ...attendanceForm, transferNotes: e.target.value })
+                      }
+                      placeholder="例：捷運站面交取票"
+                      className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-indigo-500"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-gray-300">觀演星等評價</label>
-                  <div className="flex items-center space-x-1 py-1.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <button
-                        key={star}
-                        type="button"
-                        onClick={() => setAttendanceForm({ ...attendanceForm, rating: star })}
-                        className="p-1 text-gray-600 hover:text-amber-400 transition-colors"
-                      >
-                        <Star
-                          className={`h-5 w-5 ${
-                            star <= attendanceForm.rating
-                              ? 'fill-amber-400 text-amber-400'
-                              : 'text-gray-700'
-                          }`}
-                        />
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] text-emerald-300 flex items-center gap-1">
+                    <ThumbsUp className="h-3 w-3 text-emerald-400" />
+                    值得讚賞 / 亮點好評 (Pros)
+                  </label>
+                  <input
+                    type="text"
+                    value={attendanceForm.pros}
+                    onChange={(e) => setAttendanceForm({ ...attendanceForm, pros: e.target.value })}
+                    placeholder="例：音響層次分明、唱功與舞美滿分"
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] text-rose-300 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3 text-rose-400" />
+                    美中不足 / 踩雷提醒 (Cons)
+                  </label>
+                  <input
+                    type="text"
+                    value={attendanceForm.cons}
+                    onChange={(e) => setAttendanceForm({ ...attendanceForm, cons: e.target.value })}
+                    placeholder="例：周邊排隊動線混亂、空調偏冷"
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-indigo-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] text-amber-300 flex items-center gap-1">
+                    <Lightbulb className="h-3 w-3 text-amber-400" />
+                    下次參戰貼士 / 避坑攻略 (Tips)
+                  </label>
+                  <input
+                    type="text"
+                    value={attendanceForm.tips}
+                    onChange={(e) => setAttendanceForm({ ...attendanceForm, tips: e.target.value })}
+                    placeholder="例：建議提早1.5小時到場領取手燈並自備外套"
+                    className="w-full bg-gray-900 border border-gray-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-indigo-500"
+                  />
                 </div>
               </div>
 
@@ -2189,7 +2508,33 @@ export default function HomePage() {
           ticketType={viewingStubSession.session.attendance?.ticketType}
           ticketStubUrl={viewingStubSession.session.attendance?.ticketStubUrl}
           stubPrivacyMasked={viewingStubSession.session.attendance?.stubPrivacyMasked}
+          status={viewingStubSession.session.attendance?.status}
+          eventId={viewingStubSession.event.id}
+          sessionId={viewingStubSession.session.id}
+          posterUrl={viewingStubSession.event.posterUrl}
+          rating={viewingStubSession.session.attendance?.rating}
+          ratingSound={viewingStubSession.session.attendance?.ratingSound}
+          ratingSight={viewingStubSession.session.attendance?.ratingSight}
+          ratingAtmosphere={viewingStubSession.session.attendance?.ratingAtmosphere}
+          ratingPerformance={viewingStubSession.session.attendance?.ratingPerformance}
+          pros={viewingStubSession.session.attendance?.pros}
+          cons={viewingStubSession.session.attendance?.cons}
+          tips={viewingStubSession.session.attendance?.tips}
+          queueTimeMinutes={viewingStubSession.session.attendance?.queueTimeMinutes}
+          transferNotes={viewingStubSession.session.attendance?.transferNotes}
           onClose={() => setViewingStubSession(null)}
+          onSaveTransferNotes={async (notes) => {
+            if (!viewingStubSession?.session?.id) return;
+            await fetch('/api/attendances', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: viewingStubSession.session.id,
+                transferNotes: notes,
+              }),
+            });
+            await loadSavedEvents();
+          }}
         />
       )}
 
