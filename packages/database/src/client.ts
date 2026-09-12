@@ -49,6 +49,16 @@ export function getDatabase(options?: DatabaseOptions): Database.Database {
   // 初始化 Schema（CREATE IF NOT EXISTS，冪等操作）
   db.exec(SCHEMA_SQL);
 
+  // 輕量自動遷移：確保既有資料庫之 event_setlists 包含 youtube_music_url 欄位
+  try {
+    const cols = db.pragma('table_info(event_setlists)') as Array<{ name: string }>;
+    if (cols.length > 0 && !cols.some((c) => c.name === 'youtube_music_url')) {
+      db.exec('ALTER TABLE event_setlists ADD COLUMN youtube_music_url TEXT;');
+    }
+  } catch {
+    // 忽略建立初期的潛在異常
+  }
+
   return db;
 }
 

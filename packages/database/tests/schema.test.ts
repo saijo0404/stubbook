@@ -202,4 +202,55 @@ describe('SQLite Local Database Schema & Operations', () => {
       .get(eventId) as any;
     expect(remaining.count).toBe(0);
   });
+
+  it('應支援 event_setlists 儲存 Spotify、Apple Music 與 YouTube Music 串流歌單網址', () => {
+    // 1. 建立活動與場次
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('串流歌單測試活動', 'https://kktix.cc/test') RETURNING id"
+      )
+      .get() as any;
+
+    const { id: sessionId } = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_title, session_date) VALUES (?, '場次1', '2026-10-01') RETURNING id"
+      )
+      .get(eventId) as any;
+
+    // 2. 插入歌單
+    const insertSetlist = db.prepare(`
+      INSERT INTO event_setlists (
+        session_id, user_id, artist_name, tour_name, venue_name, session_date,
+        source, songs, spotify_playlist_url, apple_music_url, youtube_music_url, notes
+      )
+      VALUES (?, 'local', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING id, spotify_playlist_url, apple_music_url, youtube_music_url
+    `);
+
+    const result = insertSetlist.get(
+      sessionId,
+      '測試藝人',
+      '世界巡迴 2026',
+      '台北小巨蛋',
+      '2026-10-01',
+      'MANUAL',
+      JSON.stringify([{ name: '曲目一' }, { name: '曲目二' }]),
+      'https://open.spotify.com/playlist/test123',
+      'https://music.apple.com/playlist/test456',
+      'https://music.youtube.com/playlist?list=test789',
+      '極致現場體驗'
+    ) as any;
+
+    expect(result).toBeDefined();
+    expect(result.spotify_playlist_url).toBe('https://open.spotify.com/playlist/test123');
+    expect(result.apple_music_url).toBe('https://music.apple.com/playlist/test456');
+    expect(result.youtube_music_url).toBe('https://music.youtube.com/playlist?list=test789');
+
+    // 驗證查詢
+    const queried = db
+      .prepare('SELECT * FROM event_setlists WHERE session_id = ?')
+      .get(sessionId) as any;
+    expect(queried.youtube_music_url).toBe('https://music.youtube.com/playlist?list=test789');
+    expect(JSON.parse(queried.songs)).toHaveLength(2);
+  });
 });

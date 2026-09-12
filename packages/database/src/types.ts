@@ -158,6 +158,7 @@ export interface EventSetlist {
   songs: string; // JSON string of SetlistSong[]
   spotify_playlist_url: string | null;
   apple_music_url: string | null;
+  youtube_music_url: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;

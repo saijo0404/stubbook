@@ -19,6 +19,7 @@ import {
   Search,
 } from 'lucide-react';
 import { haptics } from '../utils/haptics';
+import { StreamingSyncHub } from './StreamingSyncHub';
 
 export interface SetlistSongItem {
   name: string;
@@ -40,6 +41,7 @@ export interface SetlistData {
   songs: SetlistSongItem[];
   spotifyPlaylistUrl?: string | null;
   appleMusicUrl?: string | null;
+  youtubeMusicUrl?: string | null;
   notes?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -73,6 +75,7 @@ export const SetlistModal: React.FC<SetlistModalProps> = ({
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
   const [spotifyUrl, setSpotifyUrl] = useState<string>('');
   const [appleMusicUrl, setAppleMusicUrl] = useState<string>('');
+  const [youtubeMusicUrl, setYoutubeMusicUrl] = useState<string>('');
   const [notes, setNotes] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [importingFm, setImportingFm] = useState(false);
@@ -104,6 +107,7 @@ export const SetlistModal: React.FC<SetlistModalProps> = ({
           setSourceUrl(data.setlist.sourceUrl || null);
           setSpotifyUrl(data.setlist.spotifyPlaylistUrl || '');
           setAppleMusicUrl(data.setlist.appleMusicUrl || '');
+          setYoutubeMusicUrl(data.setlist.youtubeMusicUrl || '');
           setNotes(data.setlist.notes || '');
         } else {
           setSongs([]);
@@ -201,6 +205,7 @@ export const SetlistModal: React.FC<SetlistModalProps> = ({
         songs,
         spotifyPlaylistUrl: spotifyUrl.trim() || null,
         appleMusicUrl: appleMusicUrl.trim() || null,
+        youtubeMusicUrl: youtubeMusicUrl.trim() || null,
         notes: notes.trim() || null,
       };
 
@@ -590,38 +595,35 @@ export const SetlistModal: React.FC<SetlistModalProps> = ({
                 </button>
               </form>
 
-              {/* 播放清單連結儲存 */}
-              <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-4 space-y-3">
-                <div className="text-xs font-bold text-zinc-200 border-b border-zinc-800 pb-2 flex items-center space-x-1.5">
-                  <Music2 className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>串流播放清單連結</span>
-                </div>
+              {/* 串流音樂全生態深度聯動中心 (Spotify / Apple Music / YouTube Music) */}
+              <StreamingSyncHub
+                songs={songs}
+                artistName={artistName.trim() || eventTitle.split(' ')[0] || '演出藝人'}
+                tourName={eventTitle}
+                venueName={venueName}
+                sessionDate={sessionDate}
+                spotifyPlaylistUrl={spotifyUrl}
+                appleMusicUrl={appleMusicUrl}
+                youtubeMusicUrl={youtubeMusicUrl}
+                onUpdateUrls={(urls) => {
+                  if (urls.spotifyPlaylistUrl !== undefined) setSpotifyUrl(urls.spotifyPlaylistUrl);
+                  if (urls.appleMusicUrl !== undefined) setAppleMusicUrl(urls.appleMusicUrl);
+                  if (urls.youtubeMusicUrl !== undefined) setYoutubeMusicUrl(urls.youtubeMusicUrl);
+                }}
+              />
 
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-400 mb-1">
-                    Spotify 播放清單網址
-                  </label>
-                  <input
-                    type="url"
-                    value={spotifyUrl}
-                    onChange={(e) => setSpotifyUrl(e.target.value)}
-                    placeholder="https://open.spotify.com/playlist/..."
-                    className="w-full px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-medium text-zinc-400 mb-1">
-                    心得與隨筆筆記
-                  </label>
-                  <textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    rows={2}
-                    placeholder="記錄這場演出的特別曲目回憶..."
-                    className="w-full px-3 py-1.5 bg-zinc-900 border border-zinc-700 rounded-lg text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
-                  />
-                </div>
+              {/* 心得與隨筆筆記 */}
+              <div className="bg-zinc-950/60 border border-zinc-800 rounded-2xl p-4 space-y-2">
+                <label className="block text-[11px] font-medium text-zinc-300">
+                  現場隨筆與觀演筆記
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={2}
+                  placeholder="記錄這場演出的特別曲目回憶、嘉賓或安可驚喜..."
+                  className="w-full px-3 py-2 bg-zinc-900 border border-zinc-700 rounded-xl text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
+                />
               </div>
             </div>
           </div>

@@ -155,6 +155,7 @@ export async function GET(req: NextRequest) {
         songs,
         spotify_playlist_url as spotifyPlaylistUrl,
         apple_music_url as appleMusicUrl,
+        youtube_music_url as youtubeMusicUrl,
         notes,
         created_at as createdAt,
         updated_at as updatedAt
@@ -202,6 +203,7 @@ export async function POST(req: NextRequest) {
       songs = [],
       spotifyPlaylistUrl = null,
       appleMusicUrl = null,
+      youtubeMusicUrl = null,
       notes = null,
     } = body;
 
@@ -234,9 +236,9 @@ export async function POST(req: NextRequest) {
     const sql = `
       INSERT INTO event_setlists (
         session_id, user_id, artist_name, tour_name, venue_name, session_date,
-        source, source_url, songs, spotify_playlist_url, apple_music_url, notes
+        source, source_url, songs, spotify_playlist_url, apple_music_url, youtube_music_url, notes
       )
-      VALUES (?, 'local', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, 'local', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(session_id, user_id) DO UPDATE SET
         artist_name = excluded.artist_name,
         tour_name = excluded.tour_name,
@@ -247,6 +249,7 @@ export async function POST(req: NextRequest) {
         songs = excluded.songs,
         spotify_playlist_url = excluded.spotify_playlist_url,
         apple_music_url = excluded.apple_music_url,
+        youtube_music_url = excluded.youtube_music_url,
         notes = excluded.notes,
         updated_at = datetime('now')
       RETURNING 
@@ -254,6 +257,7 @@ export async function POST(req: NextRequest) {
         tour_name as tourName, venue_name as venueName, session_date as sessionDate,
         source, source_url as sourceUrl, songs,
         spotify_playlist_url as spotifyPlaylistUrl, apple_music_url as appleMusicUrl,
+        youtube_music_url as youtubeMusicUrl,
         notes, created_at as createdAt, updated_at as updatedAt
     `;
 
@@ -270,6 +274,7 @@ export async function POST(req: NextRequest) {
         songsJson,
         spotifyPlaylistUrl ? String(spotifyPlaylistUrl).trim() : null,
         appleMusicUrl ? String(appleMusicUrl).trim() : null,
+        youtubeMusicUrl ? String(youtubeMusicUrl).trim() : null,
         notes ? String(notes).trim() : null
       ) as any;
 
