@@ -979,4 +979,92 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain("activeTab === 'backup'");
     expect(pageContent).toContain('備份與還原');
   });
+
+  it('售票平台全覆蓋擴展：API 與適配器應支援 ibon、FamiTicket、寬宏售票、INDIEVOX (Phase 7: Issues #56, #57, #58, #59)', async () => {
+    const { POST } = await import('../src/app/api/scrape/route');
+
+    // 1. 7-ELEVEN ibon (Issue #56)
+    const ibonReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: 'https://ticket.ibon.com.tw/ActivityInfo/Details.aspx?id=38120',
+      }),
+    });
+    const ibonRes = await POST(ibonReq as any);
+    expect(ibonRes.status).toBe(200);
+    const ibonData = await ibonRes.json();
+    expect(ibonData.success).toBe(true);
+    expect(ibonData.event.platform).toBe('IBON');
+    expect(ibonData.event.title).toContain('五月天');
+    expect(ibonData.event.sessions.length).toBe(2);
+    expect(ibonData.event.salePhases.length).toBeGreaterThanOrEqual(2);
+
+    // 2. 全家 FamiTicket 全網購票網 (Issue #57)
+    const famiReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://www.famiticket.com.tw/Home/Activity/Info/2026_JOLIN' }),
+    });
+    const famiRes = await POST(famiReq as any);
+    expect(famiRes.status).toBe(200);
+    const famiData = await famiRes.json();
+    expect(famiData.success).toBe(true);
+    expect(famiData.event.platform).toBe('FAMITICKET');
+    expect(famiData.event.title).toContain('蔡依林');
+    expect(famiData.event.sessions.length).toBe(2);
+    expect(famiData.event.salePhases.length).toBeGreaterThanOrEqual(2);
+
+    // 3. 寬宏售票 Kham Ticketing (Issue #58)
+    const khamReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: 'https://kham.com.tw/application/UTK02/UTK0201_00.aspx?PRODUCT_ID=M0KHAM26',
+      }),
+    });
+    const khamRes = await POST(khamReq as any);
+    expect(khamRes.status).toBe(200);
+    const khamData = await khamRes.json();
+    expect(khamData.success).toBe(true);
+    expect(khamData.event.platform).toBe('KHAM');
+    expect(khamData.event.title).toContain('鐘樓怪人');
+    expect(khamData.event.sessions.length).toBe(3);
+    expect(khamData.event.salePhases.length).toBeGreaterThanOrEqual(2);
+
+    // 4. INDIEVOX 獨立音樂網 (Issue #59)
+    const indievoxReq = new Request('http://localhost:3000/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: 'https://www.indievox.com/activity/detail/26_NO_PARTY' }),
+    });
+    const indievoxRes = await POST(indievoxReq as any);
+    expect(indievoxRes.status).toBe(200);
+    const indievoxData = await indievoxRes.json();
+    expect(indievoxData.success).toBe(true);
+    expect(indievoxData.event.platform).toBe('INDIEVOX');
+    expect(indievoxData.event.title).toContain('草東沒有派對');
+    expect(indievoxData.event.sessions.length).toBe(1);
+    expect(indievoxData.event.sessions[0].doorsOpenTime).toBe('19:00');
+    expect(indievoxData.event.sessions[0].ticketTiers.length).toBeGreaterThanOrEqual(3);
+  });
+
+  it('前端與狀態欄應完整整合 6 大售票平台快速示範與專屬主題標籤 (Phase 7: Issue #59)', () => {
+    // 1. 檢查 layout.tsx 狀態欄文字
+    const layoutPath = path.join(__dirname, '..', 'src', 'app', 'layout.tsx');
+    const layoutContent = fs.readFileSync(layoutPath, 'utf-8');
+    expect(layoutContent).toContain('全台 6 大售票解析在線');
+
+    // 2. 檢查 page.tsx 快速示範按鈕與標籤色彩
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('🏪 [ibon] 2026 五月天世運');
+    expect(pageContent).toContain('🏪 [全網] 2026 蔡依林小巨蛋');
+    expect(pageContent).toContain('🎭 [寬宏] 音樂劇《鐘樓怪人》');
+    expect(pageContent).toContain('🎸 [INDIEVOX] 草東沒有派對 Legacy');
+    expect(pageContent).toContain("event.platform === 'IBON'");
+    expect(pageContent).toContain("event.platform === 'FAMITICKET'");
+    expect(pageContent).toContain("event.platform === 'KHAM'");
+    expect(pageContent).toContain("event.platform === 'INDIEVOX'");
+  });
 });

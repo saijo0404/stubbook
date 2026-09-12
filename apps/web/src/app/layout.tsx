@@ -43,7 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <div className="flex items-center space-x-4 text-sm">
               <span className="inline-flex items-center text-xs text-emerald-400 bg-emerald-950/40 border border-emerald-800/50 px-2.5 py-1 rounded-full">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse mr-1.5"></span>
-                KKTIX & 拓元 解析在線
+                全台 6 大售票解析在線
               </span>
               <a
                 href="https://github.com/saijo0404/stubbook"

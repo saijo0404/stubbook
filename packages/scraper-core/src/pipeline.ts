@@ -1,6 +1,10 @@
 import { BaseScraperAdapter } from './adapters/base';
 import { KktixScraperAdapter } from './adapters/kktix';
 import { TixcraftScraperAdapter } from './adapters/tixcraft';
+import { IbonScraperAdapter } from './adapters/ibon';
+import { FamiTicketScraperAdapter } from './adapters/famiticket';
+import { KhamScraperAdapter } from './adapters/kham';
+import { IndievoxScraperAdapter } from './adapters/indievox';
 import { MetaScraperAdapter } from './adapters/meta';
 import { ScrapedEvent, ScrapedEventSchema } from './types';
 
@@ -17,6 +21,10 @@ export class ScraperPipeline {
     this.adapters = options?.customAdapters || [
       new KktixScraperAdapter(),
       new TixcraftScraperAdapter(),
+      new IbonScraperAdapter(),
+      new FamiTicketScraperAdapter(),
+      new KhamScraperAdapter(),
+      new IndievoxScraperAdapter(),
       new MetaScraperAdapter(), // 永遠放最後作為萬用備援
     ];
     this.userAgent =

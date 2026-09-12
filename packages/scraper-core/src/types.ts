@@ -1,6 +1,15 @@
 import { z } from 'zod';
 
-export const TicketPlatformEnum = z.enum(['KKTIX', 'TIXCRAFT', 'TICKET_PLUS', 'IBON', 'OTHER']);
+export const TicketPlatformEnum = z.enum([
+  'KKTIX',
+  'TIXCRAFT',
+  'TICKET_PLUS',
+  'IBON',
+  'FAMITICKET',
+  'KHAM',
+  'INDIEVOX',
+  'OTHER',
+]);
 export type TicketPlatform = z.infer<typeof TicketPlatformEnum>;
 
 export const TicketStatusEnum = z.enum([
