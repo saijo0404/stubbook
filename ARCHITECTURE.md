@@ -104,6 +104,11 @@ erDiagram
     USER_ATTENDANCES ||--o{ MERCHANDISE_ITEMS : purchases
     USER_ATTENDANCES ||--o{ SETLIST_SONGS : remembers
     USER_ATTENDANCES ||--o{ ATTENDANCE_EXPENSES : incurs
+    USERS ||--o{ USER_FRIENDS : maintains
+    USER_ATTENDANCES ||--o{ ATTENDANCE_COMPANIONS : tags
+    USER_FRIENDS ||--o{ ATTENDANCE_COMPANIONS : links
+    USERS ||--o{ TICKET_EXCHANGES : tracks
+    EVENT_SESSIONS ||--o{ TICKET_EXCHANGES : targets
 
     VENUES {
         uuid id PK
@@ -253,6 +258,52 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
+
+    USER_FRIENDS {
+        uuid id PK
+        string user_id
+        string friend_name
+        string friend_avatar
+        enum relationship_tier "CLOSE_FRIEND | REGULAR | ACQUAINTANCE"
+        string contact_handle
+        text notes
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTENDANCE_COMPANIONS {
+        uuid id PK
+        uuid attendance_id FK
+        uuid friend_id FK
+        string companion_name
+        enum companion_role "COUPLE | BESTIE | FAMILY | FAN_CLUB | OTHER"
+        string seat_nearby
+        text notes
+        timestamp created_at
+    }
+
+    TICKET_EXCHANGES {
+        uuid id PK
+        uuid attendance_id FK
+        uuid session_id FK
+        string user_id
+        enum exchange_type "TRANSFER_OUT | EXCHANGE | SEEK_TICKET"
+        string target_name
+        string contact_info
+        enum platform "FACEBOOK | THREADS | PTT | DCARD | OFFICIAL | OTHER"
+        string my_seat
+        string target_seat
+        decimal price_difference
+        string currency
+        enum status "INITIATED | PAID_DEPOSIT | IN_PERSON_MEETUP | TICKET_RECEIVED | COMPLETED | CANCELLED"
+        string meetup_location
+        timestamp meetup_time
+        string serial_number
+        boolean anti_fraud_checked
+        text notes
+        timestamp created_at
+        timestamp updated_at
+    }
 ```
 
 ---
@@ -396,7 +447,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "2.3.0",
+     "appVersion": "2.4.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",
@@ -604,3 +655,38 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
 3. **2x Retina 超取樣導出與社群分享**：
    - 前端採用 HTML5 Canvas 2x 超取樣抗鋸齒繪製，支援自訂個人社群 ID 浮水印（如 `@instagram_id`）。
    - 提供「一鍵導出高解析度 PNG」與原生「Web Share API」系統級一鍵轉發至 IG Stories、LINE、Threads 等社群平台。
+
+---
+
+## 11. 四級隱私好友圈、同行 P2P 票根互傳與讓換票核驗 (Social Connect & P2P Stub Sync)
+
+### 11.1 四級隱私防護與同行參戰夥伴標記 (Privacy Levels & Concert Buddies)
+
+1. **四級隱私權限模型 (`privacy_level`)**：
+   - 擴充 `user_attendances.privacy_level`，支援 `PUBLIC`（全公開）、`FRIENDS`（好友可見）、`CLOSE_FRIENDS`（僅摯友圈可見）、`PRIVATE`（私密僅自己可見）。
+   - 預設為最高隱私規格 `PRIVATE`，確保在去中心化與分享時使用者資料絕對自主可控。
+2. **好友名冊 (`user_friends`) 與同行標記 (`attendance_companions`)**：
+   - 本地好友通訊錄，支援頭像、社交聯絡帳號（Threads / IG）、關係階層（`CLOSE_FRIEND`、`REGULAR`、`ACQUAINTANCE`）。
+   - 手帳場次關聯同行好友，設定同行身分（死黨 `BESTIE`、情侶 `COUPLE`、推友 `FAN_CLUB`、家人 `FAMILY`、夥伴 `OTHER`）與臨近座位，自動統計彼此累計同行參戰場次。
+
+### 11.2 去中心化現場 P2P 票根快傳協定 (P2P Stub Share Protocol)
+
+1. **去中心化與去識別化安全封包 (`P2PStubPacket`)**：
+   - 定義標準協定 `stubbook-p2p://`，採 Base64 結構化封裝。
+   - **嚴格個資脫敏**：快傳封包強制剔除票券價格、條碼流水號、個人真實備忘等機敏欄位，僅傳遞公開之巡演主視覺、場館、演出時間、Setlist 歌單與公開心得。
+2. **現場免伺服器近場快傳**：
+   - 支援動態 QR Code 顯示與掃描解析，同行樂迷在現場無需連線外部伺服器亦可透過近場掃描或複製傳輸碼一鍵入庫，自動補全活動並關聯同行夥伴。
+
+### 11.3 讓換票流轉追蹤與官方防偽真偽核驗助手 (Safe Ticket Exchange Companion)
+
+1. **讓換票五階段進度追蹤 (`ticket_exchanges`)**：
+   - 涵蓋讓票 (`TRANSFER_OUT`)、換票 (`EXCHANGE`)、求票 (`SEEK_TICKET`) 三大情境。
+   - 五大流轉生命週期：`INITIATED`（洽談確認中）➔ `PAID_DEPOSIT`（定金已支付）➔ `IN_PERSON_MEETUP`（面交驗票中）➔ `TICKET_RECEIVED`（票券已點收）➔ `COMPLETED`（交易完成）。
+2. **四大售票平台官方防偽特徵庫**：
+   - **拓元售票 (tixCraft)**：實體票金屬立體全像燙銀防偽線、365nm 紫光雙色螢光防偽纖維、點陣高壓流水碼、官方 App 動態光環電子票。
+   - **KKTIX**：彩虹雷射金屬貼標、微縮幾何印字、官方 App 即時動態浮水印與高頻動態 QR 碼。
+   - **ibon (7-Eleven)**：7-ELEVEN 專用水印防偽底紙、溫感油墨變色反應、紫光燈專屬螢光標誌。
+   - **全家 FamiTicket**：FamiPort 綠白微縮字底紋、熱感應壓印反光特性、票面專屬特徵條碼。
+3. **互動式防偽驗收 Checklist 與防詐話術庫**：
+   - 逐項勾選防偽檢查項目，進度即時寫入資料庫 `anti_fraud_checked`。
+   - 內建一鍵複製「防三角詐騙自保話術」與「面交索證對話範本」，全方位防範票券交易受騙。
