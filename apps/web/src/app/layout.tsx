@@ -35,7 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                   StubBook
                 </span>
                 <span className="ml-2 text-xs text-gray-400 hidden sm:inline-block border border-gray-700/60 px-2 py-0.5 rounded-full">
-                  票根手帳 v2.2.0
+                  票根手帳 v2.3.0
                 </span>
               </div>
             </div>
