@@ -16,22 +16,22 @@
 └──────────────┘     └──────────────┘     └──────────────┘     └──────────────┘
        │
        ▼
-┌──────────────┐     ┌──────────────┐     ┌──────────────┐
-│   Phase 5    │ ──► │   Phase 6    │ ──► │   Phase 7    │
-│ 智慧行事曆   │     │ 資料備份還原 │     │ 售票平台擴展 │
-│ 與搶票提醒   │     │ 與冷熱遷移   │     │ (全台6大系統)│
-│  (v1.1.0) ✅ │     │  (v1.2.0) ✅ │     │  (v1.3.0) ✅ │
-└──────────────┘     └──────────────┘     └──────────────┘
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Phase 5    │ ──► │   Phase 6    │ ──► │   Phase 7    │ ──► │   Phase 8    │
+│ 智慧行事曆   │     │ 資料備份還原 │     │ 售票平台擴展 │     │ 串流音樂生態 │
+│ 與搶票提醒   │     │ 與冷熱遷移   │     │ (全台6大系統)│     │(Spotify/Apple│
+│  (v1.1.0) ✅ │     │  (v1.2.0) ✅ │     │  (v1.3.0) ✅ │     │ /YT Music)   │
+└──────────────┘     └──────────────┘     └──────────────┘     │  (v1.4.0) ✅ │
+                                                               └──────────────┘
        │
        ▼
 【後續規劃里程碑】
-┌──────────────┐     ┌──────────────┐
-│   Phase 8    │ ──► │   Phase 9    │
-│ 串流音樂生態 │     │ 原生雙端發行 │
-│(Spotify/Apple│     │(Android/iOS) │
-│ /YT Music)   │     │   (v2.0.0)   │
-│   (v1.4.0)   │     │              │
-└──────────────┘     └──────────────┘
+┌──────────────┐
+│   Phase 9    │
+│ 原生雙端發行 │
+│(Android/iOS) │
+│   (v2.0.0)   │
+└──────────────┘
 ```
 
 ---
@@ -163,18 +163,18 @@
 ## 🎧 Phase 8: 串流音樂全生態深度聯動 (Full Streaming Music Hub)
 
 > **目標**：將歌單從單向搜尋導購，升級為跨各大串流平台的帳號雙向授權與一鍵自動建立歌單。
-> **對應版本**：`v1.4.0`
+> **對應版本**：`v1.4.0` ✅
 
-- [ ] **Spotify OAuth 2.0 PKCE 深入整合**
-  - [ ] 實作純前端安全 PKCE 授權流程（無須後端代理存取 Token）
-  - [ ] 一鍵調用 Spotify Web API 在使用者帳號內自動建立「[藝人名] [巡演名] 現場歌單」
-  - [ ] 智慧曲目比對演算法（排除 Live 雜音標籤、比對曲名與合作藝人、精準加入 Track URI）
-- [ ] **Apple Music (MusicKit JS) 串接**
-  - [ ] 串接 Apple Music Developer Token 與 MusicKit Web SDK
-  - [ ] 支援將 StubBook 現場 Setlist 一鍵加入使用者 Apple Music 音樂庫
-- [ ] **YouTube Music 串接**
-  - [ ] 整合 Google OAuth 2.0 與 YouTube Data API
-  - [ ] 自動搜尋官方 Audio / MV 並在用戶帳號建立 YouTube Music 專屬播放清單
+- [x] **Spotify OAuth 2.0 PKCE 深入整合**
+  - [x] 實作純前端安全 PKCE 授權流程（無須後端代理存取 Token）
+  - [x] 一鍵調用 Spotify Web API 在使用者帳號內自動建立「[藝人名] [巡演名] 現場歌單」
+  - [x] 智慧曲目比對演算法（排除 Live 雜音標籤、比對曲名與合作藝人、精準加入 Track URI）
+- [x] **Apple Music (MusicKit JS) 串接**
+  - [x] 串接 Apple Music Developer Token 與 MusicKit Web SDK
+  - [x] 支援將 StubBook 現場 Setlist 一鍵加入使用者 Apple Music 音樂庫
+- [x] **YouTube Music 串接**
+  - [x] 整合 Google OAuth 2.0 與 YouTube Data API
+  - [x] 自動搜尋官方 Audio / MV 並在用戶帳號建立 YouTube Music 專屬播放清單
 
 ---
 
@@ -209,5 +209,5 @@
 | `v1.1.0` | ✅ 已交付   | 智慧行事曆排程、搶票倒數雷達、.ics 匯出與美觀日曆儀表板      |
 | `v1.2.0` | ✅ 已交付   | 本地資料安全、.stubbook 全量封裝備份、JSON 匯入匯出與還原    |
 | `v1.3.0` | ✅ 已交付   | 全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX)  |
-| `v1.4.0` | 📋 規劃中   | 串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) |
+| `v1.4.0` | ✅ 已交付   | 串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) |
 | `v2.0.0` | 📋 規劃中   | 原生行動雙端封裝發行 (Android APK/AAB, iOS, 原生外掛調校)    |

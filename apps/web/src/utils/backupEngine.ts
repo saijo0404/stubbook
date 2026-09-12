@@ -293,7 +293,7 @@ export function exportStructuredJson(customDbPath?: string): StubbookJsonBackup 
   return {
     formatVersion: '1.0.0',
     appName: 'StubBook',
-    appVersion: '1.3.0',
+    appVersion: '1.4.0',
     exportedAt: new Date().toISOString(),
     data: {
       artists,
@@ -386,7 +386,7 @@ export async function exportStubbookArchive(
   const manifest: StubbookManifest = {
     formatVersion: '1.0.0',
     appName: 'StubBook',
-    appVersion: '1.3.0',
+    appVersion: '1.4.0',
     createdAt: new Date().toISOString(),
     database: {
       filename: 'database.sqlite',
@@ -489,7 +489,7 @@ export function inspectBackup(buffer: Buffer): BackupInspectResult {
     return {
       format: 'STUBBOOK',
       valid: warnings.length === 0,
-      appVersion: manifest.appVersion || '1.3.0',
+      appVersion: manifest.appVersion || '1.4.0',
       createdAt: manifest.createdAt,
       counts: manifest.database.counts,
       mediaFileCount: manifest.mediaFiles?.length || 0,

@@ -25,7 +25,7 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 │                   BFF & API 服務層 (Next.js Server Actions / API)        │
 ├────────────────────────────────┬─────────────────────────────────────────┤
 │  本地單機儲存 (Local Storage)   │  票根隱私遮罩與畫布渲染 (Canvas / Satori)│
-│  預算與統計彙總服務 (Analytics) │  外部串接 (Spotify / Setlist.fm API)     │
+│  預算與統計彙總服務 (Analytics) │  外部串接 (Spotify PKCE / Apple / YT / FM)│
 └────────────────────────────────┴─────────────────────────────────────────┘
                                │
                ┌───────────────┴───────────────┐
@@ -190,9 +190,14 @@ erDiagram
 - 數萬人場館現場往往基地台癱瘓無法連網。
 - PWA 與 Mobile 端支援 **Service Worker 靜態快取 + IndexedDB 離線快取**。票券座位、演出須知即便處於飛航模式亦可即時離線開啟。
 
-### ⑤ 歌單串接與自動同步 (Setlist.fm & Spotify Integration)
+### ⑤ 串流音樂全生態深度聯動與自動同步 (Full Streaming Music Hub)
 
-- 演出結束後，系統可自動比對 **Setlist.fm API** 匯入當晚現場演奏曲目，並提供一鍵「匯出為 Spotify 播放清單」。
+- **Setlist.fm 智慧曲目匯入**：演出結束後自動比對 Setlist.fm API，匯入現場真實演奏曲目與安可曲，並具備離線智慧降級備援。
+- **Spotify OAuth 2.0 PKCE 深入整合**：純前端安全 PKCE 授權，自動調用 Spotify Web API 在用戶帳號內建立現場專屬播放清單。
+- **智慧曲目名稱去雜訊演算法 (`cleanSongTitle`)**：自動濾除 `(Intro)`, `[Live]`, `(Acoustic)`, `(Encore)`, `feat.` 等現場標籤，提升跨平台檢索準確率。
+- **Apple Music (MusicKit JS) 整合**：支援 MusicKit 憑證授權與 Catalog 曲目搜尋，自動加入用戶音樂庫或生成搜尋深度連結。
+- **YouTube Music 整合**：結合 YouTube Data API v3 檢索官方音訊/MV 並自動建立播放清單。
+- **本地憑證隔離安全架構**：所有 Client ID 與 Access Token 僅存放於使用者瀏覽器 LocalStorage，零雲端金鑰洩漏風險。
 
 ### ⑥ 年度回顧與視覺化票根手帳 (Concert Wrapped & Canvas)
 
@@ -252,7 +257,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "1.3.0",
+     "appVersion": "1.4.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",

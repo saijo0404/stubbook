@@ -66,10 +66,13 @@
   - **分享頁擴充 (Share Extension)**：手機瀏覽售票網時，點擊瀏覽器「分享」即可一鍵送入 StubBook。
   - **現場離線票夾 (Offline Wallet)**：數萬人場館網路癱瘓時，依然能離線秒開座位號與入場須知。
 
-### 6. 🎵 歌單串接與年度回顧 (Setlists & Concert Wrapped)
+### 6. 🎵 歌單串接、串流音樂生態聯動與年度回顧 (Streaming Hub & Concert Wrapped)
 
-- 串接 **Setlist.fm API**：演出散場後自動同步當晚現場真實演奏曲目。
-- 串接 **Spotify / Apple Music**：一鍵將現場 Setlist 存為串流歌單。
+- **Setlist.fm 智慧曲目串接**：演出散場後自動同步當晚現場真實演奏曲目與安可曲。
+- **全生態三大串流深度聯動 (Full Streaming Music Hub)**：
+  - **Spotify**：純前端安全 PKCE 授權，智慧曲目去雜訊比對，一鍵在個人帳號自動建立現場歌單。
+  - **Apple Music**：整合 MusicKit JS，支援將演出曲目加入使用者音樂庫或生成深度搜尋連結。
+  - **YouTube Music**：整合 YouTube Data API v3，精準配對官方音訊/MV 並建立專屬播放清單。
 - **年度回顧 (StubBook Wrapped)**：年終自動生成專屬 IG Story / Threads 高顏值分享卡片。
 
 ### 7. 📅 智慧行事曆與搶票倒數雷達 (Smart Calendar & Ticketing Radar)
@@ -165,7 +168,7 @@ pnpm dev
 - **Phase 5**：智慧行事曆排程、搶票倒數雷達與 .ics 雙向匯出 (`v1.1.0` ✅)
 - **Phase 6**：純本地資料安全、.stubbook 全量封裝備份與智慧還原中心 (`v1.2.0` ✅)
 - **Phase 7**：全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX) (`v1.3.0` ✅)
-- **Phase 8**：串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) (`v1.4.0` 📋)
+- **Phase 8**：串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) (`v1.4.0` ✅)
 - **Phase 9**：原生行動雙端封裝發行 (Android APK/AAB, iOS) (`v2.0.0` 📋)
 
 ---
