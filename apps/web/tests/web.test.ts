@@ -1650,4 +1650,204 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
       expect(content).toContain('朝聖心願池');
     });
   });
+
+  describe('Phase 12: 推活熱量大數據、全出費分析與潮流社群卡工廠 (Passion Analytics & Aesthetic Card Generator)', () => {
+    it('Expenses API (/api/expenses) 應支援全量出費明細 CRUD、分類彙整與遠征佔比計算 (#83)', async () => {
+      const {
+        GET: getExpenses,
+        POST: postExpenses,
+        PUT: putExpenses,
+        DELETE: deleteExpenses,
+      } = await import('../src/app/api/expenses/route');
+
+      const { getDefaultDatabase } = await import('@stubbook/database');
+      const db = getDefaultDatabase();
+
+      // 先建立一筆測試出席記錄以滿足外鍵約束
+      const testEvent = db
+        .prepare(
+          "INSERT INTO events (title, source_url) VALUES ('遠征支出測試活動', 'https://test.com/exp') RETURNING id"
+        )
+        .get() as { id: string };
+      const testSession = db
+        .prepare(
+          "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-11-20') RETURNING id"
+        )
+        .get(testEvent.id) as { id: string };
+      const testAtt = db
+        .prepare(
+          "INSERT INTO user_attendances (user_id, session_id, status) VALUES ('local', ?, 'ATTENDED') RETURNING id"
+        )
+        .get(testSession.id) as { id: string };
+
+      // 1. 建立測試支出項目
+      const postReq = new NextRequest('http://localhost:3000/api/expenses', {
+        method: 'POST',
+        body: JSON.stringify({
+          attendance_id: testAtt.id,
+          category: 'TRANSPORT',
+          item_name: '高鐵台北-高雄來回',
+          amount: 2980,
+          currency: 'TWD',
+          notes: '提早搶票早鳥 8 折',
+        }),
+      });
+      const postRes = await postExpenses(postReq);
+      expect(postRes.status).toBe(200);
+      const postJson = await postRes.json();
+      expect(postJson.success).toBe(true);
+      expect(postJson.expense.category).toBe('TRANSPORT');
+      expect(postJson.expense.amount).toBe(2980);
+      const createdId = postJson.expense.id;
+
+      // 2. 查詢特定出席項目
+      const getByAttReq = new NextRequest(
+        `http://localhost:3000/api/expenses?attendanceId=${testAtt.id}`
+      );
+      const getByAttRes = await getExpenses(getByAttReq);
+      expect(getByAttRes.status).toBe(200);
+      const getByAttJson = await getByAttRes.json();
+      expect(getByAttJson.success).toBe(true);
+      expect(Array.isArray(getByAttJson.expenses)).toBe(true);
+      expect(getByAttJson.totalAmount).toBeGreaterThanOrEqual(2980);
+
+      // 3. 查詢全量分類彙總與遠征佔比
+      const getAllReq = new NextRequest('http://localhost:3000/api/expenses');
+      const getAllRes = await getExpenses(getAllReq);
+      expect(getAllRes.status).toBe(200);
+      const getAllJson = await getAllRes.json();
+      expect(getAllJson.success).toBe(true);
+      expect(getAllJson.categoryMap).toBeDefined();
+      expect(getAllJson.categoryMap.TRANSPORT).toBeGreaterThanOrEqual(2980);
+      expect(typeof getAllJson.grandTotal).toBe('number');
+      expect(typeof getAllJson.expeditionRate).toBe('number');
+
+      // 4. 更新支出項目
+      const putReq = new NextRequest('http://localhost:3000/api/expenses', {
+        method: 'PUT',
+        body: JSON.stringify({
+          id: createdId,
+          amount: 3200,
+          notes: '改搭高鐵商務艙',
+        }),
+      });
+      const putRes = await putExpenses(putReq);
+      expect(putRes.status).toBe(200);
+
+      // 5. 刪除支出項目
+      const delReq = new NextRequest(`http://localhost:3000/api/expenses?id=${createdId}`, {
+        method: 'DELETE',
+      });
+      const delRes = await deleteExpenses(delReq);
+      expect(delRes.status).toBe(200);
+    });
+
+    it('Passion API (/api/passion) 應聚合 365 日熱力矩陣、星期規律、解鎖現場神曲榜與狂粉熱量指數 (#84)', async () => {
+      const { GET: getPassion } = await import('../src/app/api/passion/route');
+
+      const req = new NextRequest('http://localhost:3000/api/passion');
+      const res = await getPassion(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      const a = json.analytics;
+      expect(a).toBeDefined();
+
+      // 365 日熱力矩陣
+      expect(Array.isArray(a.heatmapDays)).toBe(true);
+      expect(a.heatmapDays.length).toBe(365);
+      expect(a.heatmapDays[0]).toHaveProperty('date');
+      expect(a.heatmapDays[0]).toHaveProperty('count');
+      expect(a.heatmapDays[0]).toHaveProperty('level');
+
+      // 狂粉熱量指標
+      expect(typeof a.passionScore).toBe('number');
+      expect(typeof a.passionRankTitle).toBe('string');
+      expect(typeof a.passionRankBadge).toBe('string');
+
+      // 星期與月份分佈
+      expect(a.weekdayDistribution).toBeDefined();
+      expect(typeof a.mostFrequentWeekday).toBe('string');
+      expect(a.monthlyDistribution).toBeDefined();
+
+      // 現場神曲解鎖排行
+      expect(Array.isArray(a.topSongs)).toBe(true);
+      expect(typeof a.totalUniqueSongsHeard).toBe('number');
+
+      // 出費結構
+      expect(typeof a.totalExpeditionSpend).toBe('number');
+      expect(a.spendByCategory).toBeDefined();
+    });
+
+    it('前端應完整實作 PassionHeatmapDashboard 組件並遵循 Issue #72 防裁切規範 (#83, #84)', () => {
+      const dashPath = path.join(
+        __dirname,
+        '..',
+        'src',
+        'components',
+        'PassionHeatmapDashboard.tsx'
+      );
+      expect(fs.existsSync(dashPath)).toBe(true);
+
+      const content = fs.readFileSync(dashPath, 'utf-8');
+      expect(content).toContain('PassionHeatmapDashboard');
+      expect(content).toContain('推活熱量大數據');
+      expect(content).toContain('365 日參戰熱力矩陣');
+      expect(content).toContain('推活遠征全出費分佈');
+      expect(content).toContain('參戰星期規律與神曲解鎖榜');
+      expect(content).toContain('遠征開銷記帳明細');
+
+      // Issue #72 防裁切與全螢幕滾動安全邊界
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+      expect(content).toContain('max-h-[92dvh]');
+    });
+
+    it('前端應完整實作 AestheticCardGeneratorModal 組件支援收據、CD 盒、透明貼紙與調色盤 (#85, #86)', () => {
+      const modalPath = path.join(
+        __dirname,
+        '..',
+        'src',
+        'components',
+        'AestheticCardGeneratorModal.tsx'
+      );
+      expect(fs.existsSync(modalPath)).toBe(true);
+
+      const content = fs.readFileSync(modalPath, 'utf-8');
+      expect(content).toContain('AestheticCardGeneratorModal');
+      expect(content).toContain('潮流社群卡工廠');
+      expect(content).toContain('VINTAGE_RECEIPT');
+      expect(content).toContain('JEWEL_CASE');
+      expect(content).toContain('TRANSPARENT_STICKER');
+      expect(content).toContain('DARK_OBSIDIAN');
+      expect(content).toContain('POLAROID_WHITE');
+      expect(content).toContain('CYBERPUNK_NEON');
+      expect(content).toContain('VINTAGE_KRAFT');
+      expect(content).toContain('handleDownload');
+      expect(content).toContain('handleShare');
+
+      // Issue #72 防裁切安全邊界
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+      expect(content).toContain('max-h-[92dvh]');
+    });
+
+    it('主頁面 page.tsx 應完整整合 Phase 12 快捷工具列與彈窗掛載 (#83, #84, #85, #86)', () => {
+      const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+      const content = fs.readFileSync(pagePath, 'utf-8');
+      expect(content).toContain('PassionHeatmapDashboard');
+      expect(content).toContain('AestheticCardGeneratorModal');
+      expect(content).toContain('推活熱量大數據');
+      expect(content).toContain('潮流社群卡工廠');
+      expect(content).toContain('passionModalOpen');
+      expect(content).toContain('cardGeneratorModalOpen');
+    });
+  });
 });

@@ -334,4 +334,30 @@ CREATE TRIGGER IF NOT EXISTS tr_wishlist_items_updated_at
   BEGIN
     UPDATE wishlist_items SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
+
+-- 15. Attendance Expenses (推活遠征全量開銷與支出記帳)
+CREATE TABLE IF NOT EXISTS attendance_expenses (
+  id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  attendance_id   TEXT NOT NULL REFERENCES user_attendances(id) ON DELETE CASCADE,
+  user_id         TEXT NOT NULL DEFAULT 'local',
+  category        TEXT NOT NULL CHECK (
+    category IN ('TICKET', 'TRANSPORT', 'ACCOMMODATION', 'MERCHANDISE', 'FOOD_DINING', 'OTHER')
+  ),
+  item_name       TEXT NOT NULL,
+  amount          REAL NOT NULL DEFAULT 0,
+  currency        TEXT NOT NULL DEFAULT 'TWD',
+  notes           TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_expenses_attendance ON attendance_expenses(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_expenses_category ON attendance_expenses(category);
+
+CREATE TRIGGER IF NOT EXISTS tr_attendance_expenses_updated_at
+  AFTER UPDATE ON attendance_expenses
+  FOR EACH ROW
+  BEGIN
+    UPDATE attendance_expenses SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
 `;

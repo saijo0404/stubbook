@@ -55,6 +55,8 @@ import TourFootprintMap from '../components/TourFootprintMap';
 import LiveCountdownCard from '../components/LiveCountdownCard';
 import FestivalTimetableModal from '../components/FestivalTimetableModal';
 import WishlistModal from '../components/WishlistModal';
+import { PassionHeatmapDashboard } from '../components/PassionHeatmapDashboard';
+import { AestheticCardGeneratorModal } from '../components/AestheticCardGeneratorModal';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics' | 'backup';
@@ -336,6 +338,10 @@ export default function HomePage() {
   const [footprintModalOpen, setFootprintModalOpen] = useState(false);
   const [festivalModalOpen, setFestivalModalOpen] = useState(false);
   const [wishlistModalOpen, setWishlistModalOpen] = useState(false);
+
+  // Phase 12 新增模組 Modal 狀態
+  const [passionModalOpen, setPassionModalOpen] = useState(false);
+  const [cardGeneratorModalOpen, setCardGeneratorModalOpen] = useState(false);
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -933,6 +939,31 @@ export default function HomePage() {
         >
           <span>✨</span>
           <span>朝聖心願池</span>
+        </button>
+
+        {/* Phase 12: 熱量大數據 & 潮流社群卡 */}
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setPassionModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-rose-950/80 to-orange-950/80 hover:from-rose-900/80 hover:to-orange-900/80 border border-rose-700/50 text-rose-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🔥</span>
+          <span>推活熱量大數據</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setCardGeneratorModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-pink-950/80 to-fuchsia-950/80 hover:from-pink-900/80 hover:to-fuchsia-900/80 border border-pink-700/50 text-pink-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🧾</span>
+          <span>潮流社群卡工廠</span>
         </button>
       </div>
 
@@ -2787,6 +2818,39 @@ export default function HomePage() {
             setActiveTab('journal');
             loadSavedEvents();
           }}
+        />
+      )}
+
+      {/* Phase 12: 推活熱量大數據 Modal */}
+      {passionModalOpen && (
+        <PassionHeatmapDashboard
+          isOpen={passionModalOpen}
+          onClose={() => setPassionModalOpen(false)}
+          onOpenCardGenerator={() => {
+            setPassionModalOpen(false);
+            setCardGeneratorModalOpen(true);
+          }}
+        />
+      )}
+
+      {/* Phase 12: 潮流社群卡工廠 Modal */}
+      {cardGeneratorModalOpen && (
+        <AestheticCardGeneratorModal
+          isOpen={cardGeneratorModalOpen}
+          onClose={() => setCardGeneratorModalOpen(false)}
+          events={savedEvents.flatMap((e) =>
+            e.sessions.map((s) => ({
+              id: s.id,
+              title: e.title,
+              artist: e.organizer || e.title.split(' ')[0] || '演出藝人',
+              venue: s.venueName || '演出場館',
+              date: s.sessionDate,
+              seat: s.attendance?.seatInfo || '自由入場',
+              price: s.attendance?.ticketPrice || 0,
+              setlistCount: 20,
+              totalSpend: (s.attendance?.ticketPrice || 0) + (s.attendance?.merchTotalCost || 0),
+            }))
+          )}
         />
       )}
     </div>

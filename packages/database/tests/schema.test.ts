@@ -453,4 +453,73 @@ describe('SQLite Local Database Schema & Operations', () => {
       .get(wish.id) as any;
     expect(updated.is_fulfilled).toBe(1);
   });
+
+  it('應支援 attendance_expenses 遠征全量支出記帳與外鍵級聯', () => {
+    // 1. 建立活動、場次與出席
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('遠征活動', 'https://expedition.com') RETURNING id"
+      )
+      .get() as any;
+    const { id: sessionId } = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-11-20') RETURNING id"
+      )
+      .get(eventId) as any;
+    const { id: attendanceId } = db
+      .prepare(
+        "INSERT INTO user_attendances (user_id, session_id, status) VALUES ('local', ?, 'ATTENDED') RETURNING id"
+      )
+      .get(sessionId) as any;
+
+    // 2. 插入多筆遠征開銷
+    const insertExp = db.prepare(`
+      INSERT INTO attendance_expenses (attendance_id, category, item_name, amount, notes)
+      VALUES (?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+
+    const exp1 = insertExp.get(
+      attendanceId,
+      'TRANSPORT',
+      '台北-高雄高鐵來回票',
+      2980,
+      '早鳥 8 折'
+    ) as any;
+    const exp2 = insertExp.get(
+      attendanceId,
+      'ACCOMMODATION',
+      '巨蛋周邊商旅單人房',
+      2200,
+      '走路 5 分鐘'
+    ) as any;
+    const exp3 = insertExp.get(
+      attendanceId,
+      'FOOD_DINING',
+      '夜市宵夜慶功宴',
+      450,
+      '跟推友同樂'
+    ) as any;
+
+    expect(exp1.id).toBeTruthy();
+    expect(exp1.category).toBe('TRANSPORT');
+    expect(exp1.amount).toBe(2980);
+    expect(exp2.category).toBe('ACCOMMODATION');
+    expect(exp3.category).toBe('FOOD_DINING');
+
+    // 3. 彙總查詢
+    const summary = db
+      .prepare(
+        'SELECT category, SUM(amount) as total FROM attendance_expenses WHERE attendance_id = ? GROUP BY category'
+      )
+      .all(attendanceId) as any[];
+    expect(summary).toHaveLength(3);
+
+    // 4. 外鍵級聯測試 (刪除 attendance 連帶刪除費用)
+    db.prepare('DELETE FROM user_attendances WHERE id = ?').run(attendanceId);
+    const remaining = db
+      .prepare('SELECT COUNT(*) as c FROM attendance_expenses WHERE attendance_id = ?')
+      .get(attendanceId) as any;
+    expect(remaining.c).toBe(0);
+  });
 });
