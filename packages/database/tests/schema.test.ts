@@ -522,4 +522,144 @@ describe('SQLite Local Database Schema & Operations', () => {
       .get(attendanceId) as any;
     expect(remaining.c).toBe(0);
   });
+
+  it('應支援四級隱私權限、本地好友名冊 (user_friends) 與同行夥伴標記 (attendance_companions)', () => {
+    // 1. 建立好友名冊
+    const insertFriend = db.prepare(`
+      INSERT INTO user_friends (friend_name, friend_avatar, relationship_tier, contact_handle, notes)
+      VALUES (?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+    const friend1 = insertFriend.get(
+      '小明',
+      '🐱',
+      'CLOSE_FRIEND',
+      '@ming_live',
+      '高中死黨，推團相同'
+    ) as any;
+    const friend2 = insertFriend.get(
+      '推友小美',
+      '🌸',
+      'FRIEND',
+      '@mei_concert',
+      '在高雄巨蛋認識的推友'
+    ) as any;
+
+    expect(friend1.id).toBeTruthy();
+    expect(friend1.relationship_tier).toBe('CLOSE_FRIEND');
+    expect(friend2.relationship_tier).toBe('FRIEND');
+
+    // 2. 建立活動、場次並指定四級隱私權限
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('好友同行演唱會', 'https://friends.com') RETURNING id"
+      )
+      .get() as any;
+    const { id: sessionId } = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-12-25') RETURNING id"
+      )
+      .get(eventId) as any;
+
+    const insertAtt = db.prepare(`
+      INSERT INTO user_attendances (user_id, session_id, status, privacy_level)
+      VALUES ('local', ?, 'CONFIRMED', 'CLOSE_FRIENDS')
+      RETURNING *
+    `);
+    const attendance = insertAtt.get(sessionId) as any;
+    expect(attendance.privacy_level).toBe('CLOSE_FRIENDS');
+
+    // 3. 標記同行參戰夥伴
+    const insertComp = db.prepare(`
+      INSERT INTO attendance_companions (attendance_id, friend_id, companion_name, companion_role, seat_nearby, notes)
+      VALUES (?, ?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+    const comp1 = insertComp.get(
+      attendance.id,
+      friend1.id,
+      '小明',
+      'BESTIE',
+      '特A區 2排 12號 (隔壁)',
+      '一起搶到票太感動'
+    ) as any;
+    expect(comp1.id).toBeTruthy();
+    expect(comp1.companion_role).toBe('BESTIE');
+
+    // 4. 連表查詢同行夥伴與好友資訊
+    const companions = db
+      .prepare(
+        `
+        SELECT c.*, f.relationship_tier, f.contact_handle
+        FROM attendance_companions c
+        LEFT JOIN user_friends f ON c.friend_id = f.id
+        WHERE c.attendance_id = ?
+      `
+      )
+      .all(attendance.id) as any[];
+    expect(companions).toHaveLength(1);
+    expect(companions[0].relationship_tier).toBe('CLOSE_FRIEND');
+
+    // 5. 級聯刪除：刪除 attendance，同行夥伴應被自動清空
+    db.prepare('DELETE FROM user_attendances WHERE id = ?').run(attendance.id);
+    const compsLeft = db
+      .prepare('SELECT COUNT(*) as c FROM attendance_companions WHERE attendance_id = ?')
+      .get(attendance.id) as any;
+    expect(compsLeft.c).toBe(0);
+    // 好友名冊不應被刪除
+    const friendStillExists = db
+      .prepare('SELECT COUNT(*) as c FROM user_friends WHERE id = ?')
+      .get(friend1.id) as any;
+    expect(friendStillExists.c).toBe(1);
+  });
+
+  it('應支援讓換票進度追蹤 (ticket_exchanges) 與防偽檢核註記', () => {
+    // 1. 建立讓換票記錄
+    const insertExchange = db.prepare(`
+      INSERT INTO ticket_exchanges (
+        exchange_type, target_name, contact_info, platform, my_seat, target_seat,
+        price_difference, status, meetup_location, meetup_time, serial_number, anti_fraud_checked, notes
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+
+    const ex = insertExchange.get(
+      'EXCHANGE',
+      '陳小姐',
+      'Line: chen_tickets',
+      'THREADS',
+      '12/31 特A區 5排',
+      '01/01 特B區 2排',
+      500,
+      'INITIATED',
+      '台北小巨蛋 1 號出口',
+      '2026-12-31 16:30',
+      'TIX-2026-9988',
+      0,
+      '補差價 $500，現場面交'
+    ) as any;
+
+    expect(ex.id).toBeTruthy();
+    expect(ex.exchange_type).toBe('EXCHANGE');
+    expect(ex.status).toBe('INITIATED');
+    expect(ex.anti_fraud_checked).toBe(0);
+
+    // 2. 更新交易狀態與防偽檢核註記
+    db.prepare(
+      `
+      UPDATE ticket_exchanges
+      SET status = 'IN_PERSON_MEETUP', anti_fraud_checked = 1, notes = '已現場核對拓元全像銀箔與證件'
+      WHERE id = ?
+    `
+    ).run(ex.id);
+
+    const updated = db.prepare('SELECT * FROM ticket_exchanges WHERE id = ?').get(ex.id) as any;
+    expect(updated.status).toBe('IN_PERSON_MEETUP');
+    expect(updated.anti_fraud_checked).toBe(1);
+
+    // 3. 推進至完成
+    db.prepare("UPDATE ticket_exchanges SET status = 'COMPLETED' WHERE id = ?").run(ex.id);
+    const completed = db.prepare('SELECT * FROM ticket_exchanges WHERE id = ?').get(ex.id) as any;
+    expect(completed.status).toBe('COMPLETED');
+  });
 });
