@@ -94,11 +94,28 @@ erDiagram
     VENUES ||--o{ EVENT_SESSIONS : hosts
     EVENTS ||--o{ EVENT_SESSIONS : contains
     EVENTS ||--o{ EVENT_PRAYERS : receives_prayers
+    EVENTS ||--o{ FESTIVAL_STAGES : hosts_stages
+    FESTIVAL_STAGES ||--o{ FESTIVAL_TIMETABLES : schedules
+    EVENTS ||--o{ FESTIVAL_TIMETABLES : schedules
     EVENT_SESSIONS ||--o{ USER_ATTENDANCES : recorded_by
     USERS ||--o{ USER_ATTENDANCES : logs
+    USERS ||--o{ WISHLIST_ITEMS : desires
     USER_ATTENDANCES ||--o{ ATTENDANCE_MEDIA : uploads
     USER_ATTENDANCES ||--o{ MERCHANDISE_ITEMS : purchases
     USER_ATTENDANCES ||--o{ SETLIST_SONGS : remembers
+
+    VENUES {
+        uuid id PK
+        string name
+        string city
+        string address
+        int capacity
+        float latitude
+        float longitude
+        string region "NORTH | CENTRAL | SOUTH | EAST | OVERSEAS"
+        jsonb sub_halls
+        string photo_url
+    }
 
     EVENTS {
         uuid id PK
@@ -119,6 +136,7 @@ erDiagram
         timestamp doors_open_time
         timestamp ticket_sale_time
         string ticket_platform "KKTIX | TIXCRAFT | IBON | FAMITICKET | KHAM | INDIEVOX | OTHER"
+        string hall_name
         jsonb ticket_tiers
     }
 
@@ -187,6 +205,39 @@ erDiagram
         boolean is_encore
         string note
         string spotify_track_id
+    }
+
+    FESTIVAL_STAGES {
+        uuid id PK
+        uuid event_id FK
+        string stage_name
+        string stage_color
+        text location_notes
+    }
+
+    FESTIVAL_TIMETABLES {
+        uuid id PK
+        uuid event_id FK
+        uuid stage_id FK
+        string session_date
+        string artist_name
+        string start_time
+        string end_time
+        boolean is_selected
+        text notes
+    }
+
+    WISHLIST_ITEMS {
+        uuid id PK
+        uuid user_id FK
+        enum target_type "ARTIST | VENUE"
+        string target_name
+        int priority
+        text reason
+        boolean is_fulfilled
+        uuid fulfilled_session_id FK
+        timestamp created_at
+        timestamp updated_at
     }
 ```
 
@@ -331,7 +382,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "2.1.0",
+     "appVersion": "2.2.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",
@@ -433,3 +484,68 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
 2. **結構化參戰筆記模組**：
    - 欄位化記錄「排隊耗時 (queue_time_minutes)」、「亮點好評 (pros)」、「踩雷提醒 (cons)」、「避坑貼士 (tips)」與「換票備忘 (transfer_notes)」。
    - 提供完整攻略型筆記，沉澱為個人參戰推活知識庫。
+
+---
+
+## 9. 巡迴足跡地圖、秒級即時動態與多舞台場館庫 (Tour Footprint Map & Live Activities)
+
+### 9.1 巡迴足跡向量互動地圖架構 (Tour Footprint Map & Vector Projection)
+
+1. **墨卡托座標投影演算法 (Mercator Projection Engine)**：
+   - 將場館地理經緯度 (`latitude`, `longitude`) 映射至 SVG 視窗座標 (viewBox `0 0 500 700`)。
+   - 台灣本島座標轉換模型：
+     ```typescript
+     x = ((longitude - 119.8) / (122.2 - 119.8)) * 420 + 40;
+     y = ((25.5 - latitude) / (25.5 - 21.8)) * 600 + 40;
+     ```
+   - 具備跨國海外指標場館（如日本東京巨蛋、日本武道館、英國倫敦 Wembley 體育館等）專屬獨立分頁。
+2. **打卡光暈階梯渲染**：
+   - 依據使用者在該場館歷史參戰次數 (`sessionCount`)，動態調節點位顏色與擴散光暈（0~~1 次：emerald 綠，2~~3 次：amber 黃，4 次以上：rose 玫瑰紅，標記半徑從 `r=6` 至 `r=11` 漸層增強）。
+3. **場館深潛探索面板 (`TourFootprintMap.tsx` & `/api/footprint`)**：
+   - 點擊任一場館標記即可展開深潛視窗：
+     - 該場館歷史參戰時序歷程與座位資訊。
+     - 該場館現場視角照片縮圖輪播。
+     - 累積門票出費統計總額。
+     - Google Maps 原生經緯度一鍵導航連結。
+4. **已知熱門場館字典自動補全**：
+   - 內建台北小巨蛋、北流、高流、Legacy、Zepp New Taipei、高雄國家體育場等熱門場館之經緯度、縣市行政分區與多廳結構字典，活動建立時自動填充。
+
+### 9.2 秒級精密動態倒數卡與 Live Activities 狀態機 (Live Activities & Precision Countdown)
+
+1. **動態精密跳動時鐘**：
+   - 前端採用 1000ms 高頻率定時器精確計算「天、時、分、秒」，避免依賴靜態重整。
+   - 提供數字平滑滾動與高對比發光字型。
+2. **5 階段生命週期狀態機 (5-Phase Live Activity Lifecycle)**：
+   - 依據演出當日開場時間與開場前/後時程，自動流轉 5 個狀態：
+     - `QUEUEING` (場外整隊/周邊領取)：開演前 4 小時至 2 小時，引導查看周邊購買清單與排隊攻略。
+     - `DOORS_OPEN` (開放入場/驗票)：開演前 2 小時至 30 分鐘，提示預備票券與快速通關。
+     - `COUNTDOWN` (開演倒數)：開演前 30 分鐘內，秒級狂熱倒數。
+     - `LIVE` (熱血開演中)：演出進行中（開演至開演後 3 小時），一鍵直達「現場沉浸模式」，點亮發光座位牌與手燈。
+     - `EXIT` (散場交通/回味)：演出結束散場，提示交通動線並引導速記手帳與歌單。
+3. **行動端推播與靈動島模擬**：
+   - `/api/live-activity` 支援狀態查詢與模擬推播推播通知。
+
+### 9.3 大型場館多廳子分區與音樂祭 Timetable 排程 (Multi-Hall & Festival Timetable)
+
+1. **場館多廳結構 (Sub-Halls Hierarchy)**：
+   - `venues` 資料表擴充 `sub_halls TEXT (JSON array)` 與 `event_sessions.hall_name TEXT`。
+   - 支援如「台北南港展覽館 (1館 4F / 2館 1F)」、「高雄流行音樂中心 (海音館 / 鯨魚堤岸 / LIVE WAREHOUSE)」等階層式廳別管理。
+2. **音樂祭多舞台資料結構 (`festival_stages` & `festival_timetables`)**：
+   - 一對多關聯活動，記錄各舞台名稱 (`stage_name`)、專屬配色 (`stage_color`) 與演出時間區間 (`start_time`, `end_time`)。
+3. **衝堂重疊偵測演算法 (Schedule Clash Detection Algorithm)**：
+   - 針對使用者已選取（`is_selected = 1`）的必看演出時間槽，雙迴圈比對時間重疊：
+     ```typescript
+     clashDuration = Math.min(endA, endB) - Math.max(startA, startB);
+     if (clashDuration > 0) -> 產生衝堂警示
+     ```
+   - 於介面頂端顯示警告橫幅，標明衝堂演出者與重疊分鐘數，並即時統計個人跑台動線清單。
+
+### 9.4 朝聖心願池與售票雷達智慧匹配 (Wishlist & Ticketing Radar)
+
+1. **朝聖心願池清單 (`wishlist_items`)**：
+   - 記錄夢想藝人 (`ARTIST`) 或夢想場館 (`VENUE`)，設定 1~5 星優先度與許願原因。
+2. **售票爬蟲資料庫智慧雷達匹配**：
+   - `/api/wishlist` 執行時，遍歷未圓夢心願，自動在 `events` 與 `venues` 中模糊比對活動名稱、藝人名稱或場館。
+   - 若發現有售票中或即將開賣的匹配活動，自動掛載 `matchedEvents` 清單，並在介面展示醒目的「🎯 售票雷達已捕獲！」提示卡。
+3. **圓夢解鎖成就**：
+   - 使用者參戰後一鍵勾選「已圓夢」，自動關聯至參戰場次 `fulfilled_session_id`，並觸發五彩紙屑慶祝動效。
