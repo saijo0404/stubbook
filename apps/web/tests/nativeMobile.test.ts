@@ -118,10 +118,10 @@ describe('Phase 9: Native Mobile Packaging & Capacitor Integration', () => {
       ).toBe(true);
     });
 
-    it('app/build.gradle 應配置 versionCode 20000 與 versionName 2.0.0 並啟用混淆優化', () => {
+    it('app/build.gradle 應配置 versionCode 20100 與 versionName 2.1.0 並啟用混淆優化', () => {
       const buildGradle = fs.readFileSync(path.join(androidDir, 'app', 'build.gradle'), 'utf-8');
-      expect(buildGradle).toContain('versionCode 20000');
-      expect(buildGradle).toContain('versionName "2.0.0"');
+      expect(buildGradle).toContain('versionCode 20100');
+      expect(buildGradle).toContain('versionName "2.1.0"');
       expect(buildGradle).toContain('minifyEnabled true');
       expect(buildGradle).toContain('shrinkResources true');
     });

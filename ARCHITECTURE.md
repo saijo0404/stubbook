@@ -93,6 +93,7 @@ erDiagram
     ARTISTS ||--o{ EVENTS : organizes
     VENUES ||--o{ EVENT_SESSIONS : hosts
     EVENTS ||--o{ EVENT_SESSIONS : contains
+    EVENTS ||--o{ EVENT_PRAYERS : receives_prayers
     EVENT_SESSIONS ||--o{ USER_ATTENDANCES : recorded_by
     USERS ||--o{ USER_ATTENDANCES : logs
     USER_ATTENDANCES ||--o{ ATTENDANCE_MEDIA : uploads
@@ -125,16 +126,37 @@ erDiagram
         uuid id PK
         uuid user_id FK
         uuid session_id FK
-        enum status "WANT_TO_GO | TICKETING | CONFIRMED | ATTENDED | MISSED"
+        enum status "WANT_TO_GO | TICKETING | CONFIRMED | ATTENDED | MISSED | PURCHASED | WAITING_TO_BUY | LOTTERY_ENTERED | TRANSFERRING | ABANDONED"
         string seat_info
         enum ticket_type "PHYSICAL | DIGITAL | WRISTBAND"
         decimal ticket_price
         string currency
         int rating
+        int rating_sound
+        int rating_sight
+        int rating_atmosphere
+        int rating_performance
+        text pros
+        text cons
+        text tips
+        int queue_time_minutes
+        text transfer_notes
         text notes
         string ticket_stub_url
         boolean stub_privacy_masked
         timestamp created_at
+    }
+
+    EVENT_PRAYERS {
+        uuid id PK
+        uuid event_id FK
+        uuid session_id FK
+        uuid user_id FK
+        int taps_count
+        string omikuji_result
+        text blessing_note
+        timestamp created_at
+        timestamp updated_at
     }
 
     MERCHANDISE_ITEMS {
@@ -203,6 +225,26 @@ erDiagram
 
 - **擬真票根牆**：提供復古撕票線、雷射防偽質感的數位票根手帳模式。
 - **年度足跡 Wrapped**：年終自動產出專屬分享小卡（IG Story / Threads 規格）：年度場次、歌手雷達圖、踩點場館與花費統計。
+
+### ⑦ 視覺相片月曆與 9:16 手機桌布生成 (Visual Photo Calendar & Wallpaper Engine)
+
+- **雙模式切換**：行事曆具備「視覺相片模式」與「經典標籤模式」無縫切換，單元格以演出海報封面或自訂現場精選照填滿，整月回憶一覽無遺。
+- **HTML5 Canvas 鎖定畫面桌布導出**：支援以 1080×1920 (9:16) 原生手機解析度合成個人當月參戰桌布，內建高對比深色漸層底圖、海報矩陣與參戰統計數字。
+
+### ⑧ 抽票祈願儀式感與 Web Audio 擬真木魚 (Gacha Prayer & Audio Synthesis)
+
+- **推活集氣儀式**：提供點擊敲木魚累積功德與全場祈願次數，整合 Web Audio API 純代碼振盪器（440Hz -> 110Hz 指數衰減）與 Capacitor 觸覺震動，零外掛音檔負擔。
+- **專屬神籤與開賣御守圖卡**：自動求取「超大吉」、「神席吉」、「特上吉」等趣味開賣神籤，並透過 Canvas 渲染 600×900 像素之開運御守卡供社群分享。
+
+### ⑨ 票券全生命週期狀態機與安全讓換票指南 (Ticket Lifecycle & Anti-Fraud Safety)
+
+- **10 種全生命週期狀態**：支援 `PURCHASED`、`WAITING_TO_BUY`、`LOTTERY_ENTERED`、`TICKETING`、`CONFIRMED`、`TRANSFERRING`、`ABANDONED`、`ATTENDED`、`MISSED`、`WANT_TO_GO` 完整追蹤。
+- **讓換票防詐安全指南**：內建「防詐五不原則」、實名制現場檢核清單與安全面交交易備忘錄範本，支援一鍵複製安全文案。
+
+### ⑩ 五維演出評鑑模型與結構化參戰筆記範本 (5D Review System & Structured Journal)
+
+- **多維度演出評鑑**：涵蓋綜合評分 (Overall)、音響音質 (Sound)、視野角度 (Sight)、現場氛圍 (Atmosphere)、藝人表現 (Performance) 五維星等。
+- **結構化手帳範本模組**：支援填寫排隊耗時 (分鐘)、亮點好評、踩雷提醒、避坑貼士與換票備忘，沉澱高價值推活攻略資料庫。
 
 ---
 
@@ -289,7 +331,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "2.0.0",
+     "appVersion": "2.1.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",
@@ -353,3 +395,41 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
 | `/api/backup`  | `GET`  | `format=json`         | 匯出跨平台標準純文字 JSON 資料庫內容 (Portable JSON)                        |
 | `/api/restore` | `POST` | `multipart/form-data` | 上傳 `.stubbook` 二進位封裝檔，支援 `dryRun` 預覽與 `mode=OVERWRITE\|MERGE` |
 | `/api/restore` | `POST` | `application/json`    | 上傳 JSON 備份物件進行快速文字型資料匯入與合併                              |
+
+---
+
+## 8. 推活儀式感、相片月曆與多維手帳範本 (Visual Photo Calendar & Fan Rituals)
+
+### 8.1 視覺相片月曆與 9:16 桌布合成引擎 (Visual Photo Calendar & Wallpaper Engine)
+
+1. **雙模式切換**：`CalendarDashboard.tsx` 支援「視覺相片模式 (Photo Mode)」與「經典標籤模式 (Classic Mode)」自由切換。相片模式下，日曆日期單元格自動載入演出海報或活動封面，讓整月份直接化為精美推活回憶相片牆。
+2. **高畫質手機鎖定畫面桌布導出**：
+   - 純前端 HTML5 `<canvas>` 繪製，無須依賴伺服器轉檔，輸出標準 1080×1920 (9:16) 原生高解析度 PNG。
+   - 包含極致深黑漸層背景、當月參戰統計徽章（總場次、累積花費、參戰藝人）、當月星期格線與海報縮圖矩陣。
+   - 點擊「一鍵導出手機桌布」即可即時預覽並一鍵下載，方便更換為手機鎖定畫面。
+
+### 8.2 抽票祈願儀式感與 Web Audio 擬真木魚 (Ticket Prayer Ritual & Audio Synthesis)
+
+1. **純代碼 Web Audio 音效合成**：
+   - 利用 `AudioContext` 建立自定義雙振盪器（三角波 + 正弦波），透過 `exponentialRampToValueAtTime` 模擬 440Hz 至 110Hz 之純淨木魚敲擊聲與共振，零外部音訊檔案相依，無延遲且體積為零。
+   - 結合 `@capacitor/haptics` 進行敲擊微震動回饋，並在前端動態呈現「功德 +1」粒子動畫。
+2. **全場集氣與專屬開運籤詩**：
+   - `/api/prayers` 支援累計個人功德次數與全場累積祈願次數。
+   - 提供「超大吉」、「神席吉」、「特上吉」、「良席吉」、「安全開演吉」等 8 種隨機開賣神籤，並透過 Canvas 渲染 600×900 像素之開運御守圖卡供社群轉發分享。
+
+### 8.3 票券全生命週期狀態機與安全換票指南 (Ticket Lifecycle & Anti-Fraud Safety)
+
+1. **10 種全生命週期狀態**：
+   - 全面追蹤票務生命週期：`PURCHASED`（已購票）、`WAITING_TO_BUY`（待搶票）、`LOTTERY_ENTERED`（抽票登記中）、`TICKETING`（搶票中）、`CONFIRMED`（確定參戰）、`TRANSFERRING`（讓票/換票中）、`ABANDONED`（未中籤/已放棄）、`ATTENDED`（已參戰）、`MISSED`（未前往）、`WANT_TO_GO`（想去/觀望中）。
+2. **讓換票防詐安全手冊 (`SafeTransferGuideModal.tsx`)**：
+   - 整理現場樂迷必備「防詐五不原則」（堅持面交、拒絕點擊假第三方驗證連結、警惕非官方轉帳等）。
+   - 提供實名制驗證核對清單與交易備忘錄範本，支援一鍵複製標準安全確認訊息。
+
+### 8.4 五維度演出評鑑模型與結構化手帳範本 (5D Review System & Structured Journal)
+
+1. **五維度星等模型**：
+   - 資料庫 `user_attendances` 擴充 `rating_sound`（音響音質）、`rating_sight`（視野角度）、`rating_atmosphere`（現場氛圍）、`rating_performance`（藝人表現）與 `rating`（綜合評分）。
+   - 前端提供互動式點選評分，於票根手帳卡以多維星等卡片優雅呈現。
+2. **結構化參戰筆記模組**：
+   - 欄位化記錄「排隊耗時 (queue_time_minutes)」、「亮點好評 (pros)」、「踩雷提醒 (cons)」、「避坑貼士 (tips)」與「換票備忘 (transfer_notes)」。
+   - 提供完整攻略型筆記，沉澱為個人參戰推活知識庫。
