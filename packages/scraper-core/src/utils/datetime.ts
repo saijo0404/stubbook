@@ -155,7 +155,7 @@ export function parseChineseDateTime(
  * 售票階段關鍵字清單
  */
 export const SALE_KEYWORD_REGEX =
-  /(?:售票時間|售票日期|售票日程|售票日|售票時程|售票開放|開放售票|售票資訊|開始售票|開賣時間|開賣日期|開賣日程|開賣日|正式開賣|全面開賣|啟售時間|啟售日期|啟售日程|啟售日|一般啟售|會員啟售|卡友啟售|優先啟售|正式啟售|購票時間|購票日期|購票日程|購票日|開放購票|開始購票|預售時間|預售日期|預售日|預購時間|預購日期|會員預購|卡友優先|卡友預售|卡友購票|優先預購|優先購票|優先售票|先行預約|先行販售|登記抽票|抽選登記|抽票登記|實名制抽票|抽票|抽選|搶票時間|開票時間|公售時間|一般售票|會員優先|清票時間|釋票時間|清票|釋票|二次開賣|加開開賣|二次售票|開始販售|販售時間|販售日期|ticket\s*sale|on\s*sale|general\s*sale|presale|public\s*sale|sale\s*start|sale\s*date|sale\s*time|ticketing)/i;
+  /(?:售票時間|售票日期|售票日程|售票日|售票時程|售票開放|開放售票|售票資訊|開始售票|開賣時間|開賣日期|開賣日程|開賣日|正式開賣|全面開賣|啟售時間|啟售日期|啟售日程|啟售日|一般啟售|會員啟售|卡友啟售|優先啟售|正式啟售|購票時間|購票日期|購票日程|購票日|開放購票|開始購票|預售時間|預售日期|預售日|預售開賣|預售|現場售票|現場開賣|現場票|預購時間|預購日期|會員預購|卡友優先|卡友預售|卡友購票|優先預購|優先購票|優先售票|先行預約|先行販售|登記抽票|抽選登記|抽票登記|實名制抽票|抽票|抽選|搶票時間|開票時間|公售時間|一般售票|會員優先|早鳥會員|早鳥優先|清票時間|釋票時間|清票|釋票|二次開賣|加開開賣|二次售票|開始販售|販售時間|販售日期|ticket\s*sale|on\s*sale|general\s*sale|presale|public\s*sale|sale\s*start|sale\s*date|sale\s*time|ticketing)/i;
 
 /**
  * 自內文或 HTML 片段中提取售票時程 (Sale Phases)
@@ -170,10 +170,22 @@ export function extractSalePhasesFromContent(
 
   const normalized = normalizeChineseText(content);
 
-  // 切分成行或標點句進行精準抽取
+  // 切分成行或標點句進行精準抽取（包含逗號後連接獨立開賣時程的分割）
   const lines = normalized
     .split(/[\n\r；;。|｜]+/)
-    .map((l) => l.trim())
+    .flatMap((seg) => {
+      if (
+        /[，,]\s*(?=[^，,]*?(?:售票|開賣|啟售|預售|預購|抽票|一般|優先|全面|現場|早鳥|會員))/i.test(
+          seg
+        )
+      ) {
+        return seg
+          .split(/[，,]+/)
+          .map((s) => s.trim())
+          .filter(Boolean);
+      }
+      return [seg.trim()];
+    })
     .filter(Boolean);
 
   for (const line of lines) {
@@ -187,11 +199,13 @@ export function extractSalePhasesFromContent(
     if (/抽票|登記|抽選|實名制抽票|抽選登記|lottery|raffle|ballot/i.test(line)) {
       saleType = 'LOTTERY';
     } else if (
-      /優先|會員|預購|卡友|先行|早鳥|國泰|中信|台新|玉山|富邦|星展|粉絲|presale|priority|fanclub|early\s*bird/i.test(
+      /優先|會員|預購|預售|卡友|先行|早鳥|國泰|中信|台新|玉山|富邦|星展|粉絲|presale|priority|fanclub|early\s*bird/i.test(
         line
       )
     ) {
       saleType = 'PRESALE';
+    } else if (/現場/i.test(line)) {
+      saleType = 'DOOR';
     } else if (/清票|釋票|二次開賣|加開|rerelease|resale/i.test(line)) {
       saleType = 'RERELEASE';
     }
@@ -202,7 +216,15 @@ export function extractSalePhasesFromContent(
         ? '拓元全面開賣'
         : platform === 'KKTIX'
           ? 'KKTIX 一般售票'
-          : '活動公開售票';
+          : platform === 'IBON'
+            ? 'ibon 全面啟售'
+            : platform === 'FAMITICKET'
+              ? 'FamiTicket 全網啟售'
+              : platform === 'KHAM'
+                ? '寬宏售票全面開賣'
+                : platform === 'INDIEVOX'
+                  ? 'INDIEVOX 正式開賣'
+                  : '活動公開售票';
 
     if (saleType === 'PRESALE') {
       phaseName =
@@ -210,7 +232,17 @@ export function extractSalePhasesFromContent(
           ? '拓元會員/優先預購'
           : platform === 'KKTIX'
             ? 'KKTIX 會員/優先預購'
-            : '優先預購';
+            : platform === 'IBON'
+              ? 'ibon 優先預售'
+              : platform === 'FAMITICKET'
+                ? '全網優先預購'
+                : platform === 'KHAM'
+                  ? '寬宏會員/早鳥開賣'
+                  : platform === 'INDIEVOX'
+                    ? 'INDIEVOX 預售開賣'
+                    : '優先預購';
+    } else if (saleType === 'DOOR') {
+      phaseName = platform === 'INDIEVOX' ? 'INDIEVOX 現場售票' : '現場票開賣';
     } else if (saleType === 'LOTTERY') {
       phaseName =
         platform === 'TIXCRAFT'

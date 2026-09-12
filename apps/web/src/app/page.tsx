@@ -761,8 +761,8 @@ export default function HomePage() {
               演唱會資訊解析與典藏
             </h1>
             <p className="text-gray-400 text-sm sm:text-base">
-              貼上售票網址（KKTIX / 拓元售票），自動解析多場次時間、場館與票價階梯，一鍵存入本地
-              SQLite 資料庫。
+              貼上全台主流售票平台網址（KKTIX / 拓元售票 / ibon / 全網購票網 / 寬宏售票 /
+              INDIEVOX），自動解析多場次時間、場館與票價階梯，一鍵存入本地 SQLite 資料庫。
             </p>
           </div>
 
@@ -781,7 +781,7 @@ export default function HomePage() {
                   type="url"
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
-                  placeholder="貼入 KKTIX 或 拓元售票活動網址 (https://...)"
+                  placeholder="貼入售票活動網址 (KKTIX, 拓元, ibon, FamiTicket, 寬宏, INDIEVOX...)"
                   className="w-full bg-gray-950 border border-gray-700/80 rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 text-white placeholder-gray-500"
                   required
                 />
@@ -812,7 +812,7 @@ export default function HomePage() {
                   setUrl(u);
                   handleScrape(u);
                 }}
-                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-indigo-300 border border-indigo-900/50 transition-colors"
+                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-amber-300 border border-amber-900/50 transition-colors"
               >
                 🎫 [KKTIX] 2026 告五人巡迴
               </button>
@@ -823,9 +823,54 @@ export default function HomePage() {
                   setUrl(u);
                   handleScrape(u);
                 }}
+                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-rose-300 border border-rose-900/50 transition-colors"
+              >
+                🏟️ [拓元] 2026 周杰倫大巨蛋 (3場)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const u = 'https://ticket.ibon.com.tw/ActivityInfo/Details.aspx?id=38120';
+                  setUrl(u);
+                  handleScrape(u);
+                }}
+                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-emerald-300 border border-emerald-900/50 transition-colors"
+              >
+                🏪 [ibon] 2026 五月天世運 (2場)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const u = 'https://www.famiticket.com.tw/Home/Activity/Info/2026_JOLIN';
+                  setUrl(u);
+                  handleScrape(u);
+                }}
+                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-sky-300 border border-sky-900/50 transition-colors"
+              >
+                🏪 [全網] 2026 蔡依林小巨蛋 (2場)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const u =
+                    'https://kham.com.tw/application/UTK02/UTK0201_00.aspx?PRODUCT_ID=M0KHAM26';
+                  setUrl(u);
+                  handleScrape(u);
+                }}
                 className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-purple-300 border border-purple-900/50 transition-colors"
               >
-                🏟️ [拓元] 2026 周杰倫大巨蛋 (3場次)
+                🎭 [寬宏] 音樂劇《鐘樓怪人》 (3場)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const u = 'https://www.indievox.com/activity/detail/26_NO_PARTY';
+                  setUrl(u);
+                  handleScrape(u);
+                }}
+                className="bg-gray-800/80 hover:bg-gray-700 px-3 py-1.5 rounded-lg text-fuchsia-300 border border-fuchsia-900/50 transition-colors"
+              >
+                🎸 [INDIEVOX] 草東沒有派對 Legacy
               </button>
             </div>
           </div>
@@ -896,7 +941,15 @@ export default function HomePage() {
                           ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
                           : event.platform === 'TIXCRAFT'
                             ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
-                            : 'bg-gray-800 text-gray-300'
+                            : event.platform === 'IBON'
+                              ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
+                              : event.platform === 'FAMITICKET'
+                                ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
+                                : event.platform === 'KHAM'
+                                  ? 'bg-purple-950/80 text-purple-300 border border-purple-800/60'
+                                  : event.platform === 'INDIEVOX'
+                                    ? 'bg-fuchsia-950/80 text-fuchsia-300 border border-fuchsia-800/60'
+                                    : 'bg-gray-800 text-gray-300'
                       }`}
                     >
                       {event.platform} 售票
@@ -1353,7 +1406,23 @@ export default function HomePage() {
                       )}
                       <div className="space-y-1">
                         <div className="flex items-center space-x-2">
-                          <span className="text-[10px] px-2 py-0.5 bg-gray-800 text-gray-300 font-bold rounded">
+                          <span
+                            className={`text-[10px] px-2 py-0.5 font-bold rounded ${
+                              ev.platform === 'KKTIX'
+                                ? 'bg-amber-950/80 text-amber-300 border border-amber-800/60'
+                                : ev.platform === 'TIXCRAFT'
+                                  ? 'bg-rose-950/80 text-rose-300 border border-rose-800/60'
+                                  : ev.platform === 'IBON'
+                                    ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-800/60'
+                                    : ev.platform === 'FAMITICKET'
+                                      ? 'bg-sky-950/80 text-sky-300 border border-sky-800/60'
+                                      : ev.platform === 'KHAM'
+                                        ? 'bg-purple-950/80 text-purple-300 border border-purple-800/60'
+                                        : ev.platform === 'INDIEVOX'
+                                          ? 'bg-fuchsia-950/80 text-fuchsia-300 border border-fuchsia-800/60'
+                                          : 'bg-gray-800 text-gray-300'
+                            }`}
+                          >
                             {ev.platform}
                           </span>
                           {ev.organizer && (
