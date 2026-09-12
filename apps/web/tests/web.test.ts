@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
+import { NextRequest } from 'next/server';
 
 describe('Apps/Web - Next.js & Capacitor Configuration', () => {
   it('Capacitor 跨平台原生配置應包含正確之 App ID 與輸出目錄', async () => {
@@ -1435,6 +1436,218 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
       expect(pageContent).toContain('LOTTERY_ENTERED');
       expect(pageContent).toContain('PURCHASED');
       expect(pageContent).toContain('TRANSFERRING');
+    });
+  });
+
+  describe('Phase 11: 巡迴足跡地圖、秒級即時動態與多舞台場館庫 (Tour Footprint Map & Live Activities)', () => {
+    it('Footprint API 路由應正確聚合場館座標、參戰歷史、消費與次廳別 (#78)', async () => {
+      const { GET: getFootprint, POST: postFootprint } =
+        await import('../src/app/api/footprint/route');
+      const res = await getFootprint();
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(Array.isArray(json.venues)).toBe(true);
+      expect(json.stats).toBeDefined();
+      expect(json.stats.totalVenues).toBeGreaterThanOrEqual(0);
+      expect(json.stats.regionBreakdown).toBeDefined();
+
+      // 驗證預設字典知名場館座標補全
+      const taipeiArena = json.venues.find((v: any) => v.name.includes('小巨蛋'));
+      if (taipeiArena) {
+        expect(taipeiArena.latitude).toBeCloseTo(25.051, 1);
+        expect(taipeiArena.longitude).toBeCloseTo(121.5501, 1);
+        expect(taipeiArena.region).toBe('NORTH');
+      }
+
+      // 測試 POST 更新場館座標
+      if (json.venues.length > 0) {
+        const target = json.venues[0];
+        const postReq = new NextRequest('http://localhost:3000/api/footprint', {
+          method: 'POST',
+          body: JSON.stringify({
+            id: target.id,
+            latitude: 25.05,
+            longitude: 121.55,
+            region: 'NORTH',
+            sub_halls: ['主場館', '副館'],
+          }),
+        });
+        const postRes = await postFootprint(postReq);
+        expect(postRes.status).toBe(200);
+      }
+    });
+
+    it('TourFootprintMap 組件應支援全台向量地圖、海外朝聖地標與場館歷史時間軸 (#78)', () => {
+      const mapPath = path.join(__dirname, '..', 'src', 'components', 'TourFootprintMap.tsx');
+      expect(fs.existsSync(mapPath)).toBe(true);
+
+      const content = fs.readFileSync(mapPath, 'utf-8');
+      expect(content).toContain('TAIWAN STRAIT');
+      expect(content).toContain('PACIFIC OCEAN');
+      expect(content).toContain('mapCoordinates');
+      expect(content).toContain('taiwanVenues');
+      expect(content).toContain('overseasVenues');
+      expect(content).toContain('sub_halls');
+      expect(content).toContain('Google 地圖導航前往');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+    });
+
+    it('LiveActivity API 與 LiveCountdownCard 應支援秒級精密倒數與 5 階段狀態機 (#79)', async () => {
+      const { GET: getLiveActivity, POST: postLiveActivity } =
+        await import('../src/app/api/live-activity/route');
+      const req = new NextRequest('http://localhost:3000/api/live-activity');
+      const res = await getLiveActivity(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+
+      // 測試 POST 靈動島通知模擬
+      const postReq = new NextRequest('http://localhost:3000/api/live-activity', {
+        method: 'POST',
+        body: JSON.stringify({ sessionId: 'dummy-session', phase: 'LIVE' }),
+      });
+      const postRes = await postLiveActivity(postReq);
+      expect(postRes.status).toBe(200);
+      const postJson = await postRes.json();
+      expect(postJson.message).toContain('LIVE');
+
+      // 驗證 LiveCountdownCard 組件程式碼結構
+      const cardPath = path.join(__dirname, '..', 'src', 'components', 'LiveCountdownCard.tsx');
+      expect(fs.existsSync(cardPath)).toBe(true);
+
+      const cardContent = fs.readFileSync(cardPath, 'utf-8');
+      expect(cardContent).toContain('LIVE ACTIVITIES');
+      expect(cardContent).toContain('DAYS');
+      expect(cardContent).toContain('HOURS');
+      expect(cardContent).toContain('MINS');
+      expect(cardContent).toContain('SECS');
+      expect(cardContent).toContain('QUEUEING');
+      expect(cardContent).toContain('DOORS_OPEN');
+      expect(cardContent).toContain('COUNTDOWN');
+      expect(cardContent).toContain('LIVE');
+      expect(cardContent).toContain('EXIT');
+      expect(cardContent).toContain('handleSimulateDynamicIsland');
+    });
+
+    it('Festival API 與 FestivalTimetableModal 應支援多舞台排程與衝堂警示機制 (#80)', async () => {
+      const { GET: getFestival, PUT: putFestival } = await import('../src/app/api/festival/route');
+      const req = new NextRequest('http://localhost:3000/api/festival');
+      const res = await getFestival(req);
+      expect(res.status).toBe(200);
+
+      const json = await res.json();
+      expect(json.success).toBe(true);
+      expect(Array.isArray(json.stages)).toBe(true);
+      expect(Array.isArray(json.timetables)).toBe(true);
+      expect(Array.isArray(json.clashes)).toBe(true);
+
+      // 驗證多舞台時程組件
+      const modalPath = path.join(
+        __dirname,
+        '..',
+        'src',
+        'components',
+        'FestivalTimetableModal.tsx'
+      );
+      expect(fs.existsSync(modalPath)).toBe(true);
+
+      const content = fs.readFileSync(modalPath, 'utf-8');
+      expect(content).toContain('Multi-Stage Timetable');
+      expect(content).toContain('衝堂警示');
+      expect(content).toContain('clashes');
+      expect(content).toContain('handleCopySchedule');
+      expect(content).toContain('toggleSlotSelection');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+    });
+
+    it('Wishlist API 與 WishlistModal 應支援朝聖心願池管理與售票雷達智慧匹配 (#81)', async () => {
+      const {
+        GET: getWishlist,
+        POST: postWishlist,
+        PUT: putWishlist,
+        DELETE: deleteWishlist,
+      } = await import('../src/app/api/wishlist/route');
+
+      // GET
+      const getRes = await getWishlist();
+      expect(getRes.status).toBe(200);
+      const json = await getRes.json();
+      expect(json.success).toBe(true);
+      expect(Array.isArray(json.items)).toBe(true);
+      expect(json.stats).toBeDefined();
+
+      // POST
+      const postReq = new NextRequest('http://localhost:3000/api/wishlist', {
+        method: 'POST',
+        body: JSON.stringify({
+          target_type: 'ARTIST',
+          target_name: 'ONE OK ROCK',
+          priority: 5,
+          reason: '想要在現場大合唱 We Are！',
+        }),
+      });
+      const postRes = await postWishlist(postReq);
+      expect(postRes.status).toBe(200);
+      const postJson = await postRes.json();
+      expect(postJson.success).toBe(true);
+      const createdId = postJson.item.id;
+
+      // PUT (圓夢標記)
+      const putReq = new NextRequest('http://localhost:3000/api/wishlist', {
+        method: 'PUT',
+        body: JSON.stringify({ id: createdId, is_fulfilled: true }),
+      });
+      const putRes = await putWishlist(putReq);
+      expect(putRes.status).toBe(200);
+
+      // DELETE
+      const delReq = new NextRequest(`http://localhost:3000/api/wishlist?id=${createdId}`, {
+        method: 'DELETE',
+      });
+      const delRes = await deleteWishlist(delReq);
+      expect(delRes.status).toBe(200);
+
+      // 驗證 WishlistModal 組件
+      const modalPath = path.join(__dirname, '..', 'src', 'components', 'WishlistModal.tsx');
+      expect(fs.existsSync(modalPath)).toBe(true);
+
+      const content = fs.readFileSync(modalPath, 'utf-8');
+      expect(content).toContain('Pilgrimage Bucket List');
+      expect(content).toContain('朝聖心願池');
+      expect(content).toContain('handleAddWish');
+      expect(content).toContain('handleToggleFulfilled');
+      expect(content).toContain('售票雷達已命中');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+    });
+
+    it('主頁面 page.tsx 應整合 LiveCountdownCard 與 Phase 11 捷徑工具列', () => {
+      const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+      const content = fs.readFileSync(pagePath, 'utf-8');
+      expect(content).toContain('LiveCountdownCard');
+      expect(content).toContain('TourFootprintMap');
+      expect(content).toContain('FestivalTimetableModal');
+      expect(content).toContain('WishlistModal');
+      expect(content).toContain('巡迴足跡地圖');
+      expect(content).toContain('音樂祭 Timetable 排程');
+      expect(content).toContain('朝聖心願池');
     });
   });
 });

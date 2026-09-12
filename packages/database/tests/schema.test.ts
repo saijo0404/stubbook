@@ -347,4 +347,110 @@ describe('SQLite Local Database Schema & Operations', () => {
       .get(eventId) as any;
     expect(count.c).toBe(0);
   });
+
+  it('應支援 venues 座標、行政區域、廳別子分區與 session hall_name', () => {
+    const insertVenue = db.prepare(`
+      INSERT INTO venues (name, city, address, latitude, longitude, region, sub_halls)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+
+    const venue = insertVenue.get(
+      '高雄流行音樂中心',
+      '高雄市',
+      '高雄市鹽埕區真愛路1號',
+      22.6186,
+      120.2889,
+      'SOUTH',
+      JSON.stringify(['海音館', '鯨魚堤岸', 'LIVE WAREHOUSE'])
+    ) as any;
+
+    expect(venue.id).toBeTruthy();
+    expect(venue.latitude).toBeCloseTo(22.6186);
+    expect(venue.longitude).toBeCloseTo(120.2889);
+    expect(venue.region).toBe('SOUTH');
+    expect(JSON.parse(venue.sub_halls)).toContain('海音館');
+
+    // 建立 event 與帶有 hall_name 的 session
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('大港開唱', 'https://megaport.tw') RETURNING id"
+      )
+      .get() as any;
+
+    const { id: sessionId } = db
+      .prepare(
+        `
+        INSERT INTO event_sessions (event_id, venue_id, hall_name, session_date)
+        VALUES (?, ?, '海音館', '2026-03-28')
+        RETURNING id
+      `
+      )
+      .get(eventId, venue.id) as any;
+
+    const session = db.prepare('SELECT * FROM event_sessions WHERE id = ?').get(sessionId) as any;
+    expect(session.hall_name).toBe('海音館');
+  });
+
+  it('應支援 festival_stages 與 festival_timetables 多舞台排程與外鍵級聯', () => {
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('浪人祭 Vagabond Festival', 'https://vagabond.tw') RETURNING id"
+      )
+      .get() as any;
+
+    // 1. 建立舞台
+    const insertStage = db.prepare(`
+      INSERT INTO festival_stages (event_id, stage_name, stage_color, location_notes)
+      VALUES (?, '鯤鯓舞台', '#f43f5e', '近海灘主舞台')
+      RETURNING *
+    `);
+    const stage = insertStage.get(eventId) as any;
+    expect(stage.id).toBeTruthy();
+    expect(stage.stage_name).toBe('鯤鯓舞台');
+    expect(stage.stage_color).toBe('#f43f5e');
+
+    // 2. 建立演出時間表
+    const insertTimetable = db.prepare(`
+      INSERT INTO festival_timetables (event_id, stage_id, session_date, artist_name, start_time, end_time, is_selected)
+      VALUES (?, ?, '2026-10-10', '滅火器 Fire EX.', '16:00', '16:50', 1)
+      RETURNING *
+    `);
+    const slot = insertTimetable.get(eventId, stage.id) as any;
+    expect(slot.id).toBeTruthy();
+    expect(slot.artist_name).toBe('滅火器 Fire EX.');
+    expect(slot.is_selected).toBe(1);
+
+    // 3. 測試級聯刪除
+    db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
+    const stagesRemaining = db
+      .prepare('SELECT COUNT(*) as c FROM festival_stages WHERE event_id = ?')
+      .get(eventId) as any;
+    const slotsRemaining = db
+      .prepare('SELECT COUNT(*) as c FROM festival_timetables WHERE event_id = ?')
+      .get(eventId) as any;
+    expect(stagesRemaining.c).toBe(0);
+    expect(slotsRemaining.c).toBe(0);
+  });
+
+  it('應支援 wishlist_items 朝聖心願池管理與更新', () => {
+    const insertWish = db.prepare(`
+      INSERT INTO wishlist_items (user_id, target_type, target_name, priority, reason)
+      VALUES ('local', 'VENUE', '日本武道館', 5, '一生一定要朝聖一次的傳奇場館！')
+      RETURNING *
+    `);
+    const wish = insertWish.get() as any;
+    expect(wish.id).toBeTruthy();
+    expect(wish.target_type).toBe('VENUE');
+    expect(wish.target_name).toBe('日本武道館');
+    expect(wish.priority).toBe(5);
+    expect(wish.is_fulfilled).toBe(0);
+
+    // 圓夢更新
+    db.prepare('UPDATE wishlist_items SET is_fulfilled = 1 WHERE id = ?').run(wish.id);
+    const updated = db
+      .prepare('SELECT is_fulfilled FROM wishlist_items WHERE id = ?')
+      .get(wish.id) as any;
+    expect(updated.is_fulfilled).toBe(1);
+  });
 });

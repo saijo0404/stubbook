@@ -75,6 +75,23 @@ export function getDatabase(options?: DatabaseOptions): Database.Database {
       if (!colNames.has('transfer_notes'))
         db.exec('ALTER TABLE user_attendances ADD COLUMN transfer_notes TEXT;');
     }
+
+    const venueCols = db.pragma('table_info(venues)') as Array<{ name: string }>;
+    if (venueCols.length > 0) {
+      const vColNames = new Set(venueCols.map((c) => c.name));
+      if (!vColNames.has('latitude')) db.exec('ALTER TABLE venues ADD COLUMN latitude REAL;');
+      if (!vColNames.has('longitude')) db.exec('ALTER TABLE venues ADD COLUMN longitude REAL;');
+      if (!vColNames.has('region'))
+        db.exec("ALTER TABLE venues ADD COLUMN region TEXT NOT NULL DEFAULT 'NORTH';");
+      if (!vColNames.has('sub_halls'))
+        db.exec("ALTER TABLE venues ADD COLUMN sub_halls TEXT NOT NULL DEFAULT '[]';");
+      if (!vColNames.has('photo_url')) db.exec('ALTER TABLE venues ADD COLUMN photo_url TEXT;');
+    }
+
+    const sessionCols = db.pragma('table_info(event_sessions)') as Array<{ name: string }>;
+    if (sessionCols.length > 0 && !sessionCols.some((c) => c.name === 'hall_name')) {
+      db.exec('ALTER TABLE event_sessions ADD COLUMN hall_name TEXT;');
+    }
   } catch {
     // 忽略建立初期的潛在異常
   }
