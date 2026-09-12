@@ -88,6 +88,17 @@
 - **SHA-256 數位簽章與 Zip Slip 防護**：內建數位指紋完整性檢查與嚴格路徑穿越防禦，支援自動 `.bak` 災難回滾備份。
 - **智慧多模式還原**：支援全量覆蓋 (Overwrite)、增量合併 (Merge) 與乾跑預覽 (Dry-run Diff)，亦提供通用 JSON 匯出匯入。
 
+### 9. 📱 原生行動雙端封裝與現場沉浸模式 (Native Mobile & Live Concert Mode)
+
+- **Android 平台深度封裝**：支援 Android 10+（API Level 29~34+），配置 AAB / Release APK 生產管線、R8/ProGuard 程式碼防混淆優化，以及 Edge-to-Edge 透明邊緣沉浸導航。
+- **iOS 平台深度封裝**：Xcode 原生工程、CocoaPods 外掛管理，相容 iPhone 動態島 (Dynamic Island) 與頂底 Safe Area 邊界，完整配置 App Store 審核合規隱私權宣告。
+- **原生硬體外掛橋接矩陣**：相機票根速拍 (`@capacitor/camera`)、原生日曆日程排定、本機檔案系統儲存 (`@capacitor/filesystem`)、震動馬達多段觸覺回饋 (`@capacitor/haptics`) 與現場人潮網路監控 (`@capacitor/network`)。
+- **行動端專屬現場沉浸模式 (Live Concert Mode)**：
+  - **巨型座位指示牌 (Seat View)**：發光高對比字體，昏暗現場秒看分區與排號。
+  - **驗票閘門螢幕最大亮度 (Turnstile Scanner)**：一鍵切換純白防反光高對比條碼，供閘門檢票人員秒刷通過。
+  - **現場人潮弱網雷達 (Offline Protector)**：數萬人擠爆基地台時自動切換離線快取防護，票券、回憶與手帳 100% 離線可用。
+  - **舞台視野速拍、現場速記與虛擬應援手燈**：即時快拍視野照、速記 Talking 感動，並提供五色螢光棒揮舞燈效。
+
 ---
 
 ## 🛠️ 技術選型 (Tech Stack)
@@ -169,7 +180,7 @@ pnpm dev
 - **Phase 6**：純本地資料安全、.stubbook 全量封裝備份與智慧還原中心 (`v1.2.0` ✅)
 - **Phase 7**：全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX) (`v1.3.0` ✅)
 - **Phase 8**：串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) (`v1.4.0` ✅)
-- **Phase 9**：原生行動雙端封裝發行 (Android APK/AAB, iOS) (`v2.0.0` 📋)
+- **Phase 9**：原生行動雙端封裝發行 (Android APK/AAB, iOS, 原生外掛, 現場沉浸模式) (`v2.0.0` ✅)
 
 ---
 

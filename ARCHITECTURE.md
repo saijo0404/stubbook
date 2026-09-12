@@ -216,6 +216,38 @@ erDiagram
 | **Mobile Web (PWA)**  | Next.js + next-pwa + Web Share Target   | 輕量免安裝、桌面捷徑、接收手機瀏覽器分享的售票網址                   |
 | **iOS / Android App** | Capacitor 封裝 Next.js 前端             | 原生相機拍攝票根、離線 SQLite/IndexedDB 快取、系統級 Share Extension |
 
+### 5.1 Android 原生工程架構 (Android Native Shell)
+
+- **Gradle 雙發行管線**：支援現代 Android 10+（API Level 29~34+），提供 Release APK 與 AAB (Android App Bundle) 生產構建指令 (`pnpm build:android`)。
+- **R8 / ProGuard 防混淆與壓縮**：在 `proguard-rules.pro` 中完整保護 Capacitor 核心通道、WebKit `@JavascriptInterface`、Cordova 外掛與原生反射類別，發行建置自動開啟 `minifyEnabled true` 與 `shrinkResources true`。
+- **權限與 Web Share Target**：於 `AndroidManifest.xml` 配置相機、相簿讀寫、震動馬達、網路狀態與行事曆權限，並宣告 `android.intent.action.SEND` (`text/plain`) Intent Filter，支援從手機各大瀏覽器一鍵分享售票連結至 StubBook。
+- **Edge-to-Edge 沉浸介面**：透過 `styles.xml` 與 `colors.xml` 配置透明狀態列與導航列，完美貼合 AMOLED 黑色背景。
+
+### 5.2 iOS 原生工程架構 (iOS Native Shell)
+
+- **Xcode 專案與 CocoaPods**：以 iOS 14.0+ 為最低部署目標，統一管理 Capacitor 核心與相機、檔案系統、狀態列、網路、觸覺回饋外掛。
+- **App Store 隱私合規與 URL Scheme**：於 `Info.plist` 提供完整權限宣告（`NSCameraUsageDescription`、`NSPhotoLibraryUsageDescription`、`NSCalendarsUsageDescription`）與 `stubbook://` 深層鏈接協定。
+- **動態島 (Dynamic Island) 與 Safe Area 適配**：透過全域 CSS 變數 `--sat: env(safe-area-inset-top)` 等與 `.pt-safe`、`.pb-safe` 邊界工具類，無縫適配 iPhone 靈動島、頂部瀏海與底部 Home Indicator 手勢條。
+
+### 5.3 原生硬體外掛橋接矩陣 (Native Hardware Plugins Suite)
+
+系統於 `apps/web/src/utils/native/` 建構了抽象橋接層，具備原生環境與 Web / Node.js 雙向相容與無聲降級機制：
+
+- `nativeBridge`：即時檢測 Capacitor 原生執行時環境與平台。
+- `nativeCamera`：封裝 `@capacitor/camera`，拍照即自動觸發 Canvas 條碼個資高斯模糊遮罩；Web 環境自動降級為檔案選擇器。
+- `nativeFilesystem`：封裝 `@capacitor/filesystem`，直接將 `.stubbook` 容器導出至手機 Documents 資料夾。
+- `nativeHaptics`：調用原生線性馬達提供 Light, Medium, Heavy, Success, Warning, Selection 觸覺層次。
+- `nativeNetwork`：監控蜂巢行動網路與 Wi-Fi 連線，支援現場壅塞弱網雷達。
+- `nativeStatusBar`：控制狀態列深色主題與全螢幕現場沉浸模式。
+- `nativeCalendar`：原生日曆排程與提醒整合。
+
+### 5.4 行動端專屬「現場沉浸模式 (Live Concert Mode)」
+
+- **巨型座位指示牌 (Seat View)**：高對比發光字體，昏暗場館出示秒看座位分區與排號。
+- **驗票速刷視圖 (Turnstile Scanner)**：一鍵切換螢幕最大亮度 (純白防反光)，讓驗票閘門掃描器秒讀條碼。
+- **現場人潮弱網雷達 (Offline Protector)**：數萬人擠爆基地台時自動切換離線快取防護，票券、回憶與手帳 100% 離線可用。
+- **舞台視野速拍、現場速記與虛擬應援手燈**：即時快拍舞台視角、速記 Talking 感動，並提供五色螢光棒揮舞燈效。
+
 ---
 
 ## 6. 安全性與權限控制 (Security & Governance)
@@ -257,7 +289,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "1.4.0",
+     "appVersion": "2.0.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",

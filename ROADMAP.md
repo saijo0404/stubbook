@@ -25,12 +25,11 @@
                                                                └──────────────┘
        │
        ▼
-【後續規劃里程碑】
 ┌──────────────┐
 │   Phase 9    │
 │ 原生雙端發行 │
 │(Android/iOS) │
-│   (v2.0.0)   │
+│  (v2.0.0) ✅ │
 └──────────────┘
 ```
 
@@ -181,19 +180,24 @@
 ## 📱 Phase 9: 原生行動雙端封裝與發行 (Native Mobile Packaging & App Store Delivery)
 
 > **目標**：將單一程式碼庫完全封裝為 Android 與 iOS 原生應用，完成真機測試與發行準備。
-> **對應版本**：`v2.0.0`
+> **對應版本**：`v2.0.0` ✅
 
-- [ ] **Android 平台深度封裝與最佳化**
-  - [ ] Android Studio / Gradle 原生工程調優，支援 Android 10+ 各種螢幕比例與深色主題
-  - [ ] APK 與 AAB (Android App Bundle) 生產簽章與建置管線
-  - [ ] 系統狀態列 (Status Bar)、導航列透明度與沉浸式現場模式調校
-- [ ] **iOS 平台深度封裝與最佳化**
-  - [ ] Xcode 專案結構、CocoaPods 依賴與 Provisioning Profile 憑證配置
-  - [ ] 支援動態島 (Dynamic Island) / 瀏海螢幕 Safe Area 安全邊界與手勢互動
-- [ ] **原生真機外掛與效能調校**
-  - [ ] 原生系統日曆外掛 (`@capacitor-community/calendar`) 深度呼叫
-  - [ ] 原生檔案系統與相簿存取 (`@capacitor/filesystem` / `@capacitor/camera`)
-  - [ ] 現場極端弱網/斷網環境壓力測試與記憶體洩漏分析，達成 60fps 流暢手帳翻頁體驗
+- [x] **Android 平台深度封裝與最佳化**
+  - [x] Android Studio / Gradle 原生工程調優，支援 Android 10+ 各種螢幕比例與深色主題
+  - [x] APK 與 AAB (Android App Bundle) 生產簽章與建置管線 (`pnpm build:android`, R8/ProGuard)
+  - [x] 系統狀態列 (Status Bar)、導航列透明度 (Edge-to-Edge) 與沉浸式現場模式調校
+- [x] **iOS 平台深度封裝與最佳化**
+  - [x] Xcode 專案結構、CocoaPods 依賴與 Provisioning Profile 憑證配置、App Store 隱私描述宣告 (`Info.plist`)
+  - [x] 支援動態島 (Dynamic Island) / 瀏海螢幕 Safe Area 安全邊界與手勢互動 (`.pt-safe`, `.pb-safe`)
+- [x] **原生真機外掛與效能調校**
+  - [x] 原生系統日曆外掛與鬧鐘提醒 (`nativeCalendar`)
+  - [x] 原生檔案系統與相簿存取 (`@capacitor/filesystem` / `@capacitor/camera` / `nativeBridge`)
+  - [x] 現場極端弱網/斷網環境壓力測試與記憶體洩漏分析，達成 60fps 流暢手帳翻頁體驗
+- [x] **行動端專屬現場沉浸模式 (Live Concert Mode)**
+  - [x] 極致高對比大字型發光座位指示牌 (Seat View)
+  - [x] 驗票速刷視圖與螢幕最大亮度 (防反光) 條碼快掃
+  - [x] 現場人潮基地台壅塞弱網雷達與離線快取防護
+  - [x] 舞台視野速拍、現場備忘速記與虛擬應援手燈五色光效
 
 ---
 
@@ -210,4 +214,4 @@
 | `v1.2.0` | ✅ 已交付   | 本地資料安全、.stubbook 全量封裝備份、JSON 匯入匯出與還原    |
 | `v1.3.0` | ✅ 已交付   | 全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX)  |
 | `v1.4.0` | ✅ 已交付   | 串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) |
-| `v2.0.0` | 📋 規劃中   | 原生行動雙端封裝發行 (Android APK/AAB, iOS, 原生外掛調校)    |
+| `v2.0.0` | ✅ 正式交付 | 原生雙端封裝發行 (Android AAB/APK, iOS, 原生外掛, 現場模式)  |
