@@ -181,6 +181,7 @@ CREATE TABLE IF NOT EXISTS event_setlists (
   songs                 TEXT NOT NULL DEFAULT '[]',
   spotify_playlist_url  TEXT,
   apple_music_url       TEXT,
+  youtube_music_url     TEXT,
   notes                 TEXT,
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now')),

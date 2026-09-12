@@ -1067,4 +1067,215 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain("event.platform === 'KHAM'");
     expect(pageContent).toContain("event.platform === 'INDIEVOX'");
   });
+
+  it('串流音樂全生態深度聯動：Spotify PKCE、Apple Music 與 YouTube Music 引擎與去雜訊比對 (Phase 8: Issues #61, #62, #63)', async () => {
+    const {
+      cleanSongTitle,
+      generateCodeVerifier,
+      generateCodeChallenge,
+      buildSpotifyAuthUrl,
+      syncToSpotify,
+      getAppleMusicSearchUrl,
+      getAppleMusicSearchPlaylistDeepLink,
+      syncToAppleMusic,
+      getYoutubeMusicSearchUrl,
+      getYoutubeMusicPlaylistDeepLink,
+      syncToYoutubeMusic,
+    } = await import('../src/utils/streaming');
+
+    // 1. 去雜訊比對演算法測試 (Issue #61)
+    expect(cleanSongTitle('STAR RISING (Intro)')).toBe('STAR RISING');
+    expect(cleanSongTitle('Starlight Odyssey (Acoustic Version)')).toBe('Starlight Odyssey');
+    expect(cleanSongTitle('Memories of Eternity [Live in Taipei 2026]')).toBe(
+      'Memories of Eternity'
+    );
+    expect(cleanSongTitle('Light of Dawn (Remastered 2024)')).toBe('Light of Dawn');
+    expect(cleanSongTitle('Echoes in the Night - Live')).toBe('Echoes in the Night');
+    expect(cleanSongTitle('Collaboration Song (feat. Special Guest)')).toBe('Collaboration Song');
+
+    // 2. Spotify PKCE 授權參數與跳轉網址生成 (Issue #61)
+    const verifier = generateCodeVerifier(64);
+    expect(verifier.length).toBe(64);
+    const challenge = await generateCodeChallenge(verifier);
+    expect(challenge).toBeTruthy();
+    expect(typeof challenge).toBe('string');
+
+    const auth = await buildSpotifyAuthUrl({
+      clientId: 'mock_spotify_client_id',
+      redirectUri: 'http://localhost:3000/callback',
+    });
+    expect(auth.url).toContain('https://accounts.spotify.com/authorize');
+    expect(auth.url).toContain('client_id=mock_spotify_client_id');
+    expect(auth.url).toContain('code_challenge_method=S256');
+    expect(auth.url).toContain('playlist-modify-public');
+
+    // 3. Spotify 示範模式一鍵轉存 (Issue #61)
+    const mockSongs = [
+      { name: 'Re:START', isEncore: false },
+      { name: 'STAR RISING (Intro)', isEncore: false },
+      { name: 'Brave Heart', isEncore: true },
+    ];
+    const spotifySync = await syncToSpotify({
+      songs: mockSongs,
+      artistName: 'YOASOBI',
+      tourName: 'ASIA TOUR 2026',
+      isDemo: true,
+    });
+    expect(spotifySync.provider).toBe('SPOTIFY');
+    expect(spotifySync.playlistUrl).toContain('open.spotify.com/playlist/');
+    expect(spotifySync.tracks).toHaveLength(3);
+    expect(spotifySync.matchedCount).toBeGreaterThanOrEqual(2);
+
+    // 4. Apple Music 深度連結與同步 (Issue #62)
+    const amSearch = getAppleMusicSearchUrl('YOASOBI', 'Re:START (Live)');
+    expect(amSearch).toContain('music.apple.com/search');
+    expect(amSearch).toContain('YOASOBI%20Re%3ASTART');
+
+    const amPlaylist = getAppleMusicSearchPlaylistDeepLink('YOASOBI', 'ASIA TOUR');
+    expect(amPlaylist).toContain('YOASOBI%20ASIA%20TOUR');
+
+    const amSync = await syncToAppleMusic({
+      songs: mockSongs,
+      artistName: 'YOASOBI',
+      tourName: 'ASIA TOUR 2026',
+      isDemo: true,
+    });
+    expect(amSync.provider).toBe('APPLE_MUSIC');
+    expect(amSync.playlistUrl).toContain('music.apple.com');
+    expect(amSync.tracks).toHaveLength(3);
+
+    // 5. YouTube Music 深度連結與同步 (Issue #63)
+    const ytSearch = getYoutubeMusicSearchUrl('YOASOBI', 'STAR RISING (Intro)');
+    expect(ytSearch).toContain('music.youtube.com/search');
+    expect(ytSearch).toContain('YOASOBI%20STAR%20RISING');
+
+    const ytPlaylist = getYoutubeMusicPlaylistDeepLink('YOASOBI', 'ASIA TOUR');
+    expect(ytPlaylist).toContain('YOASOBI%20ASIA%20TOUR');
+
+    const ytSync = await syncToYoutubeMusic({
+      songs: mockSongs,
+      artistName: 'YOASOBI',
+      tourName: 'ASIA TOUR 2026',
+      isDemo: true,
+    });
+    expect(ytSync.provider).toBe('YOUTUBE_MUSIC');
+    expect(ytSync.playlistUrl).toContain('music.youtube.com/playlist');
+    expect(ytSync.tracks).toHaveLength(3);
+  });
+
+  it('Streaming API 路由與 Setlists API 應支援三平台同步與 youtube_music_url 欄位 (Phase 8: Issues #61, #62, #63)', async () => {
+    // 1. Streaming API 檢驗
+    const { GET, POST: streamPost } = await import('../src/app/api/streaming/route');
+
+    const configReq = new Request('http://localhost:3000/api/streaming?action=config');
+    const configRes = await GET(configReq as any);
+    expect(configRes.status).toBe(200);
+    const configData = await configRes.json();
+    expect(configData.success).toBe(true);
+    expect(configData.features).toHaveProperty('spotify');
+    expect(configData.features).toHaveProperty('appleMusic');
+    expect(configData.features).toHaveProperty('youtubeMusic');
+
+    // 測試 clean_titles
+    const cleanReq = new Request('http://localhost:3000/api/streaming', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'clean_titles',
+        titles: ['曲目 (Live)', '歌曲 (Acoustic)'],
+      }),
+    });
+    const cleanRes = await streamPost(cleanReq as any);
+    const cleanData = await cleanRes.json();
+    expect(cleanData.success).toBe(true);
+    expect(cleanData.cleaned[0].cleaned).toBe('曲目');
+    expect(cleanData.cleaned[1].cleaned).toBe('歌曲');
+
+    // 測試 sync action
+    const syncReq = new Request('http://localhost:3000/api/streaming', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sync',
+        provider: 'SPOTIFY',
+        artistName: '草東沒有派對',
+        songs: [{ name: '大風吹' }, { name: '山海' }],
+        isDemo: true,
+      }),
+    });
+    const syncRes = await streamPost(syncReq as any);
+    expect(syncRes.status).toBe(200);
+    const syncData = await syncRes.json();
+    expect(syncData.success).toBe(true);
+    expect(syncData.result.provider).toBe('SPOTIFY');
+    expect(syncData.result.tracks).toHaveLength(2);
+
+    // 2. Setlists API 儲存與查詢 youtubeMusicUrl 欄位
+    const { getDefaultDatabase } = await import('@stubbook/database');
+    const db = getDefaultDatabase();
+    const ev = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('串流測試活動', 'https://kktix.cc/test_hub') RETURNING id"
+      )
+      .get() as any;
+    const sess = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_title, session_date) VALUES (?, '測試場次', '2026-10-01') RETURNING id"
+      )
+      .get(ev.id) as any;
+
+    const { POST: setlistPost, GET: setlistGet } = await import('../src/app/api/setlists/route');
+
+    const saveReq = new Request('http://localhost:3000/api/setlists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sessionId: sess.id,
+        artistName: '告五人',
+        tourName: '宇宙超有趣',
+        songs: [{ name: '披星戴月的想你' }],
+        spotifyPlaylistUrl: 'https://open.spotify.com/playlist/sp_test',
+        appleMusicUrl: 'https://music.apple.com/playlist/am_test',
+        youtubeMusicUrl: 'https://music.youtube.com/playlist?list=yt_test',
+        notes: '三大串流同步測試成功',
+      }),
+    });
+    const saveRes = await setlistPost(saveReq as any);
+    expect(saveRes.status).toBe(200);
+    const saveData = await saveRes.json();
+    expect(saveData.success).toBe(true);
+    expect(saveData.setlist.youtubeMusicUrl).toBe(
+      'https://music.youtube.com/playlist?list=yt_test'
+    );
+    expect(saveData.setlist.spotifyPlaylistUrl).toBe('https://open.spotify.com/playlist/sp_test');
+    expect(saveData.setlist.appleMusicUrl).toBe('https://music.apple.com/playlist/am_test');
+
+    const getReq = new Request(`http://localhost:3000/api/setlists?sessionId=${sess.id}`);
+    const getRes = await setlistGet(getReq as any);
+    expect(getRes.status).toBe(200);
+    const getData = await getRes.json();
+    expect(getData.setlist.youtubeMusicUrl).toBe('https://music.youtube.com/playlist?list=yt_test');
+
+    // 刪除清理
+    db.prepare('DELETE FROM events WHERE id = ?').run(ev.id);
+  });
+
+  it('前端應完整實作 StreamingSyncHub 組件並整合至 SetlistModal (Phase 8: Issue #64)', () => {
+    const hubPath = path.join(__dirname, '..', 'src', 'components', 'StreamingSyncHub.tsx');
+    expect(fs.existsSync(hubPath)).toBe(true);
+    const hubContent = fs.readFileSync(hubPath, 'utf-8');
+    expect(hubContent).toContain('export const StreamingSyncHub');
+    expect(hubContent).toContain('串流音樂深度聯動中心');
+    expect(hubContent).toContain('Spotify');
+    expect(hubContent).toContain('Apple Music');
+    expect(hubContent).toContain('YT Music');
+    expect(hubContent).toContain('handleStartSpotifyAuth');
+    expect(hubContent).toContain('handleSync');
+    expect(hubContent).toContain('showInspector');
+
+    const modalPath = path.join(__dirname, '..', 'src', 'components', 'SetlistModal.tsx');
+    const modalContent = fs.readFileSync(modalPath, 'utf-8');
+    expect(modalContent).toContain('StreamingSyncHub');
+    expect(modalContent).toContain('youtubeMusicUrl');
+  });
 });
