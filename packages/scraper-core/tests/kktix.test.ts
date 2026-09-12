@@ -109,4 +109,32 @@ describe('KktixScraperAdapter', () => {
     expect(event.salePhases[0].phaseName).toContain('國泰世華CUBE卡友優先購票');
     expect(event.salePhases[0].saleStart).toBe('2026-10-01T04:00:00.000Z');
   });
+
+  it('應能從真實 KKTIX 活動 (ba87b6aa) 中正確解析「開售時間」與各票種販售時程 (Issue #71)', () => {
+    const ba87b6aaPath = path.join(__dirname, 'fixtures', 'kktix-ba87b6aa.html');
+    const html = fs.readFileSync(ba87b6aaPath, 'utf-8');
+    const event = adapter.parseHtml(html, 'https://baodaorecords.kktix.cc/events/ba87b6aa');
+
+    expect(event.title).toBe('AIMI ASIA TOUR 2026 STAR RISING in Taipei');
+    expect(event.platform).toBe('KKTIX');
+    expect(event.sessions).toHaveLength(1);
+
+    const session = event.sessions[0];
+    expect(session.venueName).toBe('MOONDOG');
+
+    // 驗證開賣時間：2026-08-28 18:00:00 (+08:00) 轉為 UTC 即 2026-08-28T10:00:00.000Z
+    expect(session.ticketSaleTime).toBe('2026-08-28T10:00:00.000Z');
+
+    // 驗證開賣階段
+    expect(event.salePhases).toBeDefined();
+    expect(event.salePhases.length).toBeGreaterThan(0);
+    expect(event.salePhases[0].saleStart).toBe('2026-08-28T10:00:00.000Z');
+
+    // 驗證票種解析與狀態 (皆結束販售 / 售完)
+    expect(session.ticketTiers.length).toBeGreaterThanOrEqual(4);
+    const tierNames = session.ticketTiers.map((t) => t.name);
+    expect(tierNames).toContain('SVIP');
+    expect(tierNames).toContain('VIP');
+    expect(session.ticketTiers.every((t) => t.status === 'SOLD_OUT')).toBe(true);
+  });
 });

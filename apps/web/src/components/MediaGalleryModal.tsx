@@ -166,8 +166,8 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-4xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/85 backdrop-blur-sm animate-fadeIn flex min-h-full items-center justify-center">
+      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-4xl my-auto max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 bg-zinc-950/60">
           <div>
@@ -461,18 +461,18 @@ export const MediaGalleryModal: React.FC<MediaGalleryModalProps> = ({
       {/* Lightbox Modal */}
       {lightboxIndex !== null && mediaList[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-60 bg-black/95 flex flex-col items-center justify-center p-4 animate-fadeIn"
+          className="fixed inset-0 z-60 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/95 flex min-h-full flex-col items-center justify-center animate-fadeIn"
           onClick={() => setLightboxIndex(null)}
         >
           <button
             onClick={() => setLightboxIndex(null)}
-            className="absolute top-4 right-4 text-white text-2xl hover:text-zinc-400 p-2"
+            className="absolute top-4 right-4 text-white text-2xl hover:text-zinc-400 p-2 z-10"
           >
             ✕
           </button>
 
           <div
-            className="max-w-4xl max-h-[85vh] flex flex-col items-center"
+            className="max-w-4xl my-auto max-h-[85dvh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
             {mediaList[lightboxIndex].mediaType === 'VIDEO' ? (

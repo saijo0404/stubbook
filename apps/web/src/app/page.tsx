@@ -1792,8 +1792,8 @@ export default function HomePage() {
 
       {/* ─────────────────── 參戰手帳記錄彈窗 (ATTENDANCE MODAL) ─────────────────── */}
       {editingSession && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl overflow-hidden animate-scaleIn">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe flex min-h-full items-center justify-center">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-lg w-full my-auto max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden animate-scaleIn">
             {/* Modal Header */}
             <div className="px-6 py-4 border-b border-gray-800 flex items-center justify-between bg-gray-950/60">
               <div className="space-y-0.5">
@@ -2121,8 +2121,8 @@ export default function HomePage() {
 
       {/* 日誌檢視彈窗 */}
       {showLogs && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe flex min-h-full items-center justify-center">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-2xl w-full my-auto max-h-[85dvh] flex flex-col shadow-2xl overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-800 flex items-center justify-between">
               <span className="font-semibold text-sm text-gray-200 flex items-center">
                 <Terminal className="h-4 w-4 mr-2 text-indigo-400" />
@@ -2296,8 +2296,8 @@ export default function HomePage() {
 
       {/* 刪除活動確認 Modal */}
       {deletingEvent && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe flex min-h-full items-center justify-center">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-md w-full my-auto p-6 shadow-2xl space-y-4">
             <div className="flex items-center space-x-3 text-rose-400">
               <div className="p-3 bg-rose-950/80 rounded-xl border border-rose-800/80">
                 <Trash2 className="h-6 w-6 text-rose-400" />

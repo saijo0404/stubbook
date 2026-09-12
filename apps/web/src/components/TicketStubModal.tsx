@@ -50,13 +50,13 @@ export function TicketStubModal({
   });
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-transparent max-w-4xl w-full flex flex-col items-center animate-scaleIn">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe flex min-h-full items-center justify-center">
+      <div className="bg-transparent max-w-4xl w-full my-auto flex flex-col items-center animate-scaleIn">
         {/* 頂部關閉按鈕 */}
-        <div className="w-full flex justify-end pb-3">
+        <div className="w-full flex justify-end pb-3 sticky top-0 z-10">
           <button
             onClick={onClose}
-            className="p-2 rounded-full bg-gray-850 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors shadow-lg"
+            className="p-2 rounded-full bg-gray-850 hover:bg-gray-700 text-gray-300 hover:text-white transition-colors shadow-lg border border-gray-700"
           >
             <X className="h-5 w-5" />
           </button>

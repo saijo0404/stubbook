@@ -102,7 +102,7 @@ export const AddToCalendarMenu: React.FC<AddToCalendarMenuProps> = ({
 
       {isOpen && (
         <div
-          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} mt-2 w-64 sm:w-72 rounded-2xl bg-gray-900/95 backdrop-blur-md border border-gray-750 shadow-2xl z-50 overflow-hidden animate-scaleIn text-xs`}
+          className={`absolute ${align === 'left' ? 'left-0' : 'right-0'} mt-2 w-64 sm:w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-gray-900/95 backdrop-blur-md border border-gray-750 shadow-2xl z-50 overflow-hidden animate-scaleIn text-xs`}
         >
           <div className="px-3.5 py-2.5 border-b border-gray-800 bg-gray-950/70 flex items-center justify-between">
             <span className="font-bold text-gray-200 flex items-center gap-1.5">

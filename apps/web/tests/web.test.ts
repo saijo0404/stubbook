@@ -1278,4 +1278,55 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(modalContent).toContain('StreamingSyncHub');
     expect(modalContent).toContain('youtubeMusicUrl');
   });
+
+  it('所有彈窗與互動視窗應具備防裁切、垂直滾動與安全邊界適配 (Issue #72)', () => {
+    const componentsToCheck = [
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'TicketStubModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto', 'sticky top-0'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'ConcertWrappedModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto', 'max-h-[50dvh]'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'TicketMaskModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'SeatViewModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'SetlistModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'MerchManagerModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'MediaGalleryModal.tsx'),
+        checks: ['overflow-y-auto', 'pt-safe', 'pb-safe', 'min-h-full', 'my-auto'],
+      },
+      {
+        file: path.join(__dirname, '..', 'src', 'components', 'AddToCalendarMenu.tsx'),
+        checks: ['max-w-[calc(100vw-2rem)]'],
+      },
+    ];
+
+    for (const { file, checks } of componentsToCheck) {
+      expect(fs.existsSync(file)).toBe(true);
+      const content = fs.readFileSync(file, 'utf-8');
+      for (const check of checks) {
+        expect(content).toContain(check);
+      }
+    }
+
+    const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+    const pageContent = fs.readFileSync(pagePath, 'utf-8');
+    expect(pageContent).toContain('editingSession');
+    expect(pageContent).toContain('showLogs');
+    expect(pageContent).toContain('deletingEvent');
+  });
 });

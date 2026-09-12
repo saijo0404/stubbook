@@ -275,8 +275,8 @@ export const SetlistModal: React.FC<SetlistModalProps> = ({
   const encoreSongs = songs.filter((s) => s.isEncore);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl max-h-[92vh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/85 backdrop-blur-md animate-in fade-in duration-200 flex min-h-full items-center justify-center">
+      <div className="relative w-full max-w-4xl my-auto max-h-[90dvh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
         {/* Modal 頂部 Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 bg-zinc-950/70">
           <div className="flex items-center space-x-3">

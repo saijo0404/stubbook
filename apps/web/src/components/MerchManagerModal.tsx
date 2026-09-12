@@ -201,8 +201,8 @@ export const MerchManagerModal: React.FC<MerchManagerModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-2xl max-h-[90vh] flex flex-col shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/80 backdrop-blur-sm animate-fadeIn flex min-h-full items-center justify-center">
+      <div className="bg-zinc-900 border border-zinc-700/80 rounded-2xl w-full max-w-2xl my-auto max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 bg-zinc-950/60">
           <div>

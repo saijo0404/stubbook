@@ -193,8 +193,8 @@ export function TicketMaskModal({ isOpen, imageSrc, onClose, onApplyMask }: Tick
   };
 
   return (
-    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-3xl w-full max-h-[92vh] flex flex-col shadow-2xl overflow-hidden animate-scaleIn">
+    <div className="fixed inset-0 bg-black/85 backdrop-blur-md z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe flex min-h-full items-center justify-center">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl max-w-3xl w-full my-auto max-h-[90dvh] flex flex-col shadow-2xl overflow-hidden animate-scaleIn">
         {/* Header */}
         <div className="px-6 py-3.5 border-b border-gray-800 flex items-center justify-between bg-gray-950/80">
           <div className="flex items-center space-x-2">

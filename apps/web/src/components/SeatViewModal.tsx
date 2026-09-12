@@ -308,8 +308,8 @@ export const SeatViewModal: React.FC<SeatViewModalProps> = ({
   const uniqueSections = Array.from(new Set(views.map((v) => v.section))).filter(Boolean);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl max-h-[92vh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/85 backdrop-blur-md animate-in fade-in duration-200 flex min-h-full items-center justify-center">
+      <div className="relative w-full max-w-5xl my-auto max-h-[90dvh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
         {/* Modal 頂部 Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800 bg-zinc-950/70">
           <div className="flex items-center space-x-3">
@@ -831,11 +831,11 @@ export const SeatViewModal: React.FC<SeatViewModalProps> = ({
       {/* 燈箱全圖預覽 Modal */}
       {lightboxIndex !== null && views[lightboxIndex] && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center p-4"
+          className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/95 flex min-h-full flex-col items-center justify-center"
           onClick={() => setLightboxIndex(null)}
         >
           <div
-            className="relative max-w-5xl max-h-[85vh] flex flex-col items-center"
+            className="relative max-w-5xl my-auto max-h-[85dvh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
             <img

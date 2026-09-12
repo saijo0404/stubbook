@@ -368,8 +368,8 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg max-h-[95vh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 z-50 overflow-y-auto p-3 sm:p-6 pt-safe pb-safe bg-black/85 backdrop-blur-md animate-in fade-in duration-200 flex min-h-full items-center justify-center">
+      <div className="relative w-full max-w-lg my-auto max-h-[90dvh] flex flex-col bg-zinc-900 border border-zinc-700/80 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800 bg-zinc-950/70">
           <div className="flex items-center space-x-2">
@@ -391,8 +391,8 @@ export const ConcertWrappedModal: React.FC<ConcertWrappedModalProps> = ({
         </div>
 
         {/* 預覽海報 Canvas 區塊 */}
-        <div className="flex-1 overflow-y-auto p-4 flex flex-col items-center justify-center bg-zinc-950/50">
-          <div className="relative w-full max-w-[340px] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
+        <div className="flex-1 overflow-y-auto p-3 sm:p-4 flex flex-col items-center justify-center bg-zinc-950/50">
+          <div className="relative w-full max-w-[280px] sm:max-w-[320px] max-h-[50dvh] aspect-[9/16] rounded-2xl overflow-hidden shadow-2xl border border-white/10">
             <canvas ref={canvasRef} className="w-full h-full object-contain block" />
           </div>
         </div>

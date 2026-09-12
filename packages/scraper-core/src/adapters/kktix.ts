@@ -82,6 +82,54 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
           // preserve sessionDate
         }
       }
+      // 從 JSON-LD offers 提取高精度販售時間與補齊票種
+      if (Array.isArray(jsonLd.offers)) {
+        for (const offer of jsonLd.offers) {
+          if (offer.validFrom) {
+            try {
+              const saleStart = new Date(offer.validFrom).toISOString();
+              const saleEnd = offer.validThrough
+                ? new Date(offer.validThrough).toISOString()
+                : undefined;
+              const phaseName = offer.name ? `KKTIX ${offer.name} 售票` : 'KKTIX 一般售票';
+
+              if (!salePhases.some((p) => p.saleStart === saleStart && p.phaseName === phaseName)) {
+                salePhases.push({
+                  phaseName,
+                  saleType: 'GENERAL',
+                  saleStart,
+                  saleEnd,
+                  ticketingPlatform: 'KKTIX',
+                  bookingUrl: url,
+                  isLottery: false,
+                });
+              }
+            } catch {
+              // ignore
+            }
+          }
+
+          // 若 HTML 表格未能抓取票種，從 JSON-LD offers 補齊
+          if (ticketTiers.length === 0 && offer.name) {
+            let status: TicketStatus = 'AVAILABLE';
+            if (offer.availability === 'SoldOut') {
+              status = 'SOLD_OUT';
+            } else if (offer.availability === 'PreOrder') {
+              status = 'NOT_STARTED';
+            }
+            ticketTiers.push({
+              name: offer.name,
+              price:
+                typeof offer.price === 'number' ? offer.price : parseInt(offer.price || '0', 10),
+              currency: offer.priceCurrency || 'TWD',
+              status,
+            });
+          }
+        }
+        salePhases.sort(
+          (a, b) => new Date(a.saleStart).getTime() - new Date(b.saleStart).getTime()
+        );
+      }
     }
 
     const session: ScrapedSession = {
@@ -144,15 +192,35 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
         $(el).find('.amount').text().trim();
       const statusText = $(el).find('.ticket-status, .status').text().trim();
 
-      if (!name) return;
+      // 忽略表頭行
+      if ($(el).find('th').length > 0) return;
+      if (
+        !name ||
+        name === '票種' ||
+        name === '票券' ||
+        name === '票券名稱' ||
+        name === 'Ticket' ||
+        name === 'Ticket Name'
+      )
+        return;
 
       const priceMatch = priceText.replace(/,/g, '').match(/\d+/);
       const price = priceMatch ? parseInt(priceMatch[0], 10) : 0;
 
       let status: TicketStatus = 'AVAILABLE';
-      if (statusText.includes('已售完') || statusText.includes('Sold Out')) {
+      if (
+        statusText.includes('已售完') ||
+        statusText.includes('Sold Out') ||
+        statusText.includes('結束販售') ||
+        statusText.includes('已結束')
+      ) {
         status = 'SOLD_OUT';
-      } else if (statusText.includes('即將開賣') || statusText.includes('尚未開賣')) {
+      } else if (
+        statusText.includes('即將開賣') ||
+        statusText.includes('尚未開賣') ||
+        statusText.includes('即將開售') ||
+        statusText.includes('尚未開售')
+      ) {
         status = 'NOT_STARTED';
       } else if (statusText.includes('暫停') || statusText.includes('取消')) {
         status = 'CANCELLED';
@@ -176,8 +244,11 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
         const raw = $(scripts[i]).html();
         if (!raw) continue;
         const parsed = JSON.parse(raw);
-        if (parsed['@type'] === 'Event' || parsed['@type'] === 'MusicEvent') {
-          return parsed;
+        const items = Array.isArray(parsed) ? parsed : [parsed];
+        for (const item of items) {
+          if (item && (item['@type'] === 'Event' || item['@type'] === 'MusicEvent')) {
+            return item;
+          }
         }
       } catch {
         // ignore
@@ -209,7 +280,37 @@ export class KktixScraperAdapter implements BaseScraperAdapter {
       addUniquePhases(extractSalePhasesFromContent(text, url, 'KKTIX'));
     });
 
-    // 2. Definition Lists (dl, dt, dd) 與表格 (table tr)
+    // 2. KKTIX 購票表格專屬時程解析 (.tickets table)
+    $('.tickets table tbody tr, .tickets tr').each((_, el) => {
+      const tierName = $(el).find('.name, td.name, .ticket-name').first().text().trim();
+      const periodText = $(el).find('.period, td.period, .period-time').first().text().trim();
+      if (periodText) {
+        // 格式通常為: 2026/08/28 18:00(+0800) ~ 2026/12/04 23:59(+0800) 結束販售
+        const parts = periodText.split('~');
+        const startRaw = parts[0]?.trim();
+        const endRaw = parts[1]?.trim();
+        const startDate = startRaw ? parseChineseDateTime(startRaw, 12, 0) : null;
+        const endDate = endRaw ? parseChineseDateTime(endRaw, 23, 59) : null;
+
+        if (startDate) {
+          const phaseName = tierName ? `KKTIX ${tierName} 售票` : 'KKTIX 一般售票';
+          addUniquePhases([
+            {
+              phaseName,
+              saleType: 'GENERAL',
+              saleStart: startDate,
+              saleEnd: endDate || undefined,
+              ticketingPlatform: 'KKTIX',
+              bookingUrl: url,
+              eligibilityNotes: periodText.slice(0, 200),
+              isLottery: false,
+            },
+          ]);
+        }
+      }
+    });
+
+    // 3. Definition Lists (dl, dt, dd) 與表格 (table tr)
     $('dl, .dl-horizontal, .event-info-list').each((_, el) => {
       const text = $(el)
         .find('dt, dd')
