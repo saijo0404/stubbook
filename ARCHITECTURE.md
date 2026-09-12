@@ -35,8 +35,9 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 ├───────────────────────────────┤  ├───────────────────────────────────────┤
 │ Tier 1: Meta / JSON-LD 標籤   │  │ Database: SQLite (better-sqlite3, WAL)│
 │ Tier 2: 專屬平台 Scraper 適配器│  │ Mode: 本地單機，零雲端依賴           │
-│         - KKTIX 專屬解析器    │  │ Storage: 本地檔案系統 (票根/照片)     │
-│         - tixCraft 拓元解析器 │  │                                       │
+│         - KKTIX / 拓元 tixCraft │  │ Storage: 本地檔案系統 (票根/照片)     │
+│         - ibon / FamiTicket    │  │                                       │
+│         - 寬宏售票 / INDIEVOX   │  │                                       │
 │ Tier 3: Playwright / Cheerio  │  │                                       │
 └───────────────────────────────┘  └───────────────────────────────────────┘
 ```
@@ -45,7 +46,7 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 
 ## 2. 網頁資訊自動抓取方案 (Parsing Pipeline)
 
-售票平台（KKTIX、拓元 tixCraft）結構異質且具備防爬蟲機制。StubBook 採用**高確定性的三層解析管線 (3-Tier Parsing Pipeline)**：
+售票平台（KKTIX、拓元 tixCraft、ibon、FamiTicket、寬宏售票、INDIEVOX）結構異質且具備防爬蟲機制。StubBook 採用**高確定性的三層解析管線 (3-Tier Parsing Pipeline)**：
 
 ```
 [輸入售票網址]
@@ -54,9 +55,13 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 [Tier 1: 靜態 Meta & 結構化資料] ─── (包含完整 MusicEvent 資料?) ───► [輸出結構化 JSON]
       │ 否 / 欄位不齊全
       ▼
-[Tier 2: 售票平台專屬適配器 Scraper]
+[Tier 2: 售票平台專屬適配器 Scraper (支援全台 6 大平台)]
       ├──► KKTIX Scraper (API / DOM 抽取場次、主辦、票價) ──────► [輸出結構化 JSON]
-      └──► tixCraft 拓元 Scraper (DOM 表格解析多場次、分區票價) ──► [輸出結構化 JSON]
+      ├──► tixCraft 拓元 Scraper (DOM 表格解析多場次、分區票價) ──► [輸出結構化 JSON]
+      ├──► ibon 售票系統 Scraper (多場次、全區票價與開賣時間) ────► [輸出結構化 JSON]
+      ├──► FamiTicket 全網購票網 Scraper (多場次、分區票價解析) ─► [輸出結構化 JSON]
+      ├──► 寬宏售票 Kham Scraper (藝文/大型展演場次與票價抽取) ──► [輸出結構化 JSON]
+      └──► INDIEVOX 獨立音樂網 Scraper (Livehouse專場/進場/售票) ──► [輸出結構化 JSON]
       │ 遇特殊動態渲染或反爬蟲
       ▼
 [Tier 3: Playwright Stealth 動態渲染引擎] ───────────────────────► [輸出結構化 JSON]
@@ -67,9 +72,13 @@ StubBook 採 **Next.js PWA + Capacitor 單一程式碼庫 (方案 A)** 搭配 **
 1. **Tier 1 (輕量標籤優先 - Meta & JSON-LD):**
    - 使用輕量 HTTP 客戶端取得 HTML，優先讀取 `schema.org/MusicEvent`（JSON-LD）或 Open Graph 標籤（`og:title`, `og:image`, `og:description`）。
    - 耗時極短（<300ms），適用於結構友善的活動專頁。
-2. **Tier 2 (首批專屬適配器 - KKTIX & tixCraft):**
+2. **Tier 2 (全台 6 大售票平台專屬適配器):**
    - **KKTIX Scraper**：針對 KKTIX 活動頁面結構，解析演出者、多場次時間、售票狀態與組織者。
    - **tixCraft (拓元) Scraper**：精確抽取拓元活動場次表（多日期時間）、實名制規則、分區票價及開賣倒數。
+   - **7-ELEVEN ibon 售票系統 Scraper**：解析 ibon 活動詳情頁面，抽取多場次日期時間、全票種/票價級距與開賣時間。
+   - **全家 FamiTicket 全網購票網 Scraper**：解析 FamiTicket 活動結構，支援多場次演出時間、各區票價及預售截止時間。
+   - **寬宏售票 (Kham Ticketing) Scraper**：針對寬宏大型展演與藝文舞台劇，解析多場次排程、斜線/逗號分隔分區票價與啟售時程。
+   - **INDIEVOX 獨立音樂網 Scraper**：針對獨立音樂 Livehouse 專場，解析演出與入場時間、多階段開賣時間與預售/現場票價。
 3. **Tier 3 (動態渲染備援 - Playwright Stealth):**
    - 針對重度客戶端渲染（SPA）或有動態 DOM 的頁面，啟動無頭瀏覽器載入並執行 JavaScript 後再行解析。
 
@@ -108,7 +117,7 @@ erDiagram
         timestamp session_date
         timestamp doors_open_time
         timestamp ticket_sale_time
-        string ticket_platform "KKTIX | TIXCRAFT | OTHER"
+        string ticket_platform "KKTIX | TIXCRAFT | IBON | FAMITICKET | KHAM | INDIEVOX | OTHER"
         jsonb ticket_tiers
     }
 
@@ -243,7 +252,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "1.2.0",
+     "appVersion": "1.3.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",

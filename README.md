@@ -11,7 +11,7 @@
 
 ## 📖 專案簡介 (Introduction)
 
-熱愛現場音樂的樂迷，往往散落在各大售票系統（KKTIX、拓元 tixCraft 等）搶票，散場後的回憶與票根也零碎地沉睡在相簿或抽屜深處。
+熱愛現場音樂的樂迷，往往散落在各大售票系統（KKTIX、拓元 tixCraft、ibon、FamiTicket、寬宏售票、INDIEVOX 等）搶票，散場後的回憶與票根也零碎地沉睡在相簿或抽屜深處。
 
 **StubBook** 旨在打造一個專為音樂現場愛好者設計的**跨平台演唱會歷程與數位手帳系統**。核心在於**高強健度的網頁擷取管線**，只需輸入售票網址，系統便會自動結構化提取演唱會巡迴、多場次時間、場館與票務資訊；同時提供**個人回憶歸檔**（票根防偽擬真展示、座位視野、周邊記帳、現場歌單自動同步與年度足跡回顧）。
 
@@ -25,7 +25,7 @@
 [前端 / PC / 手機]
        │ 貼上售票網址 / 瀏覽器一鍵分享 (Share Extension)
        ▼
-[三層式解析管線] ─── (Open Graph / JSON-LD / KKTIX & 拓元專屬 Scraper) ───► [結構化演唱會本體]
+[三層式解析管線] ─── (Open Graph / JSON-LD / 6 大售票平台專屬 Scraper) ───► [結構化演唱會本體]
                                                                                 │
                                                                                 ▼
 [個人專屬回憶錄] ◄─── (標記狀態、票根隱私遮罩、周邊記帳、現場歌單) ──────────── [SQLite 本地資料庫儲存]
@@ -34,9 +34,13 @@
 ### 1. 🕷️ 三層式網頁解析管線 (3-Tier Parsing Pipeline)
 
 - **Tier 1 (輕量標籤優先)**：高速解析 HTML Meta、Open Graph 及 `schema.org/MusicEvent` (JSON-LD)。
-- **Tier 2 (首批專屬適配器)**：
+- **Tier 2 (全台 6 大售票平台專屬適配器)**：
   - **KKTIX Scraper**：精確抽取演出者、時間多場次、售票狀態與組織者。
   - **拓元售票 (tixCraft) Scraper**：自動解析多場次表格、啟售倒數時間、實名制說明與分區票價。
+  - **7-ELEVEN ibon 售票系統 Scraper**：多場次日期時間、全票種/票價級距與開賣時間抽取。
+  - **全家 FamiTicket 全網購票網 Scraper**：多場次時間、各區票價與預售截止時間結構化解析。
+  - **寬宏售票 (Kham Ticketing) Scraper**：藝文與大型展演之場次表、分區多票價及啟售時間抽取。
+  - **INDIEVOX 獨立音樂網 Scraper**：獨立音樂 Livehouse 專場之演出/入場時間、多段啟售階段與預售/現場票價解析。
 - **Tier 3 (動態渲染保護)**：Playwright Stealth 引擎應對 SPA 與客戶端動態渲染。
 
 ### 2. 🎫 巡迴與多場次結構 (Tour & Session Architecture)
@@ -103,9 +107,9 @@ stubbook/
 ├── apps/
 │   └── web/                     # Next.js 14 Web 應用 (PC + PWA + Capacitor 原生殼)
 ├── packages/
-│   ├── scraper-core/            # 核心爬蟲管線 (Meta, JSON-LD, KKTIX, tixCraft 適配器)
+│   ├── scraper-core/            # 核心爬蟲管線 (Meta, JSON-LD, 6 大售票平台專屬適配器)
 │   │   ├── src/
-│   │   │   ├── adapters/        # tixcraft, kktix 專屬適配器
+│   │   │   ├── adapters/        # kktix, tixcraft, ibon, famiticket, kham, indievox 適配器
 │   │   │   ├── engine/          # pipeline 調度引擎
 │   │   │   └── types/           # 結構化活動型別定義
 │   ├── database/                # SQLite 資料庫操作、型別定義與 Schema
@@ -160,7 +164,7 @@ pnpm dev
 - **Phase 4**：Setlist.fm 串接、Spotify 播放清單同步與年度演唱會 Wrapped (`v1.0.0` ✅)
 - **Phase 5**：智慧行事曆排程、搶票倒數雷達與 .ics 雙向匯出 (`v1.1.0` ✅)
 - **Phase 6**：純本地資料安全、.stubbook 全量封裝備份與智慧還原中心 (`v1.2.0` ✅)
-- **Phase 7**：全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX) (`v1.3.0` 📋)
+- **Phase 7**：全域售票平台爬蟲擴展 (ibon, FamiTicket, 寬宏售票, INDIEVOX) (`v1.3.0` ✅)
 - **Phase 8**：串流音樂全生態深度聯動 (Spotify PKCE, Apple Music, YT Music) (`v1.4.0` 📋)
 - **Phase 9**：原生行動雙端封裝發行 (Android APK/AAB, iOS) (`v2.0.0` 📋)
 
