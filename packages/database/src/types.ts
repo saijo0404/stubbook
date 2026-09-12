@@ -287,3 +287,56 @@ export interface LiveActivityState {
   remainingSeconds: number;
   status: AttendanceStatus;
 }
+
+// ── 16. Attendance Expenses (遠征全量開銷與支出記帳) ──────────────────────
+export type ExpenseCategory =
+  'TICKET' | 'TRANSPORT' | 'ACCOMMODATION' | 'MERCHANDISE' | 'FOOD_DINING' | 'OTHER';
+
+export interface AttendanceExpense {
+  id: string;
+  attendance_id: string;
+  user_id: string;
+  category: ExpenseCategory;
+  item_name: string;
+  amount: number;
+  currency: string;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 17. Passion Analytics & Contribution Heatmap ─────────────────────────
+export interface ContributionDay {
+  date: string; // YYYY-MM-DD
+  count: number;
+  level: 0 | 1 | 2 | 3 | 4;
+  sessions?: Array<{
+    id: string;
+    eventTitle: string;
+    artistName: string;
+    venueName: string;
+  }>;
+}
+
+export interface PassionAnalyticsResult {
+  totalAttendances: number;
+  totalDays: number;
+  activeRate: number; // e.g. 5.2% of the year
+  passionScore: number;
+  passionRankTitle: string; // e.g. "傳說級狂熱推活大師 (Lv.99)"
+  passionRankBadge: string;
+  weekdayDistribution: Record<string, number>; // "Mon", "Tue"... "Sun"
+  mostFrequentWeekday: string;
+  monthlyDistribution: Record<string, number>; // "2026-01", "2026-02"...
+  totalUniqueSongsHeard: number;
+  topSongs: Array<{ songName: string; artistName: string; playCount: number }>;
+  totalExpeditionSpend: number;
+  spendByCategory: Record<ExpenseCategory, number>;
+  averageSpendPerConcert: number;
+  farExpeditionRate: number; // 遠征出費佔比
+}
+
+// ── 18. Aesthetic SNS Cards & Stickers ──────────────────────────────────
+export type SnsCardStyle = 'VINTAGE_RECEIPT' | 'JEWEL_CASE' | 'TRANSPARENT_STICKER';
+export type SnsCardPalette =
+  'DARK_OBSIDIAN' | 'POLAROID_WHITE' | 'CYBERPUNK_NEON' | 'VINTAGE_KRAFT';
