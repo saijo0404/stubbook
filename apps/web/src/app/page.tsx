@@ -57,6 +57,7 @@ import FestivalTimetableModal from '../components/FestivalTimetableModal';
 import WishlistModal from '../components/WishlistModal';
 import { PassionHeatmapDashboard } from '../components/PassionHeatmapDashboard';
 import { AestheticCardGeneratorModal } from '../components/AestheticCardGeneratorModal';
+import { SocialConnectModal } from '../components/SocialConnectModal';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics' | 'backup';
@@ -342,6 +343,12 @@ export default function HomePage() {
   // Phase 12 新增模組 Modal 狀態
   const [passionModalOpen, setPassionModalOpen] = useState(false);
   const [cardGeneratorModalOpen, setCardGeneratorModalOpen] = useState(false);
+
+  // Phase 13 新增模組 Modal 狀態
+  const [socialModalOpen, setSocialModalOpen] = useState(false);
+  const [socialModalTab, setSocialModalTab] = useState<
+    'friends' | 'companions' | 'p2p' | 'exchanges' | 'antifraud'
+  >('friends');
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -964,6 +971,33 @@ export default function HomePage() {
         >
           <span>🧾</span>
           <span>潮流社群卡工廠</span>
+        </button>
+
+        {/* Phase 13: 好友圈 & P2P 票根快傳 & 讓換票防偽 */}
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setSocialModalTab('friends');
+            setSocialModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-950/80 to-purple-950/80 hover:from-indigo-900/80 hover:to-purple-900/80 border border-indigo-700/50 text-indigo-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🤝</span>
+          <span>好友圈 & P2P 快傳</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setSocialModalTab('antifraud');
+            setSocialModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-blue-950/80 to-cyan-950/80 hover:from-blue-900/80 hover:to-cyan-900/80 border border-blue-700/50 text-cyan-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🛡️</span>
+          <span>讓換票防偽核驗</span>
         </button>
       </div>
 
@@ -2849,6 +2883,26 @@ export default function HomePage() {
               price: s.attendance?.ticketPrice || 0,
               setlistCount: 20,
               totalSpend: (s.attendance?.ticketPrice || 0) + (s.attendance?.merchTotalCost || 0),
+            }))
+          )}
+        />
+      )}
+
+      {/* Phase 13: 社群好友圈、P2P 票根快傳與讓換票核驗 Modal */}
+      {socialModalOpen && (
+        <SocialConnectModal
+          isOpen={socialModalOpen}
+          onClose={() => setSocialModalOpen(false)}
+          defaultTab={socialModalTab}
+          savedEvents={savedEvents.flatMap((e) =>
+            e.sessions.map((s) => ({
+              id: s.id,
+              title: e.title,
+              artist: e.organizer || e.title.split(' ')[0] || '演出藝人',
+              venue: s.venueName || '演出場館',
+              date: s.sessionDate,
+              seat: s.attendance?.seatInfo || undefined,
+              attendanceId: s.attendance?.id,
             }))
           )}
         />

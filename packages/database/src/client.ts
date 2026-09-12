@@ -74,6 +74,10 @@ export function getDatabase(options?: DatabaseOptions): Database.Database {
         db.exec('ALTER TABLE user_attendances ADD COLUMN queue_time_minutes INTEGER;');
       if (!colNames.has('transfer_notes'))
         db.exec('ALTER TABLE user_attendances ADD COLUMN transfer_notes TEXT;');
+      if (!colNames.has('privacy_level'))
+        db.exec(
+          "ALTER TABLE user_attendances ADD COLUMN privacy_level TEXT NOT NULL DEFAULT 'PRIVATE';"
+        );
     }
 
     const venueCols = db.pragma('table_info(venues)') as Array<{ name: string }>;

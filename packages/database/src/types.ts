@@ -83,6 +83,8 @@ export type AttendanceStatus =
 
 export type TicketType = 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
 
+export type PrivacyLevel = 'PUBLIC' | 'FRIENDS' | 'CLOSE_FRIENDS' | 'PRIVATE';
+
 export interface UserAttendance {
   id: string;
   user_id: string;
@@ -105,6 +107,7 @@ export interface UserAttendance {
   notes: string | null;
   ticket_stub_url: string | null;
   stub_privacy_masked: number; // SQLite boolean (0/1)
+  privacy_level?: PrivacyLevel;
   created_at: string;
   updated_at: string;
 }
@@ -340,3 +343,106 @@ export interface PassionAnalyticsResult {
 export type SnsCardStyle = 'VINTAGE_RECEIPT' | 'JEWEL_CASE' | 'TRANSPARENT_STICKER';
 export type SnsCardPalette =
   'DARK_OBSIDIAN' | 'POLAROID_WHITE' | 'CYBERPUNK_NEON' | 'VINTAGE_KRAFT';
+
+// ── 19. User Friends & Social Connect (好友圈名冊) ───────────────────────
+export type FriendRelationshipTier = 'FRIEND' | 'CLOSE_FRIEND';
+
+export interface UserFriend {
+  id: string;
+  user_id: string;
+  friend_name: string;
+  friend_avatar: string | null;
+  relationship_tier: FriendRelationshipTier;
+  contact_handle: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  attendedCount?: number;
+}
+
+// ── 20. Attendance Companions (同行參戰夥伴標記) ──────────────────────────
+export type CompanionRole = 'COUPLE' | 'BESTIE' | 'FAMILY' | 'FAN_CLUB' | 'OTHER';
+
+export interface AttendanceCompanion {
+  id: string;
+  attendance_id: string;
+  friend_id: string | null;
+  companion_name: string;
+  companion_role: CompanionRole;
+  seat_nearby: string | null;
+  notes: string | null;
+  created_at: string;
+  friend?: UserFriend;
+  friendAvatar?: string | null;
+  friendName?: string;
+  relationshipTier?: FriendRelationshipTier | null;
+}
+
+// ── 21. Ticket Exchanges (讓換票流轉追蹤與安全交易進度) ───────────────────
+export type TicketExchangeType = 'TRANSFER_OUT' | 'EXCHANGE' | 'SEEK_TICKET';
+export type ExchangePlatform = 'FACEBOOK' | 'THREADS' | 'PTT' | 'DCARD' | 'OFFICIAL' | 'OTHER';
+export type TicketExchangeStatus =
+  'INITIATED' | 'PAID_DEPOSIT' | 'IN_PERSON_MEETUP' | 'TICKET_RECEIVED' | 'COMPLETED' | 'CANCELLED';
+
+export interface TicketExchange {
+  id: string;
+  attendance_id: string | null;
+  session_id: string | null;
+  user_id: string;
+  exchange_type: TicketExchangeType;
+  target_name: string;
+  contact_info: string | null;
+  platform: ExchangePlatform;
+  my_seat: string | null;
+  target_seat: string | null;
+  price_difference: number;
+  currency: string;
+  status: TicketExchangeStatus;
+  meetup_location: string | null;
+  meetup_time: string | null;
+  serial_number: string | null;
+  anti_fraud_checked: number;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  session?: {
+    eventTitle: string;
+    sessionDate: string;
+    venueName: string;
+  };
+}
+
+// ── 22. P2P Stub Share Packet (去中心化現場快傳協定) ─────────────────────
+export interface P2PStubPacket {
+  version: '1.0.0';
+  senderName: string;
+  senderId?: string;
+  sharedAt: string;
+  event: {
+    title: string;
+    tourName?: string;
+    posterUrl?: string;
+    artistName: string;
+    venueName: string;
+    sessionDate: string;
+    doorsOpenTime?: string;
+    ticketPlatform?: string;
+  };
+  setlist?: Array<{
+    songOrder: number;
+    songName: string;
+    originalArtist?: string;
+    isEncore: boolean;
+  }>;
+  sharedNotes?: string;
+}
+
+// ── 23. Anti-Fraud Official Security Guide ──────────────────────────────
+export interface AntiFraudRule {
+  id: string;
+  platform: 'TIXCRAFT' | 'KKTIX' | 'IBON' | 'FAMITICKET';
+  featureName: string;
+  description: string;
+  inspectionGuide: string;
+  badge: string;
+}

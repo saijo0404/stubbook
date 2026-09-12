@@ -93,6 +93,9 @@ CREATE TABLE IF NOT EXISTS user_attendances (
   notes                 TEXT,
   ticket_stub_url       TEXT,
   stub_privacy_masked   INTEGER NOT NULL DEFAULT 0,
+  privacy_level         TEXT NOT NULL DEFAULT 'PRIVATE' CHECK (
+    privacy_level IN ('PUBLIC', 'FRIENDS', 'CLOSE_FRIENDS', 'PRIVATE')
+  ),
   created_at            TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at            TEXT NOT NULL DEFAULT (datetime('now')),
   UNIQUE (user_id, session_id)
@@ -359,5 +362,87 @@ CREATE TRIGGER IF NOT EXISTS tr_attendance_expenses_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE attendance_expenses SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+-- 16. User Friends (本地好友圈名冊與摯友關係)
+CREATE TABLE IF NOT EXISTS user_friends (
+  id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id             TEXT NOT NULL DEFAULT 'local',
+  friend_name         TEXT NOT NULL,
+  friend_avatar       TEXT,
+  relationship_tier   TEXT NOT NULL DEFAULT 'FRIEND' CHECK (
+    relationship_tier IN ('FRIEND', 'CLOSE_FRIEND')
+  ),
+  contact_handle      TEXT,
+  notes               TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_friends_user ON user_friends(user_id);
+CREATE INDEX IF NOT EXISTS idx_friends_tier ON user_friends(relationship_tier);
+
+CREATE TRIGGER IF NOT EXISTS tr_user_friends_updated_at
+  AFTER UPDATE ON user_friends
+  FOR EACH ROW
+  BEGIN
+    UPDATE user_friends SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+-- 17. Attendance Companions (同行參戰夥伴標記)
+CREATE TABLE IF NOT EXISTS attendance_companions (
+  id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  attendance_id       TEXT NOT NULL REFERENCES user_attendances(id) ON DELETE CASCADE,
+  friend_id           TEXT REFERENCES user_friends(id) ON DELETE SET NULL,
+  companion_name      TEXT NOT NULL,
+  companion_role      TEXT NOT NULL DEFAULT 'FAN_CLUB' CHECK (
+    companion_role IN ('COUPLE', 'BESTIE', 'FAMILY', 'FAN_CLUB', 'OTHER')
+  ),
+  seat_nearby         TEXT,
+  notes               TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_companions_attendance ON attendance_companions(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_companions_friend ON attendance_companions(friend_id);
+
+-- 18. Ticket Exchanges (讓換票流轉追蹤與安全交易進度)
+CREATE TABLE IF NOT EXISTS ticket_exchanges (
+  id                  TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  attendance_id       TEXT REFERENCES user_attendances(id) ON DELETE CASCADE,
+  session_id          TEXT REFERENCES event_sessions(id) ON DELETE SET NULL,
+  user_id             TEXT NOT NULL DEFAULT 'local',
+  exchange_type       TEXT NOT NULL CHECK (
+    exchange_type IN ('TRANSFER_OUT', 'EXCHANGE', 'SEEK_TICKET')
+  ),
+  target_name         TEXT NOT NULL,
+  contact_info        TEXT,
+  platform            TEXT NOT NULL DEFAULT 'OTHER' CHECK (
+    platform IN ('FACEBOOK', 'THREADS', 'PTT', 'DCARD', 'OFFICIAL', 'OTHER')
+  ),
+  my_seat             TEXT,
+  target_seat         TEXT,
+  price_difference    REAL NOT NULL DEFAULT 0,
+  currency            TEXT NOT NULL DEFAULT 'TWD',
+  status              TEXT NOT NULL DEFAULT 'INITIATED' CHECK (
+    status IN ('INITIATED', 'PAID_DEPOSIT', 'IN_PERSON_MEETUP', 'TICKET_RECEIVED', 'COMPLETED', 'CANCELLED')
+  ),
+  meetup_location     TEXT,
+  meetup_time         TEXT,
+  serial_number       TEXT,
+  anti_fraud_checked  INTEGER NOT NULL DEFAULT 0,
+  notes               TEXT,
+  created_at          TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at          TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_exchanges_attendance ON ticket_exchanges(attendance_id);
+CREATE INDEX IF NOT EXISTS idx_exchanges_status ON ticket_exchanges(status);
+
+CREATE TRIGGER IF NOT EXISTS tr_ticket_exchanges_updated_at
+  AFTER UPDATE ON ticket_exchanges
+  FOR EACH ROW
+  BEGIN
+    UPDATE ticket_exchanges SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
 `;

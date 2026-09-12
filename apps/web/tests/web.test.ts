@@ -1849,5 +1849,278 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
       expect(content).toContain('passionModalOpen');
       expect(content).toContain('cardGeneratorModalOpen');
     });
+
+    describe('Phase 13: 四級隱私好友圈、同行 P2P 票根互傳與讓換票核驗 (Social Connect & P2P Stub Sync)', () => {
+      it('Friends API (/api/friends) 應支援好友名冊 CRUD、層級設定與同行場次統計 (#89)', async () => {
+        const { GET, POST, PUT, DELETE } = await import('../src/app/api/friends/route');
+
+        // 1. 新增好友
+        const postReq = new NextRequest('http://localhost:3000/api/friends', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            friendName: '現場推友阿翔',
+            friendAvatar: '🎸',
+            relationshipTier: 'CLOSE_FRIEND',
+            contactHandle: '@xiang_live',
+            notes: '吉他手死忠狂粉',
+          }),
+        });
+        const postRes = await POST(postReq);
+        expect(postRes.status).toBe(200);
+        const postJson = await postRes.json();
+        expect(postJson.success).toBe(true);
+        expect(postJson.friend).toBeDefined();
+        const friendId = postJson.friend.id;
+        expect(postJson.friend.friend_name).toBe('現場推友阿翔');
+        expect(postJson.friend.relationship_tier).toBe('CLOSE_FRIEND');
+
+        // 2. 查詢好友列表
+        const getReq = new NextRequest('http://localhost:3000/api/friends');
+        const getRes = await GET(getReq);
+        expect(getRes.status).toBe(200);
+        const getJson = await getRes.json();
+        expect(Array.isArray(getJson.friends)).toBe(true);
+        const found = getJson.friends.find((f: any) => f.id === friendId);
+        expect(found).toBeDefined();
+        expect(found.friendName).toBe('現場推友阿翔');
+
+        // 3. 更新好友
+        const putReq = new NextRequest('http://localhost:3000/api/friends', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: friendId,
+            friendName: '現場推友阿翔 (已改名)',
+            notes: '改名後的死忠狂粉',
+          }),
+        });
+        const putRes = await PUT(putReq);
+        expect(putRes.status).toBe(200);
+        const putJson = await putRes.json();
+        expect(putJson.success).toBe(true);
+        expect(putJson.friend.friend_name).toBe('現場推友阿翔 (已改名)');
+
+        // 4. 刪除好友
+        const delReq = new NextRequest(`http://localhost:3000/api/friends?id=${friendId}`, {
+          method: 'DELETE',
+        });
+        const delRes = await DELETE(delReq);
+        expect(delRes.status).toBe(200);
+      });
+
+      it('Companions API (/api/companions) 應支援同行夥伴標記、好友關聯與連表查詢 (#89)', async () => {
+        const { GET, POST, DELETE } = await import('../src/app/api/companions/route');
+        const { getDefaultDatabase } = await import('@stubbook/database');
+        const db = getDefaultDatabase();
+
+        // 建立測試手帳
+        const { id: eventId } = db
+          .prepare(
+            "INSERT INTO events (title, source_url) VALUES ('同行測試音樂會', 'https://comp.com') RETURNING id"
+          )
+          .get() as any;
+        const { id: sessionId } = db
+          .prepare(
+            "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-10-10') RETURNING id"
+          )
+          .get(eventId) as any;
+        const { id: attendanceId } = db
+          .prepare(
+            "INSERT INTO user_attendances (user_id, session_id, status) VALUES ('local', ?, 'CONFIRMED') RETURNING id"
+          )
+          .get(sessionId) as any;
+
+        // 1. 標記同行夥伴
+        const postReq = new NextRequest('http://localhost:3000/api/companions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attendanceId,
+            companionName: '推友大寶',
+            companionRole: 'BESTIE',
+            seatNearby: '特A區 5排 18號',
+            notes: '一起排首波官方周邊',
+          }),
+        });
+        const postRes = await POST(postReq);
+        expect(postRes.status).toBe(200);
+        const postJson = await postRes.json();
+        expect(postJson.success).toBe(true);
+        const compId = postJson.companion.id;
+
+        // 2. 查詢該場次同行夥伴
+        const getReq = new NextRequest(
+          `http://localhost:3000/api/companions?attendanceId=${attendanceId}`
+        );
+        const getRes = await GET(getReq);
+        expect(getRes.status).toBe(200);
+        const getJson = await getRes.json();
+        expect(getJson.companions).toHaveLength(1);
+        expect(getJson.companions[0].companionName).toBe('推友大寶');
+        expect(getJson.companions[0].companionRole).toBe('BESTIE');
+
+        // 3. 移除同行夥伴
+        const delReq = new NextRequest(`http://localhost:3000/api/companions?id=${compId}`, {
+          method: 'DELETE',
+        });
+        const delRes = await DELETE(delReq);
+        expect(delRes.status).toBe(200);
+      });
+
+      it('P2P Stub Share API (/api/p2p) 應支援去中心化去敏感封包生成與一鍵入庫同行同步 (#90)', async () => {
+        const { GET, POST } = await import('../src/app/api/p2p/route');
+        const { getDefaultDatabase } = await import('@stubbook/database');
+        const db = getDefaultDatabase();
+
+        // 建立待分享的活動
+        const { id: eventId } = db
+          .prepare(
+            "INSERT INTO events (title, tour_name, organizer, source_url) VALUES ('P2P現場巡迴', 'World Tour 2026', '搖滾樂團', 'https://p2p.com') RETURNING id"
+          )
+          .get() as any;
+        const { id: sessionId } = db
+          .prepare(
+            "INSERT INTO event_sessions (event_id, session_date, venue_name_override) VALUES (?, '2026-11-15', '台北Legacy') RETURNING id"
+          )
+          .get(eventId) as any;
+        const { id: attendanceId } = db
+          .prepare(
+            "INSERT INTO user_attendances (user_id, session_id, status, notes) VALUES ('local', ?, 'ATTENDED', '超級無敵神場！') RETURNING id"
+          )
+          .get(sessionId) as any;
+
+        // 1. 生成 P2P 快傳封包
+        const getReq = new NextRequest(
+          `http://localhost:3000/api/p2p?attendanceId=${attendanceId}&senderName=搖滾阿豪`
+        );
+        const getRes = await GET(getReq);
+        expect(getRes.status).toBe(200);
+        const getJson = await getRes.json();
+        expect(getJson.success).toBe(true);
+        expect(getJson.packet).toBeDefined();
+        expect(getJson.packet.event.title).toBe('P2P現場巡迴');
+        expect(getJson.packet.senderName).toBe('搖滾阿豪');
+        expect(getJson.encoded).toMatch(/^stubbook-p2p:\/\//);
+
+        // 2. 模擬接收端一鍵入庫
+        const postReq = new NextRequest('http://localhost:3000/api/p2p', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            encodedPayload: getJson.encoded,
+            markAsCompanion: true,
+            userId: 'peer_user',
+          }),
+        });
+        const postRes = await POST(postReq);
+        expect(postRes.status).toBe(200);
+        const postJson = await postRes.json();
+        expect(postJson.success).toBe(true);
+        expect(postJson.attendanceId).toBeDefined();
+
+        // 驗證同行夥伴已自動標記為搖滾阿豪
+        const comp = db
+          .prepare('SELECT * FROM attendance_companions WHERE attendance_id = ?')
+          .get(postJson.attendanceId) as any;
+        expect(comp).toBeDefined();
+        expect(comp.companion_name).toBe('搖滾阿豪');
+      });
+
+      it('Ticket Exchanges API (/api/exchanges) 應支援讓換票進度流轉追蹤與防偽核驗更新 (#91)', async () => {
+        const { GET, POST, PUT, DELETE } = await import('../src/app/api/exchanges/route');
+
+        // 1. 建立讓換票流程
+        const postReq = new NextRequest('http://localhost:3000/api/exchanges', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            exchangeType: 'EXCHANGE',
+            targetName: 'Threads 推友小萱',
+            contactInfo: 'IG: @hsuan_live',
+            platform: 'THREADS',
+            mySeat: '12/31 搖滾A區 5排',
+            targetSeat: '01/01 搖滾B區 10排',
+            priceDifference: 400,
+            meetupLocation: '南港展覽館 4F 服務台',
+            meetupTime: '2026-12-31 15:00',
+            notes: '互換跨年場次',
+          }),
+        });
+        const postRes = await POST(postReq);
+        expect(postRes.status).toBe(200);
+        const postJson = await postRes.json();
+        expect(postJson.success).toBe(true);
+        const exchangeId = postJson.exchange.id;
+
+        // 2. 查詢讓換票清單
+        const getReq = new NextRequest('http://localhost:3000/api/exchanges');
+        const getRes = await GET(getReq);
+        expect(getRes.status).toBe(200);
+        const getJson = await getRes.json();
+        expect(Array.isArray(getJson.exchanges)).toBe(true);
+        const found = getJson.exchanges.find((e: any) => e.id === exchangeId);
+        expect(found).toBeDefined();
+        expect(found.targetName).toBe('Threads 推友小萱');
+
+        // 3. 更新進度為面交驗票並打勾防偽檢核
+        const putReq = new NextRequest('http://localhost:3000/api/exchanges', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: exchangeId,
+            status: 'IN_PERSON_MEETUP',
+            antiFraudChecked: 1,
+            serialNumber: 'KKTIX-992288',
+          }),
+        });
+        const putRes = await PUT(putReq);
+        expect(putRes.status).toBe(200);
+        const putJson = await putRes.json();
+        expect(putJson.success).toBe(true);
+        expect(putJson.exchange.status).toBe('IN_PERSON_MEETUP');
+        expect(putJson.exchange.anti_fraud_checked).toBe(1);
+
+        // 4. 刪除記錄
+        const delReq = new NextRequest(`http://localhost:3000/api/exchanges?id=${exchangeId}`, {
+          method: 'DELETE',
+        });
+        const delRes = await DELETE(delReq);
+        expect(delRes.status).toBe(200);
+      });
+
+      it('前端應完整實作 SocialConnectModal 組件並遵循 Issue #72 防裁切規範 (#89, #90, #91, #92)', () => {
+        const modalPath = path.join(__dirname, '..', 'src', 'components', 'SocialConnectModal.tsx');
+        expect(fs.existsSync(modalPath)).toBe(true);
+
+        const content = fs.readFileSync(modalPath, 'utf-8');
+        expect(content).toContain('SocialConnectModal');
+        expect(content).toContain('社群好友圈與票根快傳');
+        expect(content).toContain('好友名冊');
+        expect(content).toContain('同行夥伴');
+        expect(content).toContain('P2P 票根快傳');
+        expect(content).toContain('讓換票進度');
+        expect(content).toContain('官方防偽核驗');
+        expect(content).toContain('OFFICIAL_ANTI_FRAUD_DATA');
+
+        // Issue #72 防裁切與全螢幕滾動安全邊界
+        expect(content).toContain('overflow-y-auto');
+        expect(content).toContain('pt-safe');
+        expect(content).toContain('pb-safe');
+        expect(content).toContain('min-h-full');
+        expect(content).toContain('my-auto');
+        expect(content).toContain('max-h-[92dvh]');
+      });
+
+      it('主頁面 page.tsx 應完整整合 Phase 13 社群好友圈、P2P 票根快傳與防偽核驗快捷按鈕 (#92)', () => {
+        const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+        const content = fs.readFileSync(pagePath, 'utf-8');
+        expect(content).toContain('SocialConnectModal');
+        expect(content).toContain('好友圈 & P2P 快傳');
+        expect(content).toContain('讓換票防偽核驗');
+        expect(content).toContain('socialModalOpen');
+        expect(content).toContain('socialModalTab');
+      });
+    });
   });
 });
