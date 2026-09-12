@@ -20,6 +20,13 @@ CREATE TABLE IF NOT EXISTS venues (
   address     TEXT,
   country     TEXT NOT NULL DEFAULT 'TW',
   capacity    INTEGER,
+  latitude    REAL,
+  longitude   REAL,
+  region      TEXT NOT NULL DEFAULT 'NORTH' CHECK (
+    region IN ('NORTH', 'CENTRAL', 'SOUTH', 'EAST', 'OVERSEAS')
+  ),
+  sub_halls   TEXT NOT NULL DEFAULT '[]',
+  photo_url   TEXT,
   created_at  TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
@@ -45,6 +52,7 @@ CREATE TABLE IF NOT EXISTS event_sessions (
   event_id              TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
   venue_id              TEXT REFERENCES venues(id) ON DELETE SET NULL,
   venue_name_override   TEXT,
+  hall_name             TEXT,
   session_title         TEXT,
   session_date          TEXT NOT NULL,
   doors_open_time       TEXT,
@@ -263,5 +271,67 @@ CREATE TRIGGER IF NOT EXISTS tr_event_prayers_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE event_prayers SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+-- 12. Festival Stages (音樂祭舞台分區)
+CREATE TABLE IF NOT EXISTS festival_stages (
+  id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  event_id        TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  stage_name      TEXT NOT NULL,
+  stage_color     TEXT NOT NULL DEFAULT '#6366f1',
+  location_notes  TEXT,
+  created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_festival_stages_event ON festival_stages(event_id);
+
+-- 13. Festival Timetables (音樂祭演出時間表與排程)
+CREATE TABLE IF NOT EXISTS festival_timetables (
+  id            TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  event_id      TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  stage_id      TEXT NOT NULL REFERENCES festival_stages(id) ON DELETE CASCADE,
+  session_date  TEXT NOT NULL,
+  artist_name   TEXT NOT NULL,
+  start_time    TEXT NOT NULL,
+  end_time      TEXT NOT NULL,
+  is_selected   INTEGER NOT NULL DEFAULT 0,
+  notes         TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_festival_timetables_event ON festival_timetables(event_id);
+CREATE INDEX IF NOT EXISTS idx_festival_timetables_stage ON festival_timetables(stage_id);
+CREATE INDEX IF NOT EXISTS idx_festival_timetables_date ON festival_timetables(session_date);
+
+CREATE TRIGGER IF NOT EXISTS tr_festival_timetables_updated_at
+  AFTER UPDATE ON festival_timetables
+  FOR EACH ROW
+  BEGIN
+    UPDATE festival_timetables SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+-- 14. Wishlist Items (朝聖心願池 / 夢想清單)
+CREATE TABLE IF NOT EXISTS wishlist_items (
+  id                    TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  user_id               TEXT NOT NULL DEFAULT 'local',
+  target_type           TEXT NOT NULL CHECK (target_type IN ('ARTIST', 'VENUE', 'FESTIVAL')),
+  target_name           TEXT NOT NULL,
+  priority              INTEGER NOT NULL DEFAULT 3 CHECK (priority BETWEEN 1 AND 5),
+  reason                TEXT,
+  is_fulfilled          INTEGER NOT NULL DEFAULT 0,
+  fulfilled_session_id  TEXT REFERENCES event_sessions(id) ON DELETE SET NULL,
+  created_at            TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at            TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_wishlist_user ON wishlist_items(user_id);
+CREATE INDEX IF NOT EXISTS idx_wishlist_target ON wishlist_items(target_name);
+
+CREATE TRIGGER IF NOT EXISTS tr_wishlist_items_updated_at
+  AFTER UPDATE ON wishlist_items
+  FOR EACH ROW
+  BEGIN
+    UPDATE wishlist_items SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
 `;

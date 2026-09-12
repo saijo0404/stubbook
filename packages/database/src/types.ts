@@ -18,6 +18,8 @@ export interface Artist {
 }
 
 // ── 2. Venues (演唱會場館 / 場地) ─────────────────────────────────────────
+export type VenueRegion = 'NORTH' | 'CENTRAL' | 'SOUTH' | 'EAST' | 'OVERSEAS';
+
 export interface Venue {
   id: string;
   name: string;
@@ -25,6 +27,11 @@ export interface Venue {
   address: string | null;
   country: string;
   capacity: number | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  region?: VenueRegion;
+  sub_halls?: string; // JSON string e.g. ["1館", "2館"]
+  photo_url?: string | null;
   created_at: string;
 }
 
@@ -50,6 +57,7 @@ export interface EventSession {
   event_id: string;
   venue_id: string | null;
   venue_name_override: string | null;
+  hall_name?: string | null;
   session_title: string | null;
   session_date: string;
   doors_open_time: string | null;
@@ -216,4 +224,66 @@ export interface EventPrayer {
   notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// ── 12. Festival Stages (音樂祭舞台分區) ──────────────────────────
+export interface FestivalStage {
+  id: string;
+  event_id: string;
+  stage_name: string;
+  stage_color: string;
+  location_notes: string | null;
+  created_at: string;
+}
+
+// ── 13. Festival Timetables (音樂祭演出時間表與排程) ───────────────
+export interface FestivalTimetable {
+  id: string;
+  event_id: string;
+  stage_id: string;
+  session_date: string;
+  artist_name: string;
+  start_time: string;
+  end_time: string;
+  is_selected: number; // 0 or 1
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 14. Wishlist Items (朝聖心願池 / 夢想清單) ─────────────────────
+export type WishlistTargetType = 'ARTIST' | 'VENUE' | 'FESTIVAL';
+
+export interface WishlistItem {
+  id: string;
+  user_id: string;
+  target_type: WishlistTargetType;
+  target_name: string;
+  priority: number; // 1 ~ 5
+  reason: string | null;
+  is_fulfilled: number; // 0 or 1
+  fulfilled_session_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 15. Live Activity State (秒級即時動態與靈動島狀態機) ──────────────
+export type LiveActivityPhase =
+  'UPCOMING' | 'QUEUEING' | 'DOORS_OPEN' | 'COUNTDOWN' | 'LIVE' | 'EXIT';
+
+export interface LiveActivityState {
+  sessionId: string;
+  eventTitle: string;
+  artistName: string;
+  venueName: string;
+  hallName?: string | null;
+  seatInfo: string | null;
+  sessionDate: string;
+  doorsOpenTime: string | null;
+  phase: LiveActivityPhase;
+  phaseTitle: string;
+  phaseDescription: string;
+  targetTime: string;
+  remainingSeconds: number;
+  status: AttendanceStatus;
 }

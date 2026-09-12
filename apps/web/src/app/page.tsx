@@ -51,6 +51,10 @@ import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
 import { CalendarDashboard } from '../components/CalendarDashboard';
 import { AddToCalendarMenu } from '../components/AddToCalendarMenu';
 import { BackupRestoreDashboard } from '../components/BackupRestoreDashboard';
+import TourFootprintMap from '../components/TourFootprintMap';
+import LiveCountdownCard from '../components/LiveCountdownCard';
+import FestivalTimetableModal from '../components/FestivalTimetableModal';
+import WishlistModal from '../components/WishlistModal';
 import { haptics } from '../utils/haptics';
 
 type TabMode = 'scrape' | 'journal' | 'calendar' | 'seats' | 'analytics' | 'backup';
@@ -327,6 +331,11 @@ export default function HomePage() {
     event: SavedEvent;
     session: SavedSession;
   } | null>(null);
+
+  // Phase 11 新增模組 Modal 狀態
+  const [footprintModalOpen, setFootprintModalOpen] = useState(false);
+  const [festivalModalOpen, setFestivalModalOpen] = useState(false);
+  const [wishlistModalOpen, setWishlistModalOpen] = useState(false);
 
   // 日誌抽屜狀態
   const [showLogs, setShowLogs] = useState(false);
@@ -764,6 +773,27 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 秒級精密動態倒數卡 (Tickemo 標竿 / Live Activities) */}
+      <div className="max-w-5xl mx-auto px-2">
+        <LiveCountdownCard
+          onOpenLiveMode={() => {
+            if (activeLiveSession) {
+              setConcertModeSession({
+                event: activeLiveSession.event,
+                session: activeLiveSession.session,
+              });
+            } else if (savedEvents.length > 0 && savedEvents[0].sessions.length > 0) {
+              setConcertModeSession({
+                event: savedEvents[0],
+                session: savedEvents[0].sessions[0],
+              });
+            }
+          }}
+          onOpenSeatView={(venueName) => handleOpenSeatViews(venueName)}
+          onOpenWishlist={() => setWishlistModalOpen(true)}
+        />
+      </div>
+
       {/* 頂部功能頁籤導覽 */}
       <div className="w-full max-w-full overflow-x-auto scrollbar-none py-1 px-2 flex justify-start sm:justify-center">
         <div className="inline-flex bg-gray-900 border border-gray-800 p-1 rounded-2xl shadow-lg shrink-0 gap-1">
@@ -865,6 +895,45 @@ export default function HomePage() {
             <span>備份與還原</span>
           </button>
         </div>
+      </div>
+
+      {/* Phase 11 快捷工具入口列 (巡迴地圖 / 音樂祭排程 / 朝聖心願池) */}
+      <div className="flex flex-wrap items-center justify-center gap-2 max-w-4xl mx-auto px-2">
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setFootprintModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-indigo-950/80 to-purple-950/80 hover:from-indigo-900/80 hover:to-purple-900/80 border border-indigo-700/50 text-indigo-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🗺️</span>
+          <span>巡迴足跡地圖</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setFestivalModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-cyan-950/80 to-teal-950/80 hover:from-cyan-900/80 hover:to-teal-900/80 border border-cyan-700/50 text-cyan-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>🎪</span>
+          <span>音樂祭 Timetable 排程</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            haptics.selection();
+            setWishlistModalOpen(true);
+          }}
+          className="inline-flex items-center space-x-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-950/80 to-orange-950/80 hover:from-amber-900/80 hover:to-orange-900/80 border border-amber-700/50 text-amber-300 text-xs font-semibold shadow transition-all active:scale-95"
+        >
+          <span>✨</span>
+          <span>朝聖心願池</span>
+        </button>
       </div>
 
       {/* ─────────────────── TAB 1: 售票活動解析入庫 ─────────────────── */}
@@ -2691,6 +2760,34 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 巡迴足跡地圖 Modal */}
+      {footprintModalOpen && (
+        <TourFootprintMap
+          isOpen={footprintModalOpen}
+          onClose={() => setFootprintModalOpen(false)}
+        />
+      )}
+
+      {/* 音樂祭多舞台 Timetable Modal */}
+      {festivalModalOpen && (
+        <FestivalTimetableModal
+          isOpen={festivalModalOpen}
+          onClose={() => setFestivalModalOpen(false)}
+        />
+      )}
+
+      {/* 朝聖心願池 Modal */}
+      {wishlistModalOpen && (
+        <WishlistModal
+          isOpen={wishlistModalOpen}
+          onClose={() => setWishlistModalOpen(false)}
+          onSelectEvent={() => {
+            setActiveTab('journal');
+            loadSavedEvents();
+          }}
+        />
       )}
     </div>
   );
