@@ -1,0 +1,30 @@
+{
+  "name": "@stubbook/mobile",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Capacitor Native Mobile Shell for iOS and Android",
+  "scripts": {
+    "cap:sync": "pnpm --filter @stubbook/web cap sync",
+    "cap:open:android": "pnpm --filter @stubbook/web cap open android",
+    "cap:open:ios": "pnpm --filter @stubbook/web cap open ios",
+    "build:android": "pnpm --filter @stubbook/web build:android",
+    "build:ios": "pnpm --filter @stubbook/web build:ios",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/camera": "^6.1.3",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0",
+    "@capacitor/filesystem": "^6.0.4",
+    "@capacitor/haptics": "^6.0.3",
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/network": "^6.0.4",
+    "@capacitor/status-bar": "^6.0.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vitest": "^1.6.0"
+  }
+}

@@ -41,6 +41,7 @@ import { TicketStubModal } from '../components/TicketStubModal';
 import { MerchManagerModal } from '../components/MerchManagerModal';
 import { MediaGalleryModal } from '../components/MediaGalleryModal';
 import { LiveEventHeroCard } from '../components/LiveEventHeroCard';
+import { LiveConcertModeModal } from '../components/LiveConcertModeModal';
 import { SeatViewModal } from '../components/SeatViewModal';
 import { SetlistModal } from '../components/SetlistModal';
 import { AnalyticsDashboard } from '../components/AnalyticsDashboard';
@@ -239,6 +240,12 @@ export default function HomePage() {
     artistName?: string;
     venueName?: string | null;
     sessionDate?: string;
+  } | null>(null);
+
+  // 現場沉浸模式 Modal 狀態
+  const [concertModeSession, setConcertModeSession] = useState<{
+    event: SavedEvent;
+    session: SavedSession;
   } | null>(null);
 
   // 日誌抽屜狀態
@@ -1343,6 +1350,7 @@ export default function HomePage() {
                     sessionDate: activeLiveSession.session.sessionDate,
                   })
                 }
+                onOpenConcertMode={() => setConcertModeSession(activeLiveSession)}
               />
             </div>
           )}
@@ -2236,6 +2244,53 @@ export default function HomePage() {
           sessionDate={viewingSetlistSession.sessionDate}
           onClose={() => setViewingSetlistSession(null)}
           onUpdated={loadSavedEvents}
+        />
+      )}
+
+      {/* 現場沉浸模式 (Live Concert Mode) Modal */}
+      {concertModeSession && (
+        <LiveConcertModeModal
+          isOpen={Boolean(concertModeSession)}
+          event={concertModeSession.event}
+          session={concertModeSession.session}
+          onClose={() => setConcertModeSession(null)}
+          onSaveNote={async (note) => {
+            if (!concertModeSession.session) return;
+            const currentAtt = concertModeSession.session.attendance;
+            const res = await fetch('/api/attendances', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                sessionId: concertModeSession.session.id,
+                status: currentAtt?.status || 'ATTENDED',
+                seatInfo: currentAtt?.seatInfo || null,
+                ticketType: currentAtt?.ticketType || 'DIGITAL',
+                ticketPrice: currentAtt?.ticketPrice || null,
+                currency: 'TWD',
+                rating: currentAtt?.rating || 5,
+                notes: currentAtt?.notes ? `${currentAtt.notes}\n${note}` : note,
+              }),
+            });
+            if (res.ok) {
+              await loadSavedEvents();
+            }
+          }}
+          onAddMediaSnapshot={async (dataUrl) => {
+            if (!concertModeSession.session.attendance) return;
+            const res = await fetch('/api/media', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                attendanceId: concertModeSession.session.attendance.id,
+                mediaType: 'PHOTO',
+                mediaUrl: dataUrl,
+                caption: '現場視角快照 (Concert Mode)',
+              }),
+            });
+            if (res.ok) {
+              await loadSavedEvents();
+            }
+          }}
         />
       )}
 

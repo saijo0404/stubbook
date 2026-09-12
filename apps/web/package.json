@@ -11,10 +11,20 @@
     "typecheck": "tsc --noEmit",
     "cap:sync": "cap sync",
     "cap:open:ios": "cap open ios",
-    "cap:open:android": "cap open android"
+    "cap:open:android": "cap open android",
+    "build:android": "node scripts/build-android.js",
+    "build:ios": "node scripts/build-ios.js",
+    "build:mobile": "next build && cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/camera": "^6.0.0",
     "@capacitor/core": "^6.1.0",
+    "@capacitor/filesystem": "^6.0.0",
+    "@capacitor/haptics": "^6.0.0",
+    "@capacitor/ios": "^6.1.0",
+    "@capacitor/network": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.0",
     "@stubbook/database": "workspace:*",
     "@stubbook/logger": "workspace:*",
     "@stubbook/scraper-core": "workspace:*",
