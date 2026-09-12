@@ -103,6 +103,7 @@ erDiagram
     USER_ATTENDANCES ||--o{ ATTENDANCE_MEDIA : uploads
     USER_ATTENDANCES ||--o{ MERCHANDISE_ITEMS : purchases
     USER_ATTENDANCES ||--o{ SETLIST_SONGS : remembers
+    USER_ATTENDANCES ||--o{ ATTENDANCE_EXPENSES : incurs
 
     VENUES {
         uuid id PK
@@ -236,6 +237,19 @@ erDiagram
         text reason
         boolean is_fulfilled
         uuid fulfilled_session_id FK
+        timestamp created_at
+        timestamp updated_at
+    }
+
+    ATTENDANCE_EXPENSES {
+        uuid id PK
+        uuid attendance_id FK
+        string user_id
+        enum category "TICKET | TRANSPORT | ACCOMMODATION | MERCHANDISE | FOOD_DINING | OTHER"
+        string item_name
+        decimal amount
+        string currency
+        text notes
         timestamp created_at
         timestamp updated_at
     }
@@ -382,7 +396,7 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    {
      "formatVersion": "1.0.0",
      "appName": "StubBook",
-     "appVersion": "2.2.0",
+     "appVersion": "2.3.0",
      "createdAt": "2026-09-12T00:00:00.000Z",
      "database": {
        "filename": "database.sqlite",
@@ -549,3 +563,44 @@ StubBook 堅持 **100% 本地資料主權（Zero-Cloud Dependency）**，使用�
    - 若發現有售票中或即將開賣的匹配活動，自動掛載 `matchedEvents` 清單，並在介面展示醒目的「🎯 售票雷達已捕獲！」提示卡。
 3. **圓夢解鎖成就**：
    - 使用者參戰後一鍵勾選「已圓夢」，自動關聯至參戰場次 `fulfilled_session_id`，並觸發五彩紙屑慶祝動效。
+
+---
+
+## 10. 推活熱量大數據、全出費分析與潮流社群卡工廠 (Passion Analytics & Aesthetic Card Generator)
+
+### 10.1 推活全量出費大數據與遠征成本結構 (Full Expedition Cost Breakdown)
+
+1. **六大消費維度模型 (`attendance_expenses`)**：
+   - 記錄門票 (`TICKET`)、遠征交通 (`TRANSPORT`：高鐵/台鐵/客運/機票/計程車)、住宿費用 (`ACCOMMODATION`)、官方周邊 (`MERCHANDISE`)、應援餐飲慶功 (`FOOD_DINING`) 與其他雜支 (`OTHER`)。
+   - 與 `user_attendances` 建立外鍵級聯（`ON DELETE CASCADE`），保證手帳活動被刪除時連帶清理。
+2. **出費統計與遠征分析演算法 (`/api/expenses`)**：
+   - 自動整合票券基本價格 (`ticket_price`)、已購周邊總額 (`merchTotalCost`) 與手動登錄之遠征雜支。
+   - 計算各類別支出總額、全年度推活場均消費 (`averageSpendPerConcert`) 與遠征佔比 (`farExpeditionRate = (交通+住宿+其他) / 總支出`)。
+
+### 10.2 推活熱量儀表板與 365 日參戰熱力圖 (Passion Heatmap & Deep Analytics)
+
+1. **365 日參戰熱力矩陣 (Contribution Heatmap Engine)**：
+   - 參照 GitHub Commit 綠格子演算法，計算當前日期往前推 365 日之參戰次數。
+   - 依據當日參戰場次映射至 0~4 級顏色深度（0 場：暗灰底色、1 場：emerald-700、2 場：emerald-500、3 場：emerald-400、4 場以上：emerald-300 發光）。
+   - 滑鼠懸停或觸控點選即時展開 Tooltip，顯示日期、出席場次清單與演出名稱。
+2. **狂熱統計指標矩陣 (`/api/passion`)**：
+   - **星期規律 (Weekday Distribution)**：統計週一至週日參戰分佈，自動分析最狂熱星期（如「週六狂熱狂粉」）。
+   - **月份趨勢 (Monthly Trend)**：長條統計圖展示全年參戰月度分佈。
+   - **現場真實歌曲解鎖庫**：聚合所有關聯之 `setlist_songs`，統計現場聽過之不重複歌曲總數與神曲排行榜 Top 5（播放次數前五名）。
+   - **推活狂熱度分數 (Passion Score & Title)**：
+     ```typescript
+     score = Math.min(100, Math.round(attendances * 8 + songs * 0.5 + expeditionSpend / 1000));
+     ```
+     自動頒發專屬推活榮譽頭銜與徽章（如 `Lv.99 傳說級狂熱推活大師 👑`、`Lv.75 資深遠征巡迴狂熱者 🎸` 等）。
+
+### 10.3 潮流社群分享卡工廠與高解析度 Canvas (Aesthetic SNS Card Generator)
+
+1. **3 大潮流卡片視覺風格**：
+   - 🧾 **文青熱感應收據風格 (Vintage Receipt Card)**：頂部撕紙鋸齒幾何運算、巡演資訊、出費明細、Setlist 摘要、金額合計與真偽核驗條碼，具備復古文青紙質。
+   - 💿 **CD 壓克力寶石外殼風格 (Acrylic Jewel Case)**：高光澤立體壓克力外盒邊框、全像雷射折射光暈貼紙、光碟內托齒輪裝飾、巡演藝人海報與獨立編號。
+   - 🖼️ **IG Stories 透明背景貼紙 (Transparent PNG Sticker)**：全透明 Alpha 通道畫布，自帶微柔光描邊與落影，供樂迷直接貼於 Instagram / Threads 限時動態現場照片中。
+2. **四大外觀調色盤 (Color Palettes)**：
+   - `黑曜暗黑 (Dark Obsidian)`、`拍立得白 (Polaroid White)`、`霓虹電氣紫 (Cyberpunk Neon)`、`復古牛皮紙 (Vintage Kraft)`。
+3. **2x Retina 超取樣導出與社群分享**：
+   - 前端採用 HTML5 Canvas 2x 超取樣抗鋸齒繪製，支援自訂個人社群 ID 浮水印（如 `@instagram_id`）。
+   - 提供「一鍵導出高解析度 PNG」與原生「Web Share API」系統級一鍵轉發至 IG Stories、LINE、Threads 等社群平台。
