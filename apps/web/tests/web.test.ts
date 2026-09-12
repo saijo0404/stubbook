@@ -1329,4 +1329,112 @@ describe('Apps/Web - Next.js & Capacitor Configuration', () => {
     expect(pageContent).toContain('showLogs');
     expect(pageContent).toContain('deletingEvent');
   });
+
+  describe('Phase 10: 視覺相片月曆、推活祈願儀式感與多維手帳範本 (Visual Photo Calendar & Fan Rituals)', () => {
+    it('應完整提供 /api/prayers 祈願集氣與開賣幸運籤詩御守端點', async () => {
+      const prayersRoute = path.join(__dirname, '..', 'src', 'app', 'api', 'prayers', 'route.ts');
+      expect(fs.existsSync(prayersRoute)).toBe(true);
+
+      const content = fs.readFileSync(prayersRoute, 'utf-8');
+      expect(content).toContain('export async function GET');
+      expect(content).toContain('export async function POST');
+      expect(content).toContain('OMIKUJI_FORTUNES');
+      expect(content).toContain('超大吉');
+      expect(content).toContain('神席吉');
+      expect(content).toContain('luckyOmikuji');
+      expect(content).toContain('totalPrayers');
+    });
+
+    it('應完整實作 TicketPrayerModal 與木魚敲擊音效集氣、御守卡生成功能', () => {
+      const modalPath = path.join(__dirname, '..', 'src', 'components', 'TicketPrayerModal.tsx');
+      expect(fs.existsSync(modalPath)).toBe(true);
+
+      const content = fs.readFileSync(modalPath, 'utf-8');
+      expect(content).toContain('playWoodFishSound');
+      expect(content).toContain('handleWoodFishClick');
+      expect(content).toContain('handleDrawOmikuji');
+      expect(content).toContain('handleDownloadOmikujiCard');
+      expect(content).toContain('BLESSING_TAGS');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+    });
+
+    it('應完整實作 SafeTransferGuideModal 讓換票安全防詐指南與交易備忘', () => {
+      const modalPath = path.join(
+        __dirname,
+        '..',
+        'src',
+        'components',
+        'SafeTransferGuideModal.tsx'
+      );
+      expect(fs.existsSync(modalPath)).toBe(true);
+
+      const content = fs.readFileSync(modalPath, 'utf-8');
+      expect(content).toContain('防詐五不原則');
+      expect(content).toContain('實名換票檢核清單');
+      expect(content).toContain('換票資訊備忘錄');
+      expect(content).toContain('handleCopySafetyTemplate');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+      expect(content).toContain('min-h-full');
+      expect(content).toContain('my-auto');
+    });
+
+    it('CalendarDashboard 應支援視覺相片月曆 (Photo Calendar) 與 9:16 手機手帳桌布導出', () => {
+      const calPath = path.join(__dirname, '..', 'src', 'components', 'CalendarDashboard.tsx');
+      expect(fs.existsSync(calPath)).toBe(true);
+
+      const content = fs.readFileSync(calPath, 'utf-8');
+      expect(content).toContain('calendarStyle');
+      expect(content).toContain('相片月曆');
+      expect(content).toContain('標籤月曆');
+      expect(content).toContain('handleOpenWallpaperModal');
+      expect(content).toContain('handleDownloadWallpaper');
+      expect(content).toContain('匯出月份桌布');
+      expect(content).toContain('1080');
+      expect(content).toContain('1920');
+      // Issue #72 防裁切規範
+      expect(content).toContain('overflow-y-auto');
+      expect(content).toContain('pt-safe');
+      expect(content).toContain('pb-safe');
+    });
+
+    it('TicketStubModal 與主頁面應完整支援五維演出評鑑與結構化參戰手帳筆記', () => {
+      const stubPath = path.join(__dirname, '..', 'src', 'components', 'TicketStubModal.tsx');
+      expect(fs.existsSync(stubPath)).toBe(true);
+
+      const stubContent = fs.readFileSync(stubPath, 'utf-8');
+      expect(stubContent).toContain('LIFECYCLE_TAGS');
+      expect(stubContent).toContain('PURCHASED');
+      expect(stubContent).toContain('LOTTERY_ENTERED');
+      expect(stubContent).toContain('TRANSFERRING');
+      expect(stubContent).toContain('ratingSound');
+      expect(stubContent).toContain('ratingSight');
+      expect(stubContent).toContain('ratingAtmosphere');
+      expect(stubContent).toContain('ratingPerformance');
+      expect(stubContent).toContain('queueTimeMinutes');
+      expect(stubContent).toContain('transferNotes');
+      expect(stubContent).toContain('TicketPrayerModal');
+      expect(stubContent).toContain('SafeTransferGuideModal');
+
+      const pagePath = path.join(__dirname, '..', 'src', 'app', 'page.tsx');
+      const pageContent = fs.readFileSync(pagePath, 'utf-8');
+      expect(pageContent).toContain('ratingSound');
+      expect(pageContent).toContain('ratingSight');
+      expect(pageContent).toContain('ratingAtmosphere');
+      expect(pageContent).toContain('ratingPerformance');
+      expect(pageContent).toContain('queueTimeMinutes');
+      expect(pageContent).toContain('transferNotes');
+      expect(pageContent).toContain('WAITING_TO_BUY');
+      expect(pageContent).toContain('LOTTERY_ENTERED');
+      expect(pageContent).toContain('PURCHASED');
+      expect(pageContent).toContain('TRANSFERRING');
+    });
+  });
 });

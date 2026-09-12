@@ -61,7 +61,10 @@ CREATE TABLE IF NOT EXISTS user_attendances (
   user_id               TEXT NOT NULL DEFAULT 'local',
   session_id            TEXT NOT NULL REFERENCES event_sessions(id) ON DELETE CASCADE,
   status                TEXT NOT NULL DEFAULT 'CONFIRMED' CHECK (
-    status IN ('WANT_TO_GO', 'TICKETING', 'CONFIRMED', 'ATTENDED', 'MISSED')
+    status IN (
+      'WANT_TO_GO', 'TICKETING', 'CONFIRMED', 'ATTENDED', 'MISSED',
+      'PURCHASED', 'WAITING_TO_BUY', 'LOTTERY_ENTERED', 'TRANSFERRING', 'ABANDONED'
+    )
   ),
   seat_info             TEXT,
   ticket_type           TEXT NOT NULL DEFAULT 'DIGITAL' CHECK (
@@ -70,6 +73,15 @@ CREATE TABLE IF NOT EXISTS user_attendances (
   ticket_price          REAL,
   currency              TEXT NOT NULL DEFAULT 'TWD',
   rating                INTEGER CHECK (rating BETWEEN 1 AND 5),
+  rating_sound          INTEGER CHECK (rating_sound BETWEEN 1 AND 5),
+  rating_sight          INTEGER CHECK (rating_sight BETWEEN 1 AND 5),
+  rating_atmosphere     INTEGER CHECK (rating_atmosphere BETWEEN 1 AND 5),
+  rating_performance    INTEGER CHECK (rating_performance BETWEEN 1 AND 5),
+  pros                  TEXT,
+  cons                  TEXT,
+  tips                  TEXT,
+  queue_time_minutes    INTEGER,
+  transfer_notes        TEXT,
   notes                 TEXT,
   ticket_stub_url       TEXT,
   stub_privacy_masked   INTEGER NOT NULL DEFAULT 0,
@@ -227,5 +239,29 @@ CREATE TRIGGER IF NOT EXISTS tr_event_sale_phases_updated_at
   FOR EACH ROW
   BEGIN
     UPDATE event_sale_phases SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;
+
+-- 11. Event Prayers (推活祈願、幸運御守與集氣儀式)
+CREATE TABLE IF NOT EXISTS event_prayers (
+  id            TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+  event_id      TEXT NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  session_id    TEXT REFERENCES event_sessions(id) ON DELETE CASCADE,
+  user_id       TEXT NOT NULL DEFAULT 'local',
+  prayer_count  INTEGER NOT NULL DEFAULT 1,
+  lucky_omikuji TEXT,
+  blessing_tag  TEXT,
+  notes         TEXT,
+  created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_event_prayers_event ON event_prayers(event_id);
+CREATE INDEX IF NOT EXISTS idx_event_prayers_session ON event_prayers(session_id);
+
+CREATE TRIGGER IF NOT EXISTS tr_event_prayers_updated_at
+  AFTER UPDATE ON event_prayers
+  FOR EACH ROW
+  BEGIN
+    UPDATE event_prayers SET updated_at = datetime('now') WHERE id = OLD.id;
   END;
 `;

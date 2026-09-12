@@ -253,4 +253,98 @@ describe('SQLite Local Database Schema & Operations', () => {
     expect(queried.youtube_music_url).toBe('https://music.youtube.com/playlist?list=test789');
     expect(JSON.parse(queried.songs)).toHaveLength(2);
   });
+
+  it('應支援五維演出評鑑、結構化參戰手帳筆記與全生命週期狀態', () => {
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('評鑑測試活動', 'https://kktix.cc/eval') RETURNING id"
+      )
+      .get() as any;
+
+    const { id: sessionId } = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-11-01') RETURNING id"
+      )
+      .get(eventId) as any;
+
+    const insertAttendance = db.prepare(`
+      INSERT INTO user_attendances (
+        user_id, session_id, status, seat_info, ticket_price, rating,
+        rating_sound, rating_sight, rating_atmosphere, rating_performance,
+        pros, cons, tips, queue_time_minutes, transfer_notes
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      RETURNING *
+    `);
+
+    const record = insertAttendance.get(
+      'local',
+      sessionId,
+      'PURCHASED',
+      '搖滾A區 12排 10號',
+      4500,
+      5,
+      5,
+      4,
+      5,
+      5,
+      '音響乾淨，主唱超水準發揮！',
+      '排周邊動線混亂',
+      '建議提早一小時到場領取手燈',
+      45,
+      '面交驗證序號安全'
+    ) as any;
+
+    expect(record.status).toBe('PURCHASED');
+    expect(record.rating_sound).toBe(5);
+    expect(record.rating_sight).toBe(4);
+    expect(record.rating_atmosphere).toBe(5);
+    expect(record.rating_performance).toBe(5);
+    expect(record.pros).toBe('音響乾淨，主唱超水準發揮！');
+    expect(record.queue_time_minutes).toBe(45);
+    expect(record.transfer_notes).toBe('面交驗證序號安全');
+
+    // 測試其他生命週期狀態更新
+    db.prepare('UPDATE user_attendances SET status = ? WHERE id = ?').run(
+      'TRANSFERRING',
+      record.id
+    );
+    const updated = db
+      .prepare('SELECT status FROM user_attendances WHERE id = ?')
+      .get(record.id) as any;
+    expect(updated.status).toBe('TRANSFERRING');
+  });
+
+  it('應支援 event_prayers 抽票祈願與集氣計數', () => {
+    const { id: eventId } = db
+      .prepare(
+        "INSERT INTO events (title, source_url) VALUES ('祈願測試活動', 'https://kktix.cc/pray') RETURNING id"
+      )
+      .get() as any;
+
+    const { id: sessionId } = db
+      .prepare(
+        "INSERT INTO event_sessions (event_id, session_date) VALUES (?, '2026-11-15') RETURNING id"
+      )
+      .get(eventId) as any;
+
+    const insertPrayer = db.prepare(`
+      INSERT INTO event_prayers (event_id, session_id, user_id, prayer_count, lucky_omikuji, blessing_tag)
+      VALUES (?, ?, 'local', 10, '大吉：神席第一排預定！', '抽票必中')
+      RETURNING *
+    `);
+
+    const prayer = insertPrayer.get(eventId, sessionId) as any;
+    expect(prayer).toBeDefined();
+    expect(prayer.prayer_count).toBe(10);
+    expect(prayer.lucky_omikuji).toContain('神席第一排');
+    expect(prayer.blessing_tag).toBe('抽票必中');
+
+    // 外鍵 CASCADE 刪除
+    db.prepare('DELETE FROM events WHERE id = ?').run(eventId);
+    const count = db
+      .prepare('SELECT COUNT(*) as c FROM event_prayers WHERE event_id = ?')
+      .get(eventId) as any;
+    expect(count.c).toBe(0);
+  });
 });

@@ -61,7 +61,18 @@ export interface EventSession {
 }
 
 // ── 5. User Attendances (使用者個人參與紀錄) ──────────────────────────────
-export type AttendanceStatus = 'WANT_TO_GO' | 'TICKETING' | 'CONFIRMED' | 'ATTENDED' | 'MISSED';
+export type AttendanceStatus =
+  | 'WANT_TO_GO'
+  | 'TICKETING'
+  | 'CONFIRMED'
+  | 'ATTENDED'
+  | 'MISSED'
+  | 'PURCHASED'
+  | 'WAITING_TO_BUY'
+  | 'LOTTERY_ENTERED'
+  | 'TRANSFERRING'
+  | 'ABANDONED';
+
 export type TicketType = 'PHYSICAL' | 'DIGITAL' | 'WRISTBAND' | 'OTHER';
 
 export interface UserAttendance {
@@ -74,6 +85,15 @@ export interface UserAttendance {
   ticket_price: number | null;
   currency: string;
   rating: number | null;
+  rating_sound?: number | null;
+  rating_sight?: number | null;
+  rating_atmosphere?: number | null;
+  rating_performance?: number | null;
+  pros?: string | null;
+  cons?: string | null;
+  tips?: string | null;
+  queue_time_minutes?: number | null;
+  transfer_notes?: string | null;
   notes: string | null;
   ticket_stub_url: string | null;
   stub_privacy_masked: number; // SQLite boolean (0/1)
@@ -180,6 +200,20 @@ export interface EventSalePhase {
   eligibility_notes: string | null;
   is_lottery: number; // 0/1
   reminder_enabled: number; // 0/1
+  created_at: string;
+  updated_at: string;
+}
+
+// ── 11. Event Prayers (推活祈願與幸運御守) ──────────────────────────
+export interface EventPrayer {
+  id: string;
+  event_id: string;
+  session_id: string | null;
+  user_id: string;
+  prayer_count: number;
+  lucky_omikuji: string | null;
+  blessing_tag: string | null;
+  notes: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -49,11 +49,31 @@ export function getDatabase(options?: DatabaseOptions): Database.Database {
   // 初始化 Schema（CREATE IF NOT EXISTS，冪等操作）
   db.exec(SCHEMA_SQL);
 
-  // 輕量自動遷移：確保既有資料庫之 event_setlists 包含 youtube_music_url 欄位
+  // 輕量自動遷移：確保既有資料庫欄位同步
   try {
-    const cols = db.pragma('table_info(event_setlists)') as Array<{ name: string }>;
-    if (cols.length > 0 && !cols.some((c) => c.name === 'youtube_music_url')) {
+    const setlistCols = db.pragma('table_info(event_setlists)') as Array<{ name: string }>;
+    if (setlistCols.length > 0 && !setlistCols.some((c) => c.name === 'youtube_music_url')) {
       db.exec('ALTER TABLE event_setlists ADD COLUMN youtube_music_url TEXT;');
+    }
+
+    const attendanceCols = db.pragma('table_info(user_attendances)') as Array<{ name: string }>;
+    if (attendanceCols.length > 0) {
+      const colNames = new Set(attendanceCols.map((c) => c.name));
+      if (!colNames.has('rating_sound'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN rating_sound INTEGER;');
+      if (!colNames.has('rating_sight'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN rating_sight INTEGER;');
+      if (!colNames.has('rating_atmosphere'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN rating_atmosphere INTEGER;');
+      if (!colNames.has('rating_performance'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN rating_performance INTEGER;');
+      if (!colNames.has('pros')) db.exec('ALTER TABLE user_attendances ADD COLUMN pros TEXT;');
+      if (!colNames.has('cons')) db.exec('ALTER TABLE user_attendances ADD COLUMN cons TEXT;');
+      if (!colNames.has('tips')) db.exec('ALTER TABLE user_attendances ADD COLUMN tips TEXT;');
+      if (!colNames.has('queue_time_minutes'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN queue_time_minutes INTEGER;');
+      if (!colNames.has('transfer_notes'))
+        db.exec('ALTER TABLE user_attendances ADD COLUMN transfer_notes TEXT;');
     }
   } catch {
     // 忽略建立初期的潛在異常

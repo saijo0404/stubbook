@@ -88,19 +88,19 @@
 > **目標**：提升手帳的視覺溫度與開賣前粉絲互動儀式感，支援以海報/拍立得填滿行事曆，並建立更靈活的手帳筆記系統。
 > **對應版本**：`v2.1.0` 📋
 
-- [ ] **視覺相片手帳月曆 (Visual Photo Calendar - 參考 PL@Y2 & repov)**
-  - [ ] **月曆海報縮圖模式**：月曆與週曆日期單元格直接內嵌演出海報或現場精選相片，整月份一覽即為精美「回憶相片牆」。
-  - [ ] **月曆快速互動手勢**：長按特定日期快速開啟「新增手帳 / 搶票排程」快速選單。
-  - [ ] **月份相片桌布一鍵生成 (Month Wall Calendar Export)**：將單月參戰相片月曆一鍵合成導出為手機直向桌布 (Wallpaper) 或高畫質長圖。
-- [ ] **抽票中籤祈願與搶票集氣儀式 (Gacha Prayer & Fan Ritual - 參考 Flytix)**
-  - [ ] **票根祈願互動**：未開賣或抽票登記中的活動，支援在票根上「點擊祈願 / 敲木魚集氣」，即時累計祈願次數與成就徽章。
-  - [ ] **專屬幸運神籤與應援色加持**：產出開賣祈願卡，隨機抽取「神席御守」、「準時中籤」、「特區第一排」粉絲趣味御守圖卡供社群分享。
-- [ ] **完整票券生命週期狀態追蹤 (Full Ticket Lifecycle Tracking - 參考 Flytix & PL@Y2)**
-  - [ ] **五大狀態標籤**：`已購票 (Purchased)`、`待搶票 (Waiting to Buy)`、`抽票登記中 (Lottery Entry)`、`讓票/換票中 (Transferring)`、`未中籤/已放棄 (Abandoned)`。
-  - [ ] **票券真偽核驗與讓換票安全備忘 (Safe Transfer Guide)**：提供各售票系統官方票面防偽檢查要點、實名制手續提醒、面交注意事項檢核表。
-- [ ] **多維度演出評鑑與結構化範本 (Multi-dimensional Review & Templates - 參考 repov)**
-  - [ ] **五維度星等評分**：整體表現 (Overall)、音響燈光 (Sound & Lights)、視野無遮擋 (Sight)、現場氛圍 (Atmosphere)、藝人狀態 (Artist Performance)。
-  - [ ] **參戰筆記範本模組**：支援選填「推薦優點 (Pros)」、「缺點吐槽 (Cons)」、「場館交通與入場攻略 (Tips)」、「周邊排隊時長」結構化欄位。
+- [x] **視覺相片手帳月曆 (Visual Photo Calendar - 參考 PL@Y2 & repov)**
+  - [x] **月曆海報縮圖模式**：月曆與週曆日期單元格直接內嵌演出海報或現場精選相片，整月份一覽即為精美「回憶相片牆」，支援視覺相片模式與經典標籤模式自由切換。
+  - [x] **月曆快速互動手勢**：點擊特定日期即時展開當日行程，並支援開啟「手帳紀錄 / 搶票排程」快速檢視。
+  - [x] **月份相片桌布一鍵生成 (Month Wall Calendar Export)**：將單月參戰相片月曆透過 Canvas 一鍵合成導出為 9:16 高解析度手機鎖定畫面桌布 (1080×1920 PNG)。
+- [x] **抽票中籤祈願與搶票集氣儀式 (Gacha Prayer & Fan Ritual - 參考 Flytix)**
+  - [x] **票根祈願互動**：支援在票根與手帳詳情上「點擊祈願 / 敲木魚集氣」，支援 Web Audio 擬真敲擊音效與微震動，即時累計個人功德與全場集氣次數 (`/api/prayers`)。
+  - [x] **專屬幸運神籤與開賣御守卡**：產出開賣祈願籤詩（超大吉、神席吉、特上吉等趣味吉兆），並支援一鍵生成下載 600×900 祈願開運御守圖卡供社群分享。
+- [x] **完整票券生命週期狀態追蹤 (Full Ticket Lifecycle Tracking - 參考 Flytix & PL@Y2)**
+  - [x] **全生命週期狀態標籤**：`已購票 (PURCHASED)`、`待搶票 (WAITING_TO_BUY)`、`抽票登記中 (LOTTERY_ENTERED)`、`搶票中 (TICKETING)`、`確定參戰 (CONFIRMED)`、`讓票/換票中 (TRANSFERRING)`、`未中籤/已放棄 (ABANDONED)`、`已參戰 (ATTENDED)`、`未前往 (MISSED)`。
+  - [x] **票券真偽核驗與讓換票安全手冊 (Safe Transfer Guide)**：提供防詐五不原則、實名制換票檢核清單，以及換票交易資訊備忘錄（支援一鍵複製安全文案）。
+- [x] **多維度演出評鑑與結構化範本 (Multi-dimensional Review & Templates - 參考 repov)**
+  - [x] **五維度星等評分**：綜合評分 (Overall)、音響音質 (Sound)、視野角度 (Sight)、現場氛圍 (Atmosphere)、藝人現場表現 (Performance)，並於票根詳情以視覺星等呈現。
+  - [x] **結構化參戰筆記範本模組**：支援填寫「排隊耗時 (Queue Time)」、「亮點好評 (Pros)」、「踩雷提醒 (Cons)」、「避坑貼士 (Tips)」、「換票備忘 (Transfer Notes)」。
 
 ---
 

@@ -16,7 +16,15 @@ export async function GET(req: NextRequest) {
         SELECT 
           a.id, a.user_id as userId, a.session_id as sessionId, a.status,
           a.seat_info as seatInfo, a.ticket_type as ticketType,
-          a.ticket_price as ticketPrice, a.currency, a.rating, a.notes,
+          a.ticket_price as ticketPrice, a.currency, a.rating,
+          a.rating_sound as ratingSound,
+          a.rating_sight as ratingSight,
+          a.rating_atmosphere as ratingAtmosphere,
+          a.rating_performance as ratingPerformance,
+          a.pros, a.cons, a.tips,
+          a.queue_time_minutes as queueTimeMinutes,
+          a.transfer_notes as transferNotes,
+          a.notes,
           a.ticket_stub_url as ticketStubUrl, a.stub_privacy_masked as stubPrivacyMasked,
           a.created_at as createdAt, a.updated_at as updatedAt,
           COALESCE((SELECT COUNT(*) FROM merchandise_items m WHERE m.attendance_id = a.id), 0) as merchCount,
@@ -44,6 +52,15 @@ export async function GET(req: NextRequest) {
         a.ticket_price as ticketPrice,
         a.currency,
         a.rating,
+        a.rating_sound as ratingSound,
+        a.rating_sight as ratingSight,
+        a.rating_atmosphere as ratingAtmosphere,
+        a.rating_performance as ratingPerformance,
+        a.pros,
+        a.cons,
+        a.tips,
+        a.queue_time_minutes as queueTimeMinutes,
+        a.transfer_notes as transferNotes,
         a.notes,
         a.ticket_stub_url as ticketStubUrl,
         a.stub_privacy_masked as stubPrivacyMasked,
@@ -87,6 +104,15 @@ export async function POST(req: NextRequest) {
       ticketPrice = null,
       currency = 'TWD',
       rating = null,
+      ratingSound = null,
+      ratingSight = null,
+      ratingAtmosphere = null,
+      ratingPerformance = null,
+      pros = null,
+      cons = null,
+      tips = null,
+      queueTimeMinutes = null,
+      transferNotes = null,
       notes = null,
       ticketStubUrl = null,
       stubPrivacyMasked = 0,
@@ -97,7 +123,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '缺少 sessionId 參數' }, { status: 400 });
     }
 
-    const validStatuses = ['WANT_TO_GO', 'TICKETING', 'CONFIRMED', 'ATTENDED', 'MISSED'];
+    const validStatuses = [
+      'WANT_TO_GO',
+      'TICKETING',
+      'CONFIRMED',
+      'ATTENDED',
+      'MISSED',
+      'PURCHASED',
+      'WAITING_TO_BUY',
+      'LOTTERY_ENTERED',
+      'TRANSFERRING',
+      'ABANDONED',
+    ];
     if (!validStatuses.includes(status)) {
       return NextResponse.json({ error: '無效的參戰狀態' }, { status: 400 });
     }
@@ -107,13 +144,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '無效的票種形式' }, { status: 400 });
     }
 
+    const parseRating = (val: any) =>
+      val !== null && val !== undefined && val !== '' ? Number(val) : null;
+
     const db = getDefaultDatabase();
 
     const upsertStmt = db.prepare(`
       INSERT INTO user_attendances (
         user_id, session_id, status, seat_info, ticket_type, ticket_price,
-        currency, rating, notes, ticket_stub_url, stub_privacy_masked
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        currency, rating, rating_sound, rating_sight, rating_atmosphere, rating_performance,
+        pros, cons, tips, queue_time_minutes, transfer_notes,
+        notes, ticket_stub_url, stub_privacy_masked
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(user_id, session_id) DO UPDATE SET
         status = excluded.status,
         seat_info = excluded.seat_info,
@@ -121,6 +163,15 @@ export async function POST(req: NextRequest) {
         ticket_price = excluded.ticket_price,
         currency = excluded.currency,
         rating = excluded.rating,
+        rating_sound = excluded.rating_sound,
+        rating_sight = excluded.rating_sight,
+        rating_atmosphere = excluded.rating_atmosphere,
+        rating_performance = excluded.rating_performance,
+        pros = excluded.pros,
+        cons = excluded.cons,
+        tips = excluded.tips,
+        queue_time_minutes = excluded.queue_time_minutes,
+        transfer_notes = excluded.transfer_notes,
         notes = excluded.notes,
         ticket_stub_url = excluded.ticket_stub_url,
         stub_privacy_masked = excluded.stub_privacy_masked,
@@ -136,7 +187,16 @@ export async function POST(req: NextRequest) {
       ticketType,
       ticketPrice !== null && ticketPrice !== '' ? Number(ticketPrice) : null,
       currency,
-      rating !== null && rating !== '' ? Number(rating) : null,
+      parseRating(rating),
+      parseRating(ratingSound),
+      parseRating(ratingSight),
+      parseRating(ratingAtmosphere),
+      parseRating(ratingPerformance),
+      pros || null,
+      cons || null,
+      tips || null,
+      queueTimeMinutes !== null && queueTimeMinutes !== '' ? Number(queueTimeMinutes) : null,
+      transferNotes || null,
       notes || null,
       ticketStubUrl || null,
       stubPrivacyMasked ? 1 : 0
