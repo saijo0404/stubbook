@@ -69,6 +69,7 @@ interface LiveEventHeroCardProps {
   onOpenMerchManager: () => void;
   onOpenSeatViews?: (venueName?: string, seatInfo?: string) => void;
   onOpenSetlist?: () => void;
+  onOpenConcertMode?: () => void;
 }
 
 interface CountdownState {
@@ -94,6 +95,7 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
   onOpenMerchManager,
   onOpenSeatViews,
   onOpenSetlist,
+  onOpenConcertMode,
 }) => {
   const [countdown, setCountdown] = useState<CountdownState>({
     status: 'COUNTDOWN',
@@ -288,8 +290,21 @@ export const LiveEventHeroCard: React.FC<LiveEventHeroCardProps> = ({
               </div>
             </div>
 
-            {/* 操作按鈕組：出示票根與視角速查 */}
+            {/* 操作按鈕組：出示票根、視角速查與現場沉浸模式 */}
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {onOpenConcertMode && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.heavy();
+                    onOpenConcertMode();
+                  }}
+                  className="w-full sm:w-auto px-3.5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-1.5 shadow-md shadow-purple-600/30 transition-transform active:scale-95"
+                >
+                  <Flame className="w-3.5 h-3.5 text-yellow-300" />
+                  現場沉浸模式 🏟️
+                </button>
+              )}
               {onOpenSeatViews && (
                 <button
                   type="button"
